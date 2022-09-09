@@ -155,6 +155,7 @@ def Policy_Rew():
     data = build_pivot_table('map', min_q=.01, max_q=.99)
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
     data = data.groupby(by=['sub_id']).mean().reset_index()
+    data['rew'] = data['rew'].apply(lambda x: x*100)
     xmin, xmax = -4.1, 4.1 
     #data[tar].min().min()-.1, data[tar].max().max()+.1
 
@@ -163,7 +164,7 @@ def Policy_Rew():
     for i, lamb in enumerate(tar):
 
         x = data[lamb]
-        y = data['rew'] * 100
+        y = data['rew']
         corr, pval = pearsonr(x.values, y.values)
         x = sm.add_constant(x)
         res = sm.OLS(y, x).fit()
