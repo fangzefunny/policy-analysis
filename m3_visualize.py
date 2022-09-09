@@ -163,10 +163,11 @@ def Policy_Rew():
     for i, lamb in enumerate(tar):
 
         x = data[lamb]
-        y = data['rew']
+        y = data['rew'] * 100
         corr, pval = pearsonr(x.values, y.values)
         x = sm.add_constant(x)
         res = sm.OLS(y, x).fit()
+        print(res.summary())
         print(f' {lamb}: r={corr}, p={pval}')
         regress = lambda x: res.params['const'] + res.params[lamb]*x
 
