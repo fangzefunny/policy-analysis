@@ -96,31 +96,16 @@ def datainfo(pivot_tables):
     #control x loss rows: {pivot_tables['loss, HC'].shape[0]}
     ''')
 
-def bootstrapping(data, size, seed=2022):
-    rng = np.random.RandomState(seed)
-    ind = list(data.index)
-    ind_BS = rng.choice(ind, size=size, replace=True)
-    return data.loc[ind_BS, :]
-
 def build_pivot_table(method, min_q=.01, max_q=.99):
-    agent = 'mix_pol_3w'
+    agent = 'MixPol'
     tar_tail =  ['l1', 'l2', 'l3'] 
     notes    =  [r'$\lambda_1$: exp utility', r'$\lambda_2$: magnitude', r'$\lambda_3$: habit']
-    gain_data = pd.read_csv(f'{path}/../simulations/{agent}/sim_gain_exp1data-{method}-idx0.csv')
-    loss_data = pd.read_csv(f'{path}/../simulations/{agent}/sim_loss_exp1data-{method}-idx0.csv')
+    gain_data = pd.read_csv(f'{path}/../simulations/{agent}/sim-gain_exp1data-{method}-idx0-default.csv')
+    loss_data = pd.read_csv(f'{path}/../simulations/{agent}/sim-loss_exp1data-{method}-idx0-default.csv')
     sub_syndrome = pd.read_csv(f'{path}/../data/bifactor.csv')
     sub_syndrome = sub_syndrome.rename(columns={'Unnamed: 0': 'sub_id', 'F1.': 'f1', 'F2.':'f2'})
     pivot_tables = get_pivot(gain_data, loss_data, features=['rew', 'match', 'alpha']+tar_tail)
 
-    print('#-------- Before Bootstrapping ---------- #')
-    datainfo(pivot_tables)
-
-    print('#-------- After Bootstrapping ---------- #')
-    n = 106
-    pivot_tables['gain, PAT'] = bootstrapping(
-                        pivot_tables['gain, PAT'], size=n)
-    pivot_tables['loss, PAT'] = bootstrapping(
-                        pivot_tables['loss, PAT'], size=n)
     datainfo(pivot_tables)
 
     print('#-------- Clean Outliers ---------- #\n')

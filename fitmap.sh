@@ -11,7 +11,8 @@ declare models=("MixPol" "GagModel" "RlRisk")
 for data_set in "${data_sets[@]}"; do 
     for model in "${models[@]}"; do 
         echo Data set=$data_set  Model=$model Method='map'
-        #python m1_fit.py -d=$data_set -n=$model -s=420 -f=40 -c=40 -m='map' 
-        python m2_simulate.py -d=$data_set -n=$model -f=1 -m='map'
+        #python m1_fit.py -d=$data_set -n=$model -s=420 -f=40 -c=40 -m='mle' 
     done 
+    python m2_simulate.py -d=$data_set -n="MixPol" -f=10 -c=10 -m='mle'
 done
+

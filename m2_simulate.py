@@ -13,10 +13,10 @@ path = os.path.dirname(os.path.abspath(__file__))
 
 ## pass the hyperparams
 parser = argparse.ArgumentParser(description='Test for argparse')
-parser.add_argument('--data_set',   '-d', help='which_data', type = str, default='gain_data')
+parser.add_argument('--data_set',   '-d', help='which_data', type = str, default='gain_exp1data')
 parser.add_argument('--method',     '-m', help='fitting methods', type = str, default='map')
 parser.add_argument('--group',      '-g', help='fit to ind or fit to the whole group', type=str, default='ind')
-parser.add_argument('--agent_name', '-n', help='choose agent', default='mix_pol_3w')
+parser.add_argument('--agent_name', '-n', help='choose agent', default='MixPol')
 parser.add_argument('--n_cores',    '-c', help='number of CPU cores used for parallel computing', 
                                             type=int, default=1)
 parser.add_argument('--n_sim',      '-f', help='f simulations', type=int, default=5)
@@ -32,7 +32,7 @@ if not os.path.exists(f'{path}/simulations/{args.agent_name}'):
     os.mkdir(f'{path}/simulations/{args.agent_name}')
 
 # define functions
-def simulate(data, args, seed):
+def simulate(data, args, pi_id, seed):
 
     # define the subj
     subj = model(args.agent)
@@ -56,6 +56,13 @@ def simulate(data, args, seed):
         else:
             params = in_params
 
+        # # assign policy method 
+        # if args.agent_name == 'MixPol':
+        #     mask  = np.zeros_like(params)
+        #     mask[list(range(4))+[4+pi_id, 7+pi_id]] = 1
+        #     mask = -(1-mask)*1e12 + mask*0
+        #     params += mask 
+        
         # synthesize the data and save
         rng = np.random.RandomState(seed)
         sim_sample = subj.sim(data[sub_idx], params, rng=rng)
@@ -66,14 +73,19 @@ def simulate(data, args, seed):
 
 # define functions
 def sim_paral(pool, data, args):
+
+    policies = ['EU', 'MO', 'HA']
+    nPi = len(policies)
     
     ## Simulate data for n_sim times 
     seed = args.seed 
-    res = [pool.apply_async(simulate, args=(data, args, seed+5*i))
-                            for i in range(args.n_sim)]
+    res = [pool.apply_async(simulate, args=(data, args, i%nPi, seed+5*i))
+                            for i in range(args.n_sim*nPi)]
     for i, p in enumerate(res):
         sim_data = p.get() 
-        fname = f'{path}/simulations/{args.agent_name}/sim-{args.data_set}-{args.method}-idx{i}.csv'
+        sim_id, pi_id = i//nPi, i%nPi 
+        fname = f'{path}/simulations/{args.agent_name}/sim-{args.data_set}'
+        fname += f'-{args.method}-idx{sim_id}-default.csv'
         sim_data.to_csv(fname, index = False, header=True)
     
 if __name__ == '__main__':

@@ -133,6 +133,7 @@ class model:
             ctxt     = row['b_type']
             state    = row['state']
             act      = row['humanAct']
+            f_type   = row['feedback_type']
             match    = row['match']
             mem      = {'ctxt': ctxt, 'mag0': mag0, 'mag1': mag1}
             subj.buffer.push(mem)
@@ -140,7 +141,10 @@ class model:
             # control stage: make a resposne
             logLike = subj.control(act,   mode='eval')
             logAcc  = subj.control(state, mode='eval')
-            rew     = [mag0, mag1][state] if match else 0
+            if f_type == 'gain':
+                rew = ([mag0, mag1][state]) * match
+            elif f_type == 'loss':
+                rew = ([mag0, mag1][state]) * match - np.min([mag0, mag1])
 
             # record the vals 
             pred_data.loc[t, 'rew']     = rew 

@@ -87,6 +87,28 @@ def sim_paral(pool, data, args):
         fname = f'{path}/simulations/{args.agent_name}/sim-{args.data_set}'
         fname += f'-{args.method}-idx{sim_id}-{policies[pi_id]}.csv'
         sim_data.to_csv(fname, index = False, header=True)
+
+def summary(data, args):
+
+    ## Prepare storage
+    n_sub    = len(data.keys())
+    n_params = args.agent.n_params
+    res_mat  = np.zeros([n_sub, n_params+3]) + np.nan 
+    res_smry = np.zeros([2, n_params+3]) + np.nan 
+    folder   = f'{path}/fits/{args.agent_name}'
+
+    ## Loop to collect data 
+    for i, sub_idx in enumerate(data.keys()):
+        fname = f'{folder}/params-{args.data_set}-{args.method}-{sub_idx}.csv'
+        log = pd.read_csv(fname, index_col=0)
+        res_mat[i, :] = log.iloc[0, :].values
+        if i == 0: col = log.columns
+    
+    ## Compute and save the mean and sem
+    res_smry[0, :] = np.mean(res_mat, axis=0)
+    res_smry[1, :] = np.std(res_mat, axis=0) / np.sqrt(n_sub)
+    fname = f'{path}/fits/params-{args.data_set}-{args.agent_name}-{args.method}-ind.csv'
+    pd.DataFrame(res_smry, columns=col).round(4).to_csv(fname)
     
 if __name__ == '__main__':
     
@@ -100,3 +122,4 @@ if __name__ == '__main__':
 
     ## STEP 2: SYNTHESIZE DATA
     sim_paral(pool, data, args)
+    if args.group=='ind': summary(data, args)

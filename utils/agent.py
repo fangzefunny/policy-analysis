@@ -1,6 +1,4 @@
 import numpy as np
-import torch
-from torch.distributions import Beta
 from scipy.special import softmax
 from scipy.stats import norm, gamma, beta
 
@@ -275,6 +273,9 @@ class MixPol(baseAgent):
 
     def print_pi(self):
         return self._policy()[1]
+
+    def print_alpha(self):
+        return eval(f'self.alpha_{self.buffer.sample("ctxt")}') 
 
     def print_w1(self):
         return self.get_w(self.buffer.sample("ctxt"))[0]
