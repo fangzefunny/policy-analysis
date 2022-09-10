@@ -190,16 +190,17 @@ def reg(pred='l1', tar='rew'):
 
 def pred_biFactor():
 
-    preds = ['l2', 'l3']
-    tars  = ['g', 'f2']
+    preds = ['g', 'g', 'g', 'f2', 'f2', 'f2']
+    tars  = ['l1', 'l2', 'l3', 'l1', 'l2', 'l3']
     data = build_pivot_table('map', min_q=.01, max_q=.99)
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
     data = data.groupby(by=['sub_id']).mean().reset_index()
-    xmin, xmax = -4.9, 4.9 
+   
 
-    nr, nc = 1, len(tars)
-    fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharex=True)
+    nr, nc = 2, int(len(tars)/2)
+    fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharex='row',)
     for i, (pred, tar) in enumerate(zip(preds, tars)):
+        xmin, xmax = data[pred].values.min()-.4, data[pred].values.max()+.4
         x = data[pred]
         y = data[tar]
         corr, pval = pearsonr(x.values, y.values)
@@ -209,14 +210,14 @@ def pred_biFactor():
         print(f' {tar}: r={corr}, p={pval}')
         regress = lambda x: res.params['const'] + res.params[pred]*x
 
-        ax  = axs[i]
+        ax  = axs[i//3, i%3]
         x = np.linspace(xmin, xmax, 100)
         sns.scatterplot(x=pred, y=tar, data=data, 
                             color=viz.Blue, ax=ax)
         sns.lineplot(x=x, y=regress(x), color=viz.Red, lw=3, ax=ax)
         ax.set_ylabel(tar)
         ax.set_xlabel(pred)
-        ax.set_xlim([-5, 5])
+        ax.set_xlim([xmin, xmax])
         #ax.set_ylim([-3., 3.])
         ax.set_box_aspect(1)
         #ax.set_title(f'{titles[idx]}')
@@ -233,5 +234,5 @@ if __name__ == '__main__':
     #viz_Human()
     #viz_PiReward()
     #HC_PAT_policy()
-    Policy_Rew()
-    #pred_biFactor()
+    #Policy_Rew()
+    pred_biFactor()
