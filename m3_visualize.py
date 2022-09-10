@@ -87,33 +87,27 @@ def viz_Human():
 
 def LR_effect():
 
-    agents = ['MixPol', 'GagModel']
-    conds  = ['b_type', 'is_PAT']
+    feedback_types = ['gain', 'loss']
+    agents  = ['MixPol', 'GagModel']
     tar    = ['log_alpha']
 
-    nr, nc = len(conds), len(agents)
+    nr, nc = len(agents), len(feedback_types)
     fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharex='row')
-    for idx, agent in enumerate(agents):
-        for j, cond in enumerate(conds):
+    for idx, f_type in enumerate(feedback_types):
+        for j, agent in enumerate(agents):
             ax  = axs[j, idx]
             data = build_pivot_table('map', agent=agent, min_q=.01, max_q=.99)
             data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
-            data = data.groupby(by=['sub_id', 'b_type', 'feedback_type']).mean().reset_index()
-            print(f'---------{agent}: {cond}')
+            data = data.query(f'feedback_type=="{f_type}"').groupby(by=['sub_id', 'b_type', 'is_PAT']).mean().reset_index()
+            print(f'---------{agent}: {f_type}')
             ymin, ymax = data[tar[0]].min(), data[tar[0]].max()
-            if cond == 'is_PAT':
-                t_test(data, 'is_PAT==0', 'is_PAT==1', tar=tar)
-            elif cond == 'b_type':
-                t_test(data, 'b_type=="sta"', 'b_type=="vol"', tar=tar)
-            sns.boxplot(x=cond, y=tar[0], data=data, width=.65,
+            t_test(data, 'b_type=="sta"', 'b_type=="vol"', tar=tar)
+            sns.boxplot(x='b_type', y=tar[0], data=data, width=.65,
                             palette=viz.Palette, ax=ax)
             ax.set_xlim([-.8, 1.8])
             ax.set_xticks([0, 1])
             ax.set_ylim([ymin-abs(ymin)*.2, ymax+abs(ymax-1)*.5])
-            if cond == 'is_PAT':
-                ax.set_xticklabels(['HC', 'PAT'])
-            elif cond == 'b_type':
-                ax.set_xticklabels(['Stable', 'Volatile'])
+            ax.set_xticklabels(['Stable', 'Volatile'])
             ax.set_ylabel('')
             ax.set_xlabel('')
             ax.set_box_aspect(1)
