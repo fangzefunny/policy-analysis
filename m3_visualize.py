@@ -92,7 +92,7 @@ def LR_effect():
     tar    = ['log_alpha']
 
     nr, nc = len(conds), len(agents)
-    fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharex=True)
+    fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharex='row')
     for idx, agent in enumerate(agents):
         for j, cond in enumerate(conds):
             ax  = axs[j, idx]
@@ -108,7 +108,10 @@ def LR_effect():
                             palette=viz.Palette, ax=ax)
             ax.set_xlim([-.8, 1.8])
             ax.set_xticks([0, 1])
-            ax.set_xticklabels(['Stable', 'Volatile'])
+            if cond == 'is_PAT':
+                ax.set_xticklabels(['HC', 'PAT'])
+            elif cond == 'b_type':
+                ax.set_xticklabels(['Stable', 'Volatile'])
             ax.set_ylabel('')
             ax.set_xlabel('')
             ax.set_box_aspect(1)
