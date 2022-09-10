@@ -100,6 +100,7 @@ def LR_effect():
             data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
             data = data.groupby(by=['sub_id', 'b_type', 'feedback_type']).mean().reset_index()
             print(f'---------{agent}: {cond}')
+            ymin, ymax = data[tar[0]].min(), data[tar[0]].max()
             if cond == 'is_PAT':
                 t_test(data, 'is_PAT==0', 'is_PAT==1', tar=tar)
             elif cond == 'b_type':
@@ -108,6 +109,7 @@ def LR_effect():
                             palette=viz.Palette, ax=ax)
             ax.set_xlim([-.8, 1.8])
             ax.set_xticks([0, 1])
+            ax.set_ylim([ymin-abs(ymin)*.2, ymax+abs(ymax-1)*.5])
             if cond == 'is_PAT':
                 ax.set_xticklabels(['HC', 'PAT'])
             elif cond == 'b_type':
