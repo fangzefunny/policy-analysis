@@ -68,6 +68,10 @@ def remake_cols_idx(data, sub_id, feedback_type, exp_id, seed=42):
                         *(x["humanAct"]==x["state"])
                      -min(x[f'mag0'], x['mag1']), axis=1)
     
+    data['rawRew'] = data.apply(
+            lambda x: x[f'mag{int(x["humanAct"])}']
+                        *(x["humanAct"]==x["state"]), axis=1)
+    
     ## Add which experiment id 
     data['exp_id'] = exp_id
 

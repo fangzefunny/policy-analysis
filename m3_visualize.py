@@ -124,6 +124,7 @@ def Policy_Rew():
     data = build_pivot_table('map', min_q=.01, max_q=.99)
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
     data['rew'] = data['rew'].apply(lambda x: x*100)
+    data['rawRew'] = data['rawRew'].apply(lambda x: x*100)
     xmin, xmax = -4.9, 4.9 
     #data[tar].min().min()-.1, data[tar].max().max()+.1
 
@@ -132,11 +133,11 @@ def Policy_Rew():
 
     for i, lamb in enumerate(tar):
         for j, feedback_type in enumerate(['gain', 'loss']):
-
+            #
             sel_data = data.query(f'feedback_type=="{feedback_type}"').groupby(
                             by=['sub_id', 'b_type']).mean().reset_index()
             x = sel_data[lamb]
-            y = sel_data['rew']
+            y = sel_data['rawRew']
             corr, pval = pearsonr(x.values, y.values)
             x = sm.add_constant(x)
             res = sm.OLS(y, x).fit()
@@ -146,7 +147,7 @@ def Policy_Rew():
 
             ax  = axs[j, i]
             x = np.linspace(xmin, xmax, 100)
-            sns.scatterplot(x=lamb, y='rew', data=sel_data, 
+            sns.scatterplot(x=lamb, y='rawRew', data=sel_data, 
                                 color=viz.Blue, ax=ax)
             sns.lineplot(x=x, y=regress(x), color=viz.Red, lw=3, ax=ax)
             ax.set_ylabel('')
@@ -233,4 +234,4 @@ if __name__ == '__main__':
     #viz_PiReward()
     #HC_PAT_policy()
     Policy_Rew()
-    pred_biFactor()
+    #pred_biFactor()

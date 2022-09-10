@@ -13,6 +13,9 @@ for data_set in "${data_sets[@]}"; do
         echo Data set=$data_set  Model=$model Method='map'
         #python m1_fit.py -d=$data_set -n=$model -s=420 -f=40 -c=40 -m='mle' 
     done 
-    python m2_simulate.py -d=$data_set -n="MixPol" -f=10 -c=10 -m='mle'
+    python m2_simulate.py -d=$data_set -n="MixPol" -f=10 -c=10 -m='map'
 done
+
+## step 2: visualize
+python m3_visualize.py 
 

@@ -55,7 +55,7 @@ def model_cmp(quant_crs):
                 {p[0]}:{np.mean(x):.3f}, {p[1]}:{np.mean(y):.3f}
                 t={res[0]:.3f} p={res[1]:.3f}''')
 
-def get_pivot(gain_data, loss_data, features=['rew', 'match', 'anx_lvl', 'dep_lvl', 'alpha', 'l1', 'l2', 'l3']):
+def get_pivot(gain_data, loss_data, features=['rew', 'rawRew', 'match', 'anx_lvl', 'dep_lvl', 'alpha', 'l1', 'l2', 'l3']):
     ## get the gin and loss data 
     gain_data_PAT = gain_data.query('group!="HC"')
     gain_data_HC  = gain_data.query('group=="HC"')
@@ -104,7 +104,7 @@ def build_pivot_table(method, min_q=.01, max_q=.99):
     loss_data = pd.read_csv(f'{path}/../simulations/{agent}/sim-loss_exp1data-{method}-idx0-default.csv')
     sub_syndrome = pd.read_csv(f'{path}/../data/bifactor.csv')
     sub_syndrome = sub_syndrome.rename(columns={'Unnamed: 0': 'sub_id', 'F1.': 'f1', 'F2.':'f2'})
-    pivot_tables = get_pivot(gain_data, loss_data, features=['rew', 'match', 'alpha']+tar_tail)
+    pivot_tables = get_pivot(gain_data, loss_data, features=['rawRew', 'rew', 'match', 'alpha']+tar_tail)
 
     datainfo(pivot_tables)
 
