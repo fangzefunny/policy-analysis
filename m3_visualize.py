@@ -84,16 +84,48 @@ def viz_Human():
     ax.set_axis_off()
     plt.tight_layout()
     plt.savefig(f'{path}/figures/Fig1_Human_data.png', dpi=300)
+
+def LR_effect():
+
+    agents = ['MixPol', 'GagModel']
+    conds  = ['b_type', 'is_PAT']
+    tar    = ['log_alpha']
+
+    nr, nc = len(conds), len(agents)
+    fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharex=True)
+    for idx, agent in enumerate(agents):
+        for j, cond in enumerate(conds):
+            ax  = axs[j, idx]
+            data = build_pivot_table('map', agent=agent, min_q=.01, max_q=.99)
+            data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
+            data = data.groupby(by=['sub_id', 'b_type', 'feedback_type']).mean().reset_index()
+            print(f'---------{agent}: {cond}')
+            if cond == 'is_PAT':
+                t_test(data, 'is_PAT==0', 'is_PAT==1', tar=tar)
+            elif cond == 'b_type':
+                t_test(data, 'b_type=="sta"', 'b_type=="vol"', tar=tar)
+            sns.boxplot(x=cond, y=tar[0], data=data, width=.65,
+                            palette=viz.Palette, ax=ax)
+            ax.set_xlim([-.8, 1.8])
+            ax.set_xticks([0, 1])
+            ax.set_xticklabels(['Stable', 'Volatile'])
+            ax.set_ylabel('')
+            ax.set_xlabel('')
+            ax.set_box_aspect(1)
+        
+    plt.tight_layout()
+    plt.show()
+    plt.savefig(f'{path}/figures/Fig0_LR.png', dpi=300)
+
                 
 def HC_PAT_policy():
 
     tar    = ['l1', 'l2', 'l3']
-    titles = [r'$logit(w_{\text{EU}})$: EU', r'$logit(w_2)$: MO', r'$logit(w_3)$: HA']
 
     data = build_pivot_table('map', min_q=.01, max_q=.99)
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
     data = data.groupby(by=['sub_id', 'b_type', 'feedback_type']).mean().reset_index()
-
+    
     nr, nc = 1, len(tar)
     fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharey=True, sharex=True)
     for_title = t_test(data, 'is_PAT==False', 'is_PAT==True', tar=tar)
@@ -232,7 +264,8 @@ if __name__ == '__main__':
 
     #quantTable()
     #viz_Human()
+    LR_effect()
     #viz_PiReward()
     #HC_PAT_policy()
     #Policy_Rew()
-    pred_biFactor()
+    #pred_biFactor()

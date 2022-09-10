@@ -96,10 +96,8 @@ def datainfo(pivot_tables):
     #control x loss rows: {pivot_tables['loss, HC'].shape[0]}
     ''')
 
-def build_pivot_table(method, min_q=.01, max_q=.99):
-    agent = 'MixPol'
-    tar_tail =  ['l1', 'l2', 'l3'] 
-    notes    =  [r'$\lambda_1$: exp utility', r'$\lambda_2$: magnitude', r'$\lambda_3$: habit']
+def build_pivot_table(method, agent='MixPol', min_q=.01, max_q=.99):
+    tar_tail =  ['l1', 'l2', 'l3'] if agent == 'MixPol' else []
     gain_data = pd.read_csv(f'{path}/../simulations/{agent}/sim-gain_exp1data-{method}-idx0-default.csv')
     loss_data = pd.read_csv(f'{path}/../simulations/{agent}/sim-loss_exp1data-{method}-idx0-default.csv')
     sub_syndrome = pd.read_csv(f'{path}/../data/bifactor.csv')

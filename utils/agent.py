@@ -133,7 +133,7 @@ class GagModel(gagRL):
     p_priors = [beta(a=2, b=2), beta(a=2, b=2), gamma(a=3, scale=3), gamma(a=3, scale=3),
                 beta(a=2, b=2), gamma(a=3, scale=3), beta(a=2, b=2), beta(a=2, b=2), beta(a=2, b=2)]
     n_params = len(bnds)
-    voi      = ['ps', 'pi'] 
+    voi      = ['ps', 'pi', 'alpha'] 
    
     def load_params(self, params):
         self.alpha_sta = params[0]
@@ -165,6 +165,9 @@ class GagModel(gagRL):
         va   = eval(f'self.beta_{c}')*v + self.beta_act*(self.q - (1-self.q))
         pa   = 1 / (1 + np.exp(-va))
         return np.array([1-pa, pa])
+    
+    def print_alpha(self):
+        return eval(f'self.alpha_{self.buffer.sample("ctxt")}') 
 
 class RlRisk(gagRL):
     name     = 'RL with risk preference'
