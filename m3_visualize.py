@@ -83,39 +83,7 @@ def viz_Human():
     ax.set_axis_off()
     plt.tight_layout()
     plt.savefig(f'{path}/figures/Fig1_Human_data.png', dpi=300)
-        
-def viz_PiReward():
-
-    # concatenate the data
-    sim_data = [] 
-    for pi in policies:
-        for i in range(10):
-            fdir  = f'{path}/simulations/MixPol/'
-            fname = f'sim-gain_exp1data-mle-idx{i}-{pi}.csv'
-            sim_sample = pd.read_csv(fdir+fname)
-            sim_sample['policy'] = pi
-            sim_data.append(sim_sample)
-    sim_data = pd.concat(sim_data, axis=0)
-
-    sim_data = sim_data.groupby(by=['sub_id', 'b_type', 'feedback_type', 'policy']
-                                            ).mean().reset_index()
-
-    t_test(sim_data, 'policy=="EU"', 'policy=="MO"', ['rew'])
-    t_test(sim_data, 'policy=="MO"', 'policy=="HA"', ['rew'])
-
-    fig, axs = plt.subplots(1, 1, figsize=(6, 4), sharey=True)
-    ax=axs
-    sns.boxplot(x='policy', y='rew', data=sim_data, width=.65,
-                    order=policies, palette=viz.Palette, ax=ax)
-    ax.set_xlim([-.8, 2.8])
-    ax.set_ylabel('')
-    # ax.set_xticks([0, 1, 2])
-    # ax.set_xticklabels(policies)
-    ax.set_xlabel('')
-    
-    plt.tight_layout()
-    plt.savefig(f'{path}/figures/sFig1_pi_reward.png', dpi=300)
-        
+                
 def HC_PAT_policy():
 
     tar    = ['l1', 'l2', 'l3']
@@ -215,11 +183,50 @@ def reg(pred='l1', tar='rew'):
     plt.tight_layout()
     plt.savefig(f'{path}/figures/Fig2_{pred}-{tar}.png', dpi=300)
 
+def pred_biFactor():
+
+    preds = ['l2', 'l3']
+    tars  = ['g', 'f2']
+    data = build_pivot_table('map', min_q=.01, max_q=.99)
+    data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
+    data = data.groupby(by=['sub_id']).mean().reset_index()
+    xmin, xmax = -4.1, 4.1 
+
+    nr, nc = 1, len(tars)
+    fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharex=True)
+    for i, (pred, tar) in enumerate(zip(preds, tars)):
+        x = data[pred]
+        y = data[tar]
+        corr, pval = pearsonr(x.values, y.values)
+        x = sm.add_constant(x)
+        res = sm.OLS(y, x).fit()
+        print(res.summary())
+        print(f' {tar}: r={corr}, p={pval}')
+        regress = lambda x: res.params['const'] + res.params[pred]*x
+
+        ax  = axs[i]
+        x = np.linspace(xmin, xmax, 100)
+        sns.scatterplot(x=pred, y=tar, data=data, 
+                            color=viz.Blue, ax=ax)
+        sns.lineplot(x=x, y=regress(x), color=viz.Red, lw=3, ax=ax)
+        ax.set_ylabel(tar)
+        ax.set_xlabel(pred)
+        ax.set_xlim([-4.2, 4.2])
+        #ax.set_ylim([-3., 3.])
+        ax.set_box_aspect(1)
+        #ax.set_title(f'{titles[idx]}')
+        #ax.set_title(f'{titles[idx]} {for_title[idx]}')
+        # if idx == 1: ax.legend(bbox_to_anchor=(1.4, 0), loc='lower right')
+        # else: ax.get_legend().remove()
+    plt.tight_layout()
+    plt.savefig(f'{path}/figures/Fig2_lambda2_syndrome.png', dpi=300)
+
 
 if __name__ == '__main__':
 
     #quantTable()
     #viz_Human()
     #viz_PiReward()
-    HC_PAT_policy()
-    Policy_Rew()
+    #HC_PAT_policy()
+    #Policy_Rew()
+    pred_biFactor()
