@@ -164,9 +164,25 @@ def split_data(data, mode):
     with open(f'{path}/data/{mode}_{idx}data.pkl', 'wb')as handle:
         pickle.dump(for_fit, handle)
 
+def comb_data(exp):
+
+    with open(f'{path}/data/gain_{exp}data.pkl', 'rb')as handle:
+        gain_data = pickle.load(handle)
+        
+    with open(f'{path}/data/gain_{exp}data.pkl', 'rb')as handle:
+        loss_data = pickle.load(handle)
+
+    comb_data = {}
+    for subj in gain_data.keys():
+        comb_data[subj] = {0: gain_data[subj],
+                           1: loss_data[subj]}
+
+    with open(f'{path}/data/comb_{exp}data.pkl', 'wb')as handle:
+        pickle.dump(comb_data, handle)
 
 if __name__ == '__main__':
 
     data = preprocess(['exp1'])
     split_data(data, mode='gain')
     split_data(data, mode='loss')
+    comb_data('exp1')

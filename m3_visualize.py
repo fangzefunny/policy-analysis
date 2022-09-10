@@ -31,7 +31,8 @@ def quantTable(agents= ['MixPol', 'GagModel', 'RlRisk']):
             fname = f'{path}/fits/params-{cond}_exp1data-{m}-mle-ind.csv'
             data  = pd.read_csv(fname)
             nll += data.loc[0, 'nll']
-            aic += data.loc[0, 'aic']
+        n_params = eval(m).n_params*2
+        aic = 2*nll + 2*n_params
         crs[m] = {'nll':nll, 'aic':aic}
 
     for m in agents:
@@ -113,7 +114,7 @@ def HC_PAT_policy():
         # else: ax.get_legend().remove()
     plt.tight_layout()
     plt.show()
-    plt.savefig(f'{path}/figures/Fig1A_HC-PAT-policies.png', dpi=300)
+    plt.savefig(f'{path}/figures/Fig1_HC-PAT-policies.png', dpi=300)
 
 def Policy_Rew():
 
@@ -122,39 +123,42 @@ def Policy_Rew():
 
     data = build_pivot_table('map', min_q=.01, max_q=.99)
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
-    data = data.groupby(by=['sub_id']).mean().reset_index()
     data['rew'] = data['rew'].apply(lambda x: x*100)
-    xmin, xmax = -4.1, 4.1 
+    xmin, xmax = -4.9, 4.9 
     #data[tar].min().min()-.1, data[tar].max().max()+.1
 
-    nr, nc = 1, len(tar)
-    fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharey=True, sharex=True)
+    nr, nc = 2, len(tar)
+    fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharey='row')
+
     for i, lamb in enumerate(tar):
+        for j, feedback_type in enumerate(['gain', 'loss']):
 
-        x = data[lamb]
-        y = data['rew']
-        corr, pval = pearsonr(x.values, y.values)
-        x = sm.add_constant(x)
-        res = sm.OLS(y, x).fit()
-        print(res.summary())
-        print(f' {lamb}: r={corr}, p={pval}')
-        regress = lambda x: res.params['const'] + res.params[lamb]*x
+            sel_data = data.query(f'feedback_type=="{feedback_type}"').groupby(
+                            by=['sub_id', 'b_type']).mean().reset_index()
+            x = sel_data[lamb]
+            y = sel_data['rew']
+            corr, pval = pearsonr(x.values, y.values)
+            x = sm.add_constant(x)
+            res = sm.OLS(y, x).fit()
+            print(res.summary())
+            print(f' {lamb}: r={corr}, p={pval}')
+            regress = lambda x: res.params['const'] + res.params[lamb]*x
 
-        ax  = axs[i]
-        x = np.linspace(xmin, xmax, 100)
-        sns.scatterplot(x=lamb, y='rew', data=data, 
-                            color=viz.Blue, ax=ax)
-        sns.lineplot(x=x, y=regress(x), color=viz.Red, lw=3, ax=ax)
-        ax.set_ylabel('')
-        ax.set_xlabel('')
-        ax.set_xlim([-4.2, 4.2])
-        ax.set_box_aspect(1)
-        #ax.set_title(f'{titles[idx]}')
-        #ax.set_title(f'{titles[idx]} {for_title[idx]}')
-        # if idx == 1: ax.legend(bbox_to_anchor=(1.4, 0), loc='lower right')
-        # else: ax.get_legend().remove()
+            ax  = axs[j, i]
+            x = np.linspace(xmin, xmax, 100)
+            sns.scatterplot(x=lamb, y='rew', data=sel_data, 
+                                color=viz.Blue, ax=ax)
+            sns.lineplot(x=x, y=regress(x), color=viz.Red, lw=3, ax=ax)
+            ax.set_ylabel('')
+            ax.set_xlabel('')
+            ax.set_xlim([-5, 5])
+            ax.set_box_aspect(1)
+            #ax.set_title(f'{titles[idx]}')
+            #ax.set_title(f'{titles[idx]} {for_title[idx]}')
+            # if idx == 1: ax.legend(bbox_to_anchor=(1.4, 0), loc='lower right')
+            # else: ax.get_legend().remove()
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/Fig1B_policies-Rew.png', dpi=300)
+    plt.savefig(f'{path}/figures/Fig2_policies-Rew.png', dpi=300)
 
 def reg(pred='l1', tar='rew'):
 
@@ -190,7 +194,7 @@ def pred_biFactor():
     data = build_pivot_table('map', min_q=.01, max_q=.99)
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
     data = data.groupby(by=['sub_id']).mean().reset_index()
-    xmin, xmax = -4.1, 4.1 
+    xmin, xmax = -4.9, 4.9 
 
     nr, nc = 1, len(tars)
     fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharex=True)
@@ -211,7 +215,7 @@ def pred_biFactor():
         sns.lineplot(x=x, y=regress(x), color=viz.Red, lw=3, ax=ax)
         ax.set_ylabel(tar)
         ax.set_xlabel(pred)
-        ax.set_xlim([-4.2, 4.2])
+        ax.set_xlim([-5, 5])
         #ax.set_ylim([-3., 3.])
         ax.set_box_aspect(1)
         #ax.set_title(f'{titles[idx]}')
@@ -219,7 +223,7 @@ def pred_biFactor():
         # if idx == 1: ax.legend(bbox_to_anchor=(1.4, 0), loc='lower right')
         # else: ax.get_legend().remove()
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/Fig2_lambda2_syndrome.png', dpi=300)
+    plt.savefig(f'{path}/figures/sFig3_lambda2_syndrome.png', dpi=300)
 
 
 if __name__ == '__main__':
@@ -228,5 +232,5 @@ if __name__ == '__main__':
     #viz_Human()
     #viz_PiReward()
     #HC_PAT_policy()
-    #Policy_Rew()
+    Policy_Rew()
     pred_biFactor()
