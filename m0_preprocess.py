@@ -178,10 +178,10 @@ def comb_data(exp):
 
     comb_data = {}
     for subj in gain_data.keys():
-        comb_data[subj] = {0: gain_data[subj],
-                           1: loss_data[subj]}
+        comb_data[subj] = {0: gain_data[subj][0],
+                           1: loss_data[subj][0]}
 
-    with open(f'{path}/data/comb_{exp}data.pkl', 'wb')as handle:
+    with open(f'{path}/data/{exp}data.pkl', 'wb')as handle:
         pickle.dump(comb_data, handle)
 
 if __name__ == '__main__':

@@ -6,7 +6,17 @@ from scipy.stats import norm, gamma, beta
 eps_ = 1e-12
 max_ = 1e+12
 
+# ---------  Some Functions ----------- #
+
 sigmoid = lambda x: 1 / (1+np.exp(-x))
+
+flatten = lambda l: [item for sublist in l for item in sublist]
+
+def get_param_name(params, block_types=['sta', 'vol'], feedback_types=['gain', 'loss']):
+    return flatten([flatten([[f'{key}_{j}_{i}' for key in params]
+                                               for i in feedback_types])
+                                               for j in block_types])
+                    
 
 # ---------  Replay Buffer ----------- #
 
@@ -26,6 +36,7 @@ class simpleBuffer:
         lst = [self.m[k] for k in args]
         if len(lst)==1: return lst[0]
         else: return lst
+
 
 # ---------  Model base -------------- #
 
@@ -84,17 +95,19 @@ class baseAgent:
 
 class gagRL(baseAgent):
     name     = 'Gagne RL'
-    bnds     = [(0, 1), (0, 1), (0, 30)]
-    pbnds    = [(0,.5), (0,.5), (0, 10)]
-    p_name   = ['α_STA', 'α_VOL', 'β']  
+    bnds     = [(0, 30)] + [(0, 1)]*4
+    pbnds    = [(0, 10)] + [(0,.5)]*4
+    p_name   = ['β'] + get_param_name(['α'])
     n_params = len(bnds)
     voi      = ['ps', 'pi'] 
    
     def load_params(self, params):
-        self.alpha_sta = params[0]
-        self.alpha_vol = params[1]
-        self.beta      = params[2]
-
+        self.beta           = params[0]
+        self.alpha_sta_gain = params[1]
+        self.alpha_sta_loss = params[2]
+        self.alpha_vol_gain = params[3]
+        self.alpha_vol_loss = params[4]
+        
     def _init_Critic(self):
         self.p     = 1/2
         self.p_S   = np.array([1-self.p, self.p]) 
@@ -103,9 +116,8 @@ class gagRL(baseAgent):
         self._learnCritic()
 
     def _learnCritic(self):
-        c, o = self.buffer.sample('ctxt','state')
-        alpha = self.alpha_sta if c=='sta' else self.alpha_vol
-        self.p += alpha * (o - self.p)
+        b, f, o = self.buffer.sample('b_type', 'f_type', 'state')
+        self.p += eval(f'self.alpha_{b}_{f}') * (o - self.p)
         self.p_S = np.array([1-self.p, self.p])
 
     def _policy(self):
@@ -124,27 +136,41 @@ class gagRL(baseAgent):
 
 class GagModel(gagRL):
     name     = 'Gagne best model'
-    bnds     = [(0, 1), (0, 1), (0, 50), (0, 50), 
-                (0, 1), (0, 50), (0, 1), (0, 1), (0, 1)]
-    pbnds    = [(0,.5), (0,.5), (0, 10), (0, 10), 
-                (0, 1), (0, 10), (0, 1), (0, 1), (0, 1)]
-    p_name   = ['α_STA', 'α_VOL', 'β_STA', 'β_VOL', 
-                'α_ACT', 'β_ACT', 'λ_STA', 'λ_ACT', 'r']  
-    p_priors = [beta(a=2, b=2), beta(a=2, b=2), gamma(a=3, scale=3), gamma(a=3, scale=3),
-                beta(a=2, b=2), gamma(a=3, scale=3), beta(a=2, b=2), beta(a=2, b=2), beta(a=2, b=2)]
+    bnds     = [(0, 1), (0, 50), (0, 1)] + [(0, 1), (0, 50), (0, 1)]*4
+    pbnds    = [(0,.5), (0, 10), (0, 1)] + [(0,.5), (0, 10), (0, 1)]*4
+    p_name   = ['α_act', 'β_act', 'r'] + get_param_name(['α', 'β', 'λ'])
+    p_priors = [beta(a=2, b=2), gamma(a=3, scale=3), gamma(a=3, scale=3)] + \
+                [beta(a=2, b=2), gamma(a=3, scale=3), beta(a=2, b=2)]*4
     n_params = len(bnds)
     voi      = ['ps', 'pi', 'alpha'] 
    
     def load_params(self, params):
-        self.alpha_sta = params[0]
-        self.alpha_vol = params[1]
-        self.beta_sta  = params[2]
-        self.beta_vol  = params[3]
-        self.alpha_act = params[4]
-        self.beta_act  = params[5]
-        self.lamb_sta  = params[6]
-        self.lamb_vol  = params[7]
-        self.r         = params[8]
+
+        # ---- General ----- #
+        self.alpha_act      = params[0]
+        self.beta_act       = params[1]
+        self.r              = params[2]
+
+        # ---- Stable & gain ---- #
+        self.alpha_sta_gain = params[3]
+        self.beta_sta_gain  = params[4]
+        self.lamb_sta_gain  = params[5]
+
+        # ---- Stable & loss ---- #
+        self.alpha_sta_loss = params[6]
+        self.beta_sta_loss  = params[7]
+        self.lamb_sta_loss  = params[8]
+
+        # ---- Volatile & gain ---- #
+        self.alpha_vol_gain = params[9]
+        self.beta_vol_gain  = params[10]
+        self.lamb_vol_gain  = params[11]
+
+        # ---- Voatile & gain ---- #
+        self.alpha_vol_loss = params[12]
+        self.beta_vol_loss  = params[13]
+        self.lamb_vol_loss  = params[14]
+        
     
     def learn(self):
         self._learnCritic()
@@ -158,37 +184,52 @@ class GagModel(gagRL):
         self.q += self.alpha_act * (a - self.q)
        
     def _policy(self):
-        c, m0, m1 = self.buffer.sample('ctxt', 'mag0','mag1')
-        lamb = eval(f'self.lamb_{c}')
+        b, f, m0, m1 = self.buffer.sample('b_type', 'f_type','mag0','mag1')
+        lamb = eval(f'self.lamb_{b}_{f}')
         v    = lamb*(self.p - (1-self.p)) \
                + (1-lamb)*abs(m1-m0)**self.r*np.sign(m1-m0)
-        va   = eval(f'self.beta_{c}')*v + self.beta_act*(self.q - (1-self.q))
+        va   = eval(f'self.beta_{b}_{f}')*v + self.beta_act*(self.q - (1-self.q))
         pa   = 1 / (1 + np.exp(-va))
         return np.array([1-pa, pa])
     
     def print_alpha(self):
-        return eval(f'self.alpha_{self.buffer.sample("ctxt")}') 
+        b, f = self.buffer.sample('b_type', 'f_type')
+        return eval(f'self.alpha_{b}_{f}') 
 
 class RlRisk(gagRL):
     name     = 'RL with risk preference'
-    bnds     = [(0, 1), (0, 1), (0, 30), (0, 20), (0, 20)]
-    pbnds    = [(0,.5), (0,.5), (0, 10), (0, 20), (0, 20)]
-    p_name   = ['α_STA', 'α_VOL', 'β', 'γ_STA', 'γ_VOL']  
+    bnds     = [(0, 30)] + [(0, 1), (0, 20)]*4
+    pbnds    = [(0, 10)] + [(0,.5), (0, 20)]*4
+    p_name   = ['β'] + get_param_name(['α', 'γ'])
     n_params = len(bnds)
-    p_priors = [beta(a=2, b=2), beta(a=2, b=2), gamma(a=3, scale=3), gamma(a=3, scale=3), gamma(a=3, scale=3)]
+    p_priors = [gamma(a=3, scale=3)] + [beta(a=2, b=2), gamma(a=3, scale=3)]*4
     voi      = ['ps', 'pi'] 
    
     def load_params(self, params):
-        self.alpha_sta = params[0]
-        self.alpha_vol = params[1]
-        self.beta      = params[2]
-        self.gamma_sta = params[3]
-        self.gamma_vol = params[4]
-    
+
+        # ---- General ----- #
+        self.beta           = params[0]
+
+        # ---- Stable & gain ---- #
+        self.alpha_sta_gain = params[1]
+        self.gamma_sta_gain = params[2]
+
+        # ---- Stable & loss ---- #
+        self.alpha_sta_loss = params[3]
+        self.gamma_sta_loss = params[4]
+
+        # ---- Volatile & gain ---- #
+        self.alpha_vol_gain = params[5]
+        self.gamma_vol_gain = params[6]
+
+        # ---- Voatile & gain ---- #
+        self.alpha_vol_loss = params[7]
+        self.gamma_vol_loss = params[8]
+       
     def _learnCritic(self):
-        c, o = self.buffer.sample('ctxt','state')
-        self.p += eval(f'self.alpha_{c}') * (o - self.p)
-        ps = np.clip(eval(f'self.gamma_{c}')*(self.p-.5)+.5, 0, 1)
+        b, f, o = self.buffer.sample('b_type', 'f_type', 'state')
+        self.p += eval(f'self.alpha_{b}_{f}') * (o - self.p)
+        ps = np.clip(eval(f'self.gamma_{b}_{f}')*(self.p-.5)+.5, 0, 1)
         self.p_S = np.array([1-ps, ps])
 
 
@@ -196,32 +237,44 @@ class RlRisk(gagRL):
 
 class MixPol(baseAgent):
     name     = 'mixture policy model'
-    bnds     = [(0,50), (0,50), (0,50), (0,50),
-                (-40,40), (-40,40), (-40,40),
-                (-40,40), (-40,40), (-40,40)]
-    pbnds    = [(0, 2), (0, 2), (0, 3), (0, 5),
-                (-5, 5), (-5, 5), (-5, 5),
-                (-5, 5), (-5, 5), (-5, 5),]
-    p_name   = ['α_STA', 'α_VOL', 'α_ACT', 'β',
-                'λ0_STA', 'λ1_STA', 'λ2_STA',
-                'λ0_VOL', 'λ1_VOL', 'λ2_VOL']
-    p_priors = [gamma(a=3, scale=3), gamma(a=3, scale=3), gamma(a=3, scale=3), gamma(a=3, scale=3),
-                norm(loc=0, scale=10), norm(loc=0, scale=10), norm(loc=0, scale=10), norm(loc=0, scale=10),
-                norm(loc=0, scale=10), norm(loc=0, scale=10), norm(loc=0, scale=10), norm(loc=0, scale=10)]
+    bnds     = [(0,50), (0,50)] + ([(0,50)]+[(-40,40)]*3) * 4
+    pbnds    = [(0, 3), (0, 5)] + ([(0, 2)]+[(-5, 5)]*3) * 4
+    p_name   = ['α_act', 'β']   + get_param_name(['α', 'λ1', 'λ2', 'λ3'])
+    p_priors = [gamma(a=3, scale=3), gamma(a=3, scale=3)] + \
+                    ([gamma(a=3, scale=3)]+[norm(loc=0, scale=10)]*3) * 4
     n_params = len(bnds)
-    voi      = ['ps', 'pi', 'alpha', 'w1', 'w2', 'w3', 'l1', 'l2', 'l3']
+    voi      = ['ps', 'pi', 'alpha', 'w1', 'w2', 'w3', 'l1', 
+                'l2', 'l3', 'l1_effect', 'l2_effect', 'l3_effect']
 
     def load_params(self, params):
-        self.alpha_sta = params[0]
-        self.alpha_vol = params[1]
-        self.alpha_act = params[2]
-        self.beta      = params[3]
-        self.l0_sta    = params[4]
-        self.l1_sta    = params[5]
-        self.l2_sta    = params[6]
-        self.l0_vol    = params[7]
-        self.l1_vol    = params[8]
-        self.l2_vol    = params[9]
+
+        # ---- General ----- #
+        self.alpha_act      = params[0]
+        self.beta           = params[1]
+
+        # ---- Stable & gain ---- #
+        self.alpha_sta_gain = params[2]
+        self.l0_sta_gain    = params[3]
+        self.l1_sta_gain    = params[4]
+        self.l2_sta_gain    = params[5]
+
+        # ---- Stable & loss ---- #
+        self.alpha_sta_loss = params[6]
+        self.l0_sta_loss    = params[7]
+        self.l1_sta_loss    = params[8]
+        self.l2_sta_loss    = params[9]
+
+        # ---- Volatile & gain ---- #
+        self.alpha_vol_gain = params[10]
+        self.l0_vol_gain    = params[11]
+        self.l1_vol_gain    = params[12]
+        self.l2_vol_gain    = params[13]
+
+        # ---- Volatile & loss ---- #
+        self.alpha_vol_loss = params[14]
+        self.l0_vol_loss    = params[15]
+        self.l1_vol_loss    = params[16]
+        self.l2_vol_loss    = params[17]
     
     def _init_Critic(self):
         self.theta = 0 
@@ -232,6 +285,7 @@ class MixPol(baseAgent):
         self.phi = 0 
         self.q   = sigmoid(self.phi)
         self.q_A = np.array([1-self.q, self.q]) 
+        self.pi_effect = [1/3, 1/3, 1/3]
 
     #  ------ learning the probability ------- #
 
@@ -240,9 +294,8 @@ class MixPol(baseAgent):
         self._learnActor()
 
     def _learnCritic(self):
-        c, o = self.buffer.sample('ctxt','state')
-        alpha = self.alpha_sta if c=='sta' else self.alpha_vol
-        self.theta += alpha * (o - self.p)
+        b, f, o = self.buffer.sample('b_type', 'f_type', 'state')
+        self.theta += eval(f'self.alpha_{b}_{f}') * (o - self.p)
         self.p = sigmoid(self.theta)
         self.p_S = np.array([1-self.p, self.p])
 
@@ -255,18 +308,21 @@ class MixPol(baseAgent):
     #  ------ response strategy ------- #
 
     def _policy(self):
-        c, m0, m1 = self.buffer.sample('ctxt', 'mag0','mag1')
+        b, f, m0, m1 = self.buffer.sample('b_type', 'f_type', 'mag0','mag1')
         mag = np.array([m0, m1])
         pi_SM = softmax(self.beta*self.p_S*mag)
         pi_M  = softmax(self.beta*mag)
-        w0, w1, w2 = self.get_w(c)
+        w0, w1, w2 = self.get_w(b, f)
         # creat the mixature model 
+        self.pi_effect = [(pi_SM[1]-pi_SM[0])+.5, 
+                          (pi_M[1]-pi_M[0])+.5, 
+                          (self.q_A[1]-self.q_A[0])+.5]
         return w0*pi_SM + w1*pi_M + w2*self.q_A 
 
-    def get_w(self, c):
-        l0 = eval(f'self.l0_{c}')
-        l1 = eval(f'self.l1_{c}')
-        l2 = eval(f'self.l2_{c}')
+    def get_w(self, b, f):
+        l0 = eval(f'self.l0_{b}_{f}')
+        l1 = eval(f'self.l1_{b}_{f}')
+        l2 = eval(f'self.l2_{b}_{f}')
         return softmax([l0, l1, l2])
 
     #  ------ print variable of interests ------- #
@@ -278,22 +334,38 @@ class MixPol(baseAgent):
         return self._policy()[1]
 
     def print_alpha(self):
-        return eval(f'self.alpha_{self.buffer.sample("ctxt")}') 
+        b, f = self.buffer.sample('b_type', 'f_type')
+        return eval(f'self.alpha_{b}_{f}') 
 
     def print_w1(self):
-        return self.get_w(self.buffer.sample("ctxt"))[0]
+        b, f = self.buffer.sample('b_type', 'f_type')
+        return self.get_w(b, f)[0]
 
     def print_w2(self):
-        return self.get_w(self.buffer.sample("ctxt"))[1] 
+        b, f = self.buffer.sample('b_type', 'f_type')
+        return self.get_w(b, f)[1]
 
     def print_w3(self):
-        return self.get_w(self.buffer.sample("ctxt"))[2]  
+        b, f = self.buffer.sample('b_type', 'f_type')
+        return self.get_w(b, f)[2]  
 
     def print_l1(self):
-        return eval(f'self.l0_{self.buffer.sample("ctxt")}')
+        b, f = self.buffer.sample('b_type', 'f_type')
+        return eval(f'self.l0_{b}_{f}')
 
     def print_l2(self):
-        return eval(f'self.l1_{self.buffer.sample("ctxt")}')
+        b, f = self.buffer.sample('b_type', 'f_type')
+        return eval(f'self.l1_{b}_{f}')
 
     def print_l3(self):
-        return eval(f'self.l2_{self.buffer.sample("ctxt")}')
+        b, f = self.buffer.sample('b_type', 'f_type')
+        return eval(f'self.l2_{b}_{f}')
+
+    def print_l1_effect(self):
+        return self.pi_effect[0]
+
+    def print_l2_effect(self):
+        return self.pi_effect[1]
+
+    def print_l3_effect(self):
+        return self.pi_effect[2]

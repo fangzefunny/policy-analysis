@@ -75,20 +75,23 @@ class model:
         for _, row in block_data.iterrows():
 
             # predict stage: obtain input
-            mag0  = row['mag0']
-            mag1  = row['mag1']
-            ctxt  = row['b_type']
-            state = row['state']
-            act   = row['humanAct']
+            mag0   = row['mag0']
+            mag1   = row['mag1']
+            b_type = row['b_type']
+            f_type = row['feedback_type']
+            state  = row['state']
+            act    = row['humanAct']
             # rew   = row['rew']
-            mem  = {'ctxt': ctxt, 'mag0': mag0, 'mag1': mag1}
+            mem  = {'b_type': b_type, 'f_type': f_type,
+                    'mag0': mag0, 'mag1': mag1}
             subj.buffer.push(mem)
 
             # control stage: evaluate the human act
             nLL -= subj.control(act, mode='eval')
 
             # feedback stage: update the belief, 'gen' has no feedback
-            mem = {'ctxt': ctxt, 'state': state, 'act': act}
+            mem = {'b_type': b_type, 'f_type': f_type,
+                    'state': state, 'act': act}
             subj.buffer.push(mem)  
             subj.learn() 
 
@@ -109,11 +112,12 @@ class model:
         sim_data = [] 
         for block_id in data.keys():
             block_data = data[block_id].copy()
+            block_data = block_data.drop(columns=['rew'])
             sim_data.append(self.sim_block(block_data, params, rng))
         
         return pd.concat(sim_data, ignore_index=True)
 
-    def sim_block(self, block_data, params, rng):
+    def sim_block(self, block_data, params, rng=False, is_eval=True):
 
         ## init the agent 
         nA = block_data['state'].unique().shape[0]
@@ -130,33 +134,36 @@ class model:
             # predict stage: obtain input
             mag0     = row['mag0']
             mag1     = row['mag1']
-            ctxt     = row['b_type']
+            b_type   = row['b_type']
             state    = row['state']
-            act      = row['humanAct']
             f_type   = row['feedback_type']
-            match    = row['match']
-            mem      = {'ctxt': ctxt, 'mag0': mag0, 'mag1': mag1}
+            if is_eval: act    = row['humanAct']
+
+            mem      = {'b_type': b_type, 'f_type': f_type, 
+                        'mag0': mag0, 'mag1': mag1}
             subj.buffer.push(mem)
             
             # control stage: make a resposne
-            logLike = subj.control(act,   mode='eval')
-            logAcc  = subj.control(state, mode='eval')
-            if f_type == 'gain':
-                rew = ([mag0, mag1][state]) * match
-            elif f_type == 'loss':
-                rew = ([mag0, mag1][state]) * match - np.min([mag0, mag1])
+            if is_eval:
+                logAcc  = subj.control(state, mode='eval')
+                logLike = subj.control(act,   mode='eval')     
+            else:
+                act, logAcc  = subj.control(state, rng=rng, mode='sample')
+
+            match = (act==state)
+            rew = ([mag0, mag1][state]) * match
 
             # record the vals 
             pred_data.loc[t, 'rew']     = rew 
-            pred_data.loc[t, 'act']     = act
             pred_data.loc[t, 'acc']     = np.exp(logAcc).round(3)
-            pred_data.loc[t, 'logLike'] = -logLike.round(3)
+            pred_data.loc[t, 'act']     = act
+            if is_eval: pred_data.loc[t, 'logLike'] = -logLike.round(3)
 
             for var in self.agent.voi:
                 pred_data.loc[t, f'{var}'] = eval(f'subj.print_{var}()')
 
             # feedback stage: update the model 
-            mem = {'ctxt': ctxt, 'state': state, 'act': act}
+            mem = {'b_type': b_type, 'f_type': f_type, 'state': state, 'act': act}
             subj.buffer.push(mem)  
             subj.learn() 
 

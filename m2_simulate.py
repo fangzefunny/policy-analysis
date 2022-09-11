@@ -32,7 +32,7 @@ if not os.path.exists(f'{path}/simulations/{args.agent_name}'):
     os.mkdir(f'{path}/simulations/{args.agent_name}')
 
 # define functions
-def simulate(data, args, pi_id, seed):
+def simulate(data, args, seed):
 
     # define the subj
     subj = model(args.agent)
@@ -55,13 +55,6 @@ def simulate(data, args, pi_id, seed):
             params = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
         else:
             params = in_params
-
-        # # assign policy method 
-        # if args.agent_name == 'MixPol':
-        #     mask  = np.zeros_like(params)
-        #     mask[list(range(4))+[4+pi_id, 7+pi_id]] = 1
-        #     mask = -(1-mask)*1e12 + mask*0
-        #     params += mask 
         
         # synthesize the data and save
         rng = np.random.RandomState(seed)
@@ -73,21 +66,94 @@ def simulate(data, args, pi_id, seed):
 
 # define functions
 def sim_paral(pool, data, args):
-
-    policies = ['EU', 'MO', 'HA']
-    nPi = len(policies)
     
     ## Simulate data for n_sim times 
     seed = args.seed 
-    res = [pool.apply_async(simulate, args=(data, args, i%nPi, seed+5*i))
-                            for i in range(args.n_sim*nPi)]
+    res = [pool.apply_async(simulate, args=(data, args, seed+5*i))
+                            for i in range(args.n_sim)]
     for i, p in enumerate(res):
         sim_data = p.get() 
-        sim_id, pi_id = i//nPi, i%nPi 
         fname = f'{path}/simulations/{args.agent_name}/sim-{args.data_set}'
-        fname += f'-{args.method}-idx{sim_id}-default.csv'
+        fname += f'-{args.method}-idx{i}.csv'
         sim_data.to_csv(fname, index = False, header=True)
+
+def sim_subj_paral(pool, args):
+
+    res = [pool.apply_async(sim_subj, args=[args.seed+i])
+                            for i in range(args.n_sim)]
+    sim_sta_first = []
+    sim_vol_first = [] 
+    for _, p in enumerate(res):
+        sim_data = p.get() 
+        sim_sta_first += sim_data['sta_first']
+        sim_vol_first += sim_data['vol_first']
     
+    fname = f'{path}/simulations/{args.agent_name}/simsubj-{args.data_set}-sta_first.csv'
+    sim_sta_first = pd.concat(sim_sta_first, ignore_index=True)
+    sim_sta_first.to_csv(fname, index = False, header=True)
+    fname = f'{path}/simulations/{args.agent_name}/simsubj-{args.data_set}-vol_first.csv'
+    sim_vol_first = pd.concat(sim_vol_first, ignore_index=True)
+    sim_vol_first.to_csv(fname, index = False, header=True)
+
+def get_data(rng, n_trials=180, sta_first=True):
+    psi    = np.zeros(n_trials)
+    state  = np.zeros(n_trials)
+    if sta_first:
+        psi[:90]     = .7
+        psi[90:110]  = .2
+        psi[110:130] = .8
+        psi[130:150] = .2
+        psi[150:170] = .8
+        psi[170:180] = .2
+        b_type       = ['sta']*90 + ['vol']*90
+    else:
+        psi[:20]     = .2
+        psi[20:40]   = .8
+        psi[40:60]   = .2
+        psi[60:80]   = .8
+        psi[80:90]   = .2
+        psi[90:]     = .7
+        b_type       = ['vol']*90 + ['sta']*90
+    
+    for i in range(n_trials):
+        if rng.rand(1) < psi[i]:
+            state[i] = 1
+
+    return state, psi, b_type
+
+def sim_subj(seed, n_samples=3):
+       
+    # decide what to collect
+    subj   = model(MixPol)
+    params = [6.0711,6.3353,6.2796,27.3466,7.9464,-7.0917,2.6326,3.6068,-6.1563,0.4109]
+    rng    = np.random.RandomState(seed)
+    
+    # simulate block n times
+    sim_data = {'sta_first': [], 'vol_first': []}
+    for i, cond in enumerate(['sta_first', 'vol_first']):
+        m1 = np.linspace(0, 1, 180).round(2)
+        rng.shuffle(m1)
+        m2 = np.linspace(0, 1, 180).round(2)
+        rng.shuffle(m2)
+        state, psi, b_type = get_data(rng, sta_first=(1-i))
+        task = {
+            'mag0':   m1,
+            'mag1':   m2,
+            'b_type': b_type,
+            'state':  state.astype(int),
+            'psi':    psi,
+            'trials': list(range(180)),
+        }
+        task = pd.DataFrame.from_dict(task)
+        
+        for j in range(n_samples):
+            sim_rng = np.random.RandomState(seed+j)
+            sim_sample = subj.sim_block(task, params, rng=sim_rng, is_eval=False)
+            sim_data[cond].append(sim_sample)
+        
+    return sim_data 
+            
+
 if __name__ == '__main__':
     
     ## STEP 0: GET PARALLEL POOL
@@ -98,5 +164,8 @@ if __name__ == '__main__':
     fname = f'{path}/data/{args.data_set}.pkl'
     with open(fname, 'rb') as handle: data=pickle.load(handle)
 
-    ## STEP 2: SYNTHESIZE DATA
+    # STEP 2: SYNTHESIZE DATA
     sim_paral(pool, data, args)
+
+    ## STEP 3: SIM SUBJECT
+    sim_subj_paral(pool, args)

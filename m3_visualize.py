@@ -9,6 +9,7 @@ from scipy.stats import pearsonr
 
 from utils.agent import *
 from utils.analyze import *
+from utils.model import model 
 from utils.viz import viz
 viz.get_style()
 
@@ -44,6 +45,9 @@ def viz_Human():
     fname = f'{path}/data/exp1_data.csv'
     data  = pd.read_csv(fname)
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
+    data['rawRew'] = data.apply(
+            lambda x: x[f'mag{int(x["humanAct"])}']
+                        *(x["humanAct"]==x["state"]), axis=1)
     data = data.groupby(by=['sub_id', 'b_type', 'feedback_type']).mean().reset_index()
 
     fig, axs = plt.subplots(2, 2, figsize=(8, 7), sharey=True)
@@ -88,18 +92,18 @@ def viz_Human():
 def LR_effect():
 
     feedback_types = ['gain', 'loss']
-    agents  = ['MixPol', 'GagModel']
+    groups  = [0, 1]
     tar    = ['log_alpha']
 
-    nr, nc = len(agents), len(feedback_types)
+    nr, nc = len(groups), len(feedback_types)
     fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharex='row')
     for idx, f_type in enumerate(feedback_types):
-        for j, agent in enumerate(agents):
+        for j, is_pat in enumerate(groups):
             ax  = axs[j, idx]
-            data = build_pivot_table('map', agent=agent, min_q=.01, max_q=.99)
+            data = build_pivot_table('map', agent='MixPol', min_q=.01, max_q=.99)
             data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
-            data = data.query(f'feedback_type=="{f_type}"').groupby(by=['sub_id', 'b_type', 'is_PAT']).mean().reset_index()
-            print(f'---------{agent}: {f_type}')
+            data = data.query(f'is_PAT=={is_pat} & feedback_type=="{f_type}"').groupby(by=['sub_id', 'b_type']).mean().reset_index()
+            print(f'---------{is_pat}: {f_type}')
             ymin, ymax = data[tar[0]].min(), data[tar[0]].max()
             t_test(data, 'b_type=="sta"', 'b_type=="vol"', tar=tar)
             sns.boxplot(x='b_type', y=tar[0], data=data, width=.65,
@@ -123,7 +127,7 @@ def HC_PAT_policy():
 
     data = build_pivot_table('map', min_q=.01, max_q=.99)
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
-    data = data.groupby(by=['sub_id', 'b_type', 'feedback_type']).mean().reset_index()
+    data = data.groupby(by=['sub_id', 'feedback_type']).mean().reset_index()
     
     nr, nc = 1, len(tar)
     fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharey=True, sharex=True)
@@ -160,11 +164,10 @@ def Policy_Rew():
     #data[tar].min().min()-.1, data[tar].max().max()+.1
 
     nr, nc = 2, len(tar)
-    fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharey='row')
+    fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharey='row', sharex='col')
 
     for i, lamb in enumerate(tar):
         for j, feedback_type in enumerate(['gain', 'loss']):
-            #
             sel_data = data.query(f'feedback_type=="{feedback_type}"').groupby(
                             by=['sub_id', 'b_type']).mean().reset_index()
             x = sel_data[lamb]
@@ -172,23 +175,22 @@ def Policy_Rew():
             corr, pval = pearsonr(x.values, y.values)
             x = sm.add_constant(x)
             res = sm.OLS(y, x).fit()
-            print(res.summary())
-            print(f' {lamb}: r={corr}, p={pval}')
-            regress = lambda x: res.params['const'] + res.params[lamb]*x
+            #print(res.summary())
+            print(f' {feedback_type}-{lamb}: r={corr:.2f}, p={pval:.3f}')
+            #regress = lambda x: res.params['const'] + res.params[lamb]*x
 
             ax  = axs[j, i]
             x = np.linspace(xmin, xmax, 100)
-            sns.scatterplot(x=lamb, y='rawRew', data=sel_data, 
-                                color=viz.Blue, ax=ax)
-            sns.lineplot(x=x, y=regress(x), color=viz.Red, lw=3, ax=ax)
+            sns.scatterplot(x=lamb, y='rawRew', data=sel_data, s=100, 
+                                color=viz.Palette2[i], ax=ax)
+            ax.set_xlim([-4.5, 4.5]) # for the regression predictor 
+            sns.regplot(x=lamb, y='rawRew', data=sel_data, truncate=False,
+                            color=[.2, .2, .2], scatter=False, ax=ax)
             ax.set_ylabel('')
             ax.set_xlabel('')
             ax.set_xlim([-5, 5])
             ax.set_box_aspect(1)
-            #ax.set_title(f'{titles[idx]}')
-            #ax.set_title(f'{titles[idx]} {for_title[idx]}')
-            # if idx == 1: ax.legend(bbox_to_anchor=(1.4, 0), loc='lower right')
-            # else: ax.get_legend().remove()
+
     plt.tight_layout()
     plt.savefig(f'{path}/figures/Fig2_policies-Rew.png', dpi=300)
 
@@ -259,12 +261,41 @@ def pred_biFactor():
     plt.savefig(f'{path}/figures/sFig3_lambda2_syndrome.png', dpi=300)
 
 
+def pi_effect():
+
+    fname = f'{path}/simulations/MixPol/simsubj-gain_exp1data-sta_first.csv'
+    data = pd.read_csv(fname)
+
+    data = data.groupby(by=['trials'])[['l1_effect', 'l2_effect', 'l3_effect']].mean()
+    psi  = np.zeros([180])
+    psi[:90]     = .7
+    psi[90:110]  = .2
+    psi[110:130] = .8
+    psi[130:150] = .2
+    psi[150:170] = .8
+    psi[170:180] = .2
+
+    fig, ax = plt.subplots(1, 1, figsize=(10, 4))
+    ax = ax 
+    labels = ['EU', 'MO', 'HA']
+    for i in range(3):
+        sns.lineplot(x='trials', y=f'l{int(i)+1}_effect', lw=3, 
+                    data=data, color=viz.Palette2[i], label=labels[i])
+    sns.lineplot(x=np.arange(180), y=psi, color='k', ls='--')
+    ax.set_ylabel('Prob. of choosing \nthe left stimulus')
+    ax.set_xlabel('Trials')
+    ax.legend()
+    plt.tight_layout()
+    plt.savefig(f'{path}/figures/effect.png', dpi=300)
+
+
 if __name__ == '__main__':
 
     #quantTable()
     #viz_Human()
-    LR_effect()
+    #LR_effect()
     #viz_PiReward()
     #HC_PAT_policy()
-    #Policy_Rew()
+    Policy_Rew()
     #pred_biFactor()
+    #pi_effect()

@@ -1,0 +1,5 @@
+bash fitmap.sh
+Data set=exp1data Model=MixPol Method=map
+    Using 40 parallel CPU cores
+ 
+Fitting MixPol subj n29, progress: 0.00%

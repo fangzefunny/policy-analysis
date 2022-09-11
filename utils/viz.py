@@ -5,7 +5,8 @@ import matplotlib.colors
 class viz:
     '''Define the default visualize configure
     '''
-    # platte one
+    # -----------  Palette 1 -------------
+
     dBlue   = np.array([ 56,  56, 107]) / 255
     Blue    = np.array([ 46, 107, 149]) / 255
     lBlue   = np.array([241, 247, 248]) / 255
@@ -22,8 +23,12 @@ class viz:
     lYellow = np.array([252, 246, 238]) / 255
     Purple  = np.array([108,  92, 231]) / 255
     ocGreen = np.array([ 90, 196, 164]) / 255
+    Gray    = np.array([163, 161, 165]) / 255
+
     Palette = [Blue, Red, Yellow, ocGreen, Purple]
-    # platte two
+
+    # -----------  Palette 2 ------------- 
+
     dGreen  = np.array([ 15,  93,  81]) / 255
     llBlue  = np.array([118, 193, 202]) / 255
     Ebony   = np.array([ 86,  98,  70]) / 255
@@ -32,23 +37,20 @@ class viz:
     Ercu    = np.array([190, 176, 137]) / 255
     ubSilk  = np.array([232, 204, 191]) / 255
     ppPant  = np.array([233, 214, 236]) / 255
-    Palette2 = [fsGreen, Yellow, Ercu, dGreen, ubSilk, ppPant]
-    # platte three 
+
+    Palette2 = [Ebony, fsGreen, Yellow, ubSilk, Ercu, ppPant]
+
+    # -----------  Palette 2 -------------  
+
     bOrange = np.array([222, 110,  75]) / 255
-   
     deBrown = np.array([122, 101,  99]) / 255
     black   = np.array([  0,   0,   0]) / 255
     Palette3 = [bOrange, Blue, deBrown, ocGreen]
 
-    Greens  = [np.array([  8, 154, 133]) / 255, 
-               np.array([118, 193, 202]) / 255] 
-    dpi     = 200
-    sfz, mfz, lfz = 11, 13, 16
-    lw, mz  = 2.5, 6.5
-    figz    = 4
 
-    BluePalette = [dBlue, Blue, lBlue]
-    RedPalette  = [dRed, Red, lRed]
+    # -----------  Colormap ------------- 
+    BluePalette   = [dBlue, Blue, lBlue]
+    RedPalette    = [dRed, Red, lRed]
     YellowPalette = [dYellow, Yellow, lYellow]
 
     BluesMap = matplotlib.colors.LinearSegmentedColormap.from_list(
@@ -61,8 +63,6 @@ class viz:
                     'vizGreens',  [lGreen, Green])
     PurplesMap = matplotlib.colors.LinearSegmentedColormap.from_list(
                     'vizPurples', [np.clip(Purple*1.8, 0, 1), Purple])
-
-    # for info plot 
     BluesMap2 = matplotlib.colors.LinearSegmentedColormap.from_list(
                     'vizBlues',   [lBlue2, Blue])
     RedsMap2 = matplotlib.colors.LinearSegmentedColormap.from_list(
