@@ -173,13 +173,17 @@ def comb_data(exp):
     with open(f'{path}/data/gain_{exp}data.pkl', 'rb')as handle:
         gain_data = pickle.load(handle)
         
-    with open(f'{path}/data/gain_{exp}data.pkl', 'rb')as handle:
+    with open(f'{path}/data/loss_{exp}data.pkl', 'rb')as handle:
         loss_data = pickle.load(handle)
 
     comb_data = {}
-    for subj in gain_data.keys():
-        comb_data[subj] = {0: gain_data[subj][0],
-                           1: loss_data[subj][0]}
+    sub_Lst = set(gain_data.keys()).union(set(loss_data.keys()))
+    for subj in sub_Lst:
+        comb_data[subj] = {}
+        if subj in list(gain_data.keys()):
+            comb_data[subj][0] = gain_data[subj][0]
+        if subj in list(loss_data.keys()):
+            comb_data[subj][1] = loss_data[subj][0]
 
     with open(f'{path}/data/{exp}data.pkl', 'wb')as handle:
         pickle.dump(comb_data, handle)

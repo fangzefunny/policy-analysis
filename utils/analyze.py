@@ -21,7 +21,7 @@ def model_fit(models, method='mle'):
     crs = {}
     for m in models:
         for feedback in feedbacks:
-            fname = f'{path}/../simulations/{m}/sim-{feedback}_exp1data-{method}-idx0.csv'
+            fname = f'{path}/../simulations/exp1data/{m}/sim-{feedback}_exp1data-{method}-idx0.csv'
             data  = pd.read_csv(fname)
             n_param = eval(m).n_params
             subj_Lst = data['sub_id'].unique()
@@ -55,61 +55,18 @@ def model_cmp(quant_crs):
                 {p[0]}:{np.mean(x):.3f}, {p[1]}:{np.mean(y):.3f}
                 t={res[0]:.3f} p={res[1]:.3f}''')
 
-def get_pivot(gain_data, loss_data, features=['rew', 'rawRew', 'match', 'anx_lvl', 'dep_lvl', 'alpha', 'l1', 'l2', 'l3']):
-    ## get the gin and loss data 
-    gain_data_PAT = gain_data.query('group!="HC"')
-    gain_data_HC  = gain_data.query('group=="HC"')
-
-    loss_data_PAT = loss_data.query('group!="HC"')
-    loss_data_HC  = loss_data.query('group=="HC"')
-    
-    ## pivot table 
-    pivot_tables = {}
-    gainloss = ['gain', 'loss']
-    groups   = ['PAT', 'HC']
-    for feedback_type in gainloss:
-        for group in groups:
-            fname = f'{feedback_type}_data_{group}'
-            kname = f'{feedback_type}, {group}'
-            df = eval(fname).groupby(by=['sub_id', 'b_type']
-                    ).mean()[features].reset_index()
-            df['feedback_type'] = feedback_type
-            df['group']         = group
-            pivot_tables[kname] = df
-    return pivot_tables
-
-## data info
-def datainfo(pivot_tables):
-    print(f'''
-    #Total rows: {(pivot_tables['gain, PAT'].shape[0]+pivot_tables['gain, HC'].shape[0]
-                + pivot_tables['loss, PAT'].shape[0]+pivot_tables['loss, HC'].shape[0])}
-
-    #gain rows: {(pivot_tables['gain, PAT'].shape[0]+pivot_tables['gain, HC'].shape[0])}
-    #loss rows: {(pivot_tables['loss, PAT'].shape[0]+pivot_tables['loss, HC'].shape[0])}
-
-    #patient rows: {(pivot_tables['gain, PAT'].shape[0]+pivot_tables['loss, PAT'].shape[0])}
-    #control rows: {(pivot_tables['gain, HC'].shape[0]+pivot_tables['loss, HC'].shape[0])}
-    
-    #patient x gain rows: {pivot_tables['gain, PAT'].shape[0]}
-    #patient x loss rows: {pivot_tables['loss, PAT'].shape[0]}
-    #control x gain rows: {pivot_tables['gain, HC'].shape[0]}
-    #control x loss rows: {pivot_tables['loss, HC'].shape[0]}
-    ''')
-
 def build_pivot_table(method, agent='MixPol', min_q=.01, max_q=.99):
-    tar_tail =  ['l1', 'l2', 'l3'] if agent == 'MixPol' else []
-    gain_data = pd.read_csv(f'{path}/../simulations/{agent}/sim-gain_exp1data-{method}-idx0-default.csv')
-    loss_data = pd.read_csv(f'{path}/../simulations/{agent}/sim-loss_exp1data-{method}-idx0-default.csv')
+    tar_tail = ['l1', 'l2', 'l3'] if agent == 'MixPol' else []
+    features = ['rawRew', 'rew', 'match', 'alpha']+tar_tail
+    exp1data = pd.read_csv(f'{path}/../simulations/exp1data/{agent}/sim-exp1data-{method}-idx0.csv')
     sub_syndrome = pd.read_csv(f'{path}/../data/bifactor.csv')
     sub_syndrome = sub_syndrome.rename(columns={'Unnamed: 0': 'sub_id', 'F1.': 'f1', 'F2.':'f2'})
-    pivot_tables = get_pivot(gain_data, loss_data, features=['rawRew', 'rew', 'match', 'alpha']+tar_tail)
-
-    datainfo(pivot_tables)
+    pivot_table  = exp1data.groupby(by=['sub_id', 'b_type', 'feedback_type', 'group']).mean()[features].reset_index()
+    
+    #datainfo(pivot_tables)
 
     print('#-------- Clean Outliers ---------- #\n')
     # concate to build a table
-    pivot_table = [pivot_tables[k] for k in pivot_tables.keys()]
-    pivot_table = pd.concat(pivot_table, axis=0, ignore_index=True)
     pivot_table['log_alpha'] = pivot_table['alpha'].apply(lambda x: np.log(x+1e-12))
     oldN = pivot_table.shape[0]
 

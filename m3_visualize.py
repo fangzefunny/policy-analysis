@@ -1,5 +1,6 @@
 
 import os 
+import pickle
 
 import numpy as np
 import pandas as pd 
@@ -26,13 +27,19 @@ policies       = ['EU', 'MO', 'HA']
 # fit performance 
 def quantTable(agents= ['MixPol', 'GagModel', 'RlRisk']):
     crs = {}
+    fname = f'{path}/data/exp1data.pkl'
+    with open(fname, 'rb') as handle: data=pickle.load(handle)
     for m in agents:
+        subj = model(eval(m))
+        n_params = eval(m).n_params
         nll, aic = 0, 0 
-        for cond in feedback_types:
-            fname = f'{path}/fits/params-{cond}_exp1data-{m}-mle-ind.csv'
-            data  = pd.read_csv(fname)
-            nll += data.loc[0, 'nll']
-        n_params = eval(m).n_params*2
+        fname = f'{path}/fits/exp1data/fitted_subj_lst-exp1data-GagModel-map.csv'
+        subj_Lst = list(pd.read_csv(fname)['sub_id'])
+        for sub_id in subj_Lst:
+            fname = f'{path}/fits/exp1data/{m}/params-exp1data-{sub_id}-map.csv'
+            params = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
+            eval_data = subj.sim(data[sub_id], params, rng=None)
+            nll += eval_data.loc[:, 'logLike'].sum() / len(subj_Lst)
         aic = 2*nll + 2*n_params
         crs[m] = {'nll':nll, 'aic':aic}
 
@@ -127,7 +134,7 @@ def HC_PAT_policy():
 
     data = build_pivot_table('map', min_q=.01, max_q=.99)
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
-    data = data.groupby(by=['sub_id', 'feedback_type']).mean().reset_index()
+    data = data.groupby(by=['sub_id', 'feedback_type', 'b_type']).mean().reset_index()
     
     nr, nc = 1, len(tar)
     fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharey=True, sharex=True)
@@ -223,14 +230,13 @@ def reg(pred='l1', tar='rew'):
 
 def pred_biFactor():
 
-    preds = ['g', 'g', 'g', 'f2', 'f2', 'f2']
-    tars  = ['l1', 'l2', 'l3', 'l1', 'l2', 'l3']
+    preds = ['g', 'g', 'g']
+    tars  = ['l1', 'l2', 'l3']
     data = build_pivot_table('map', min_q=.01, max_q=.99)
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
     data = data.groupby(by=['sub_id']).mean().reset_index()
    
-
-    nr, nc = 2, int(len(tars)/2)
+    nr, nc = 1, int(len(tars))
     fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharex='row',)
     for i, (pred, tar) in enumerate(zip(preds, tars)):
         xmin, xmax = data[pred].values.min()-.4, data[pred].values.max()+.4
@@ -239,26 +245,24 @@ def pred_biFactor():
         corr, pval = pearsonr(x.values, y.values)
         x = sm.add_constant(x)
         res = sm.OLS(y, x).fit()
-        print(res.summary())
+        #print(res.summary())
         print(f' {tar}: r={corr}, p={pval}')
-        regress = lambda x: res.params['const'] + res.params[pred]*x
-
-        ax  = axs[i//3, i%3]
+        
+        ax  = axs[i]
         x = np.linspace(xmin, xmax, 100)
-        sns.scatterplot(x=pred, y=tar, data=data, 
-                            color=viz.Blue, ax=ax)
-        sns.lineplot(x=x, y=regress(x), color=viz.Red, lw=3, ax=ax)
+        sns.scatterplot(x=pred, y=tar, data=data, s=100, 
+                            color=viz.Palette2[i], ax=ax)
+        ax.set_xlim([xmin, xmax]) # for the regression predictor 
+        sns.regplot(x=pred, y=tar, data=data, truncate=False,
+                        color=[.2, .2, .2], scatter=False, ax=ax)
         ax.set_ylabel(tar)
         ax.set_xlabel(pred)
         ax.set_xlim([xmin, xmax])
         #ax.set_ylim([-3., 3.])
         ax.set_box_aspect(1)
-        #ax.set_title(f'{titles[idx]}')
-        #ax.set_title(f'{titles[idx]} {for_title[idx]}')
-        # if idx == 1: ax.legend(bbox_to_anchor=(1.4, 0), loc='lower right')
-        # else: ax.get_legend().remove()
+
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/sFig3_lambda2_syndrome.png', dpi=300)
+    plt.savefig(f'{path}/figures/Fig3_pre_syndrome.png', dpi=300)
 
 
 def pi_effect():
@@ -291,11 +295,11 @@ def pi_effect():
 
 if __name__ == '__main__':
 
-    #quantTable()
+    #quantTable(['MixPol', 'GagModel'])
     #viz_Human()
-    #LR_effect()
+    LR_effect()
     #viz_PiReward()
-    #HC_PAT_policy()
+    HC_PAT_policy()
     Policy_Rew()
-    #pred_biFactor()
+    pred_biFactor()
     #pi_effect()

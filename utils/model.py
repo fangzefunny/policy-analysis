@@ -108,7 +108,7 @@ class model:
 
     # ------------ simulate ------------ #
 
-    def sim(self, data, params, rng):
+    def sim(self, data, params, rng=None):
         sim_data = [] 
         for block_id in data.keys():
             block_data = data[block_id].copy()

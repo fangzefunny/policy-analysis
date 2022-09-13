@@ -1,5 +1,290 @@
-bash fitmap.sh
+(py3) zfang@adacog-gpu:~/Documents/github/policy-analysis$ ^C
+(py3) zfang@adacog-gpu:~/Documents/github/policy-analysis$ bash fitmap.sh
 Data set=exp1data Model=MixPol Method=map
     Using 40 parallel CPU cores
  
-Fitting MixPol subj n29, progress: 0.00%
+Fitting MixPol subj cb79, progress: 0.00%
+   loss: 339.9976
+Fitting MixPol subj cb84, progress: 1.14%
+   loss: 352.3460
+Fitting MixPol subj cb12, progress: 2.27%
+   loss: 269.8338
+Fitting MixPol subj cb49, progress: 3.41%
+   loss: 214.2929
+Fitting MixPol subj cb57, progress: 4.55%
+   loss: 229.2766
+Fitting MixPol subj cb77, progress: 5.68%
+   loss: 319.4977
+Fitting MixPol subj cb17, progress: 6.82%
+   loss: 276.8290
+Fitting MixPol subj cb14, progress: 7.95%
+   loss: 334.2474
+Fitting MixPol subj cb22, progress: 9.09%
+   loss: 175.6047
+Fitting MixPol subj cb13, progress: 10.23%
+   loss: 323.2863
+Fitting MixPol subj n39, progress: 11.36%
+   loss: 264.2227
+Fitting MixPol subj n28, progress: 12.50%
+   loss: 210.3883
+Fitting MixPol subj n30, progress: 13.64%
+   loss: 209.5505
+Fitting MixPol subj n23, progress: 14.77%
+   loss: 207.0175
+Fitting MixPol subj cb108, progress: 15.91%
+   loss: 328.9391
+Fitting MixPol subj n17, progress: 17.05%
+   loss: 242.0094
+Fitting MixPol subj cb73, progress: 18.18%
+   loss: 347.3524
+Fitting MixPol subj cb3, progress: 19.32%
+   loss: 231.8207
+Fitting MixPol subj n31, progress: 20.45%
+   loss: 289.9817
+Fitting MixPol subj cb5, progress: 21.59%
+   loss: 334.2261
+Fitting MixPol subj n33, progress: 22.73%
+   loss: 222.1067
+Fitting MixPol subj n40, progress: 23.86%
+   loss: 142.3088
+Fitting MixPol subj cb28, progress: 25.00%
+   loss: 333.8510
+Fitting MixPol subj cb75, progress: 26.14%
+   loss: 322.5075
+Fitting MixPol subj n13, progress: 27.27%
+   loss: 229.6447
+Fitting MixPol subj cb2, progress: 28.41%
+   loss: 345.1965
+Fitting MixPol subj n24, progress: 29.55%
+   loss: 204.1677
+Fitting MixPol subj cb29, progress: 30.68%
+   loss: 112.9207
+Fitting MixPol subj n20, progress: 31.82%
+   loss: 282.5561
+Fitting MixPol subj cb88, progress: 32.95%
+   loss: 338.8830
+Fitting MixPol subj cb68, progress: 34.09%
+   loss: 238.9556
+Fitting MixPol subj cb76, progress: 35.23%
+   loss: 323.7962
+Fitting MixPol subj cb97, progress: 36.36%
+   loss: 313.7044
+Fitting MixPol subj cb25, progress: 37.50%
+   loss: 314.2592
+Fitting MixPol subj cb20, progress: 38.64%
+   loss: 306.3736
+Fitting MixPol subj cb80, progress: 39.77%
+   loss: 338.5792
+Fitting MixPol subj n25, progress: 40.91%
+   loss: 256.3922
+Fitting MixPol subj cb96, progress: 42.05%
+   loss: 255.9545
+Fitting MixPol subj cb99, progress: 43.18%
+   loss: 318.6718
+Fitting MixPol subj cb47, progress: 44.32%
+   loss: 228.9073
+Fitting MixPol subj cb65, progress: 45.45%
+   loss: 352.4534
+Fitting MixPol subj n10, progress: 46.59%
+   loss: 229.7026
+Fitting MixPol subj cb55, progress: 47.73%
+   loss: 275.9401
+Fitting MixPol subj cb52, progress: 48.86%
+   loss: 238.0027
+Fitting MixPol subj cb100, progress: 50.00%
+   loss: 223.4774
+Fitting MixPol subj cb92, progress: 51.14%
+   loss: 322.0026
+Fitting MixPol subj cb6, progress: 52.27%
+   loss: 274.5384
+Fitting MixPol subj n32, progress: 53.41%
+   loss: 262.6751
+Fitting MixPol subj n41, progress: 54.55%
+   loss: 221.1675
+Fitting MixPol subj n35, progress: 55.68%
+   loss: 224.2349
+Fitting MixPol subj cb35, progress: 56.82%
+   loss: 273.3283
+Fitting MixPol subj cb45, progress: 57.95%
+   loss: 322.1272
+Fitting MixPol subj n26, progress: 59.09%
+   loss: 210.2687
+Fitting MixPol subj n11, progress: 60.23%
+   loss: 316.9872
+Fitting MixPol subj cb63, progress: 61.36%
+   loss: 323.7212
+Fitting MixPol subj cb7, progress: 62.50%
+   loss: 298.2720
+Fitting MixPol subj cb19, progress: 63.64%
+   loss: 236.7514
+Fitting MixPol subj cb103, progress: 64.77%
+   loss: 254.8541
+Fitting MixPol subj cb74, progress: 65.91%
+   loss: 326.1420
+Fitting MixPol subj cb200, progress: 67.05%
+   loss: 119.0488
+Fitting MixPol subj cb98, progress: 68.18%
+   loss: 249.1319
+Fitting MixPol subj cb89, progress: 69.32%
+   loss: 207.0375
+Fitting MixPol subj n36, progress: 70.45%
+   loss: 237.0868
+Fitting MixPol subj n38, progress: 71.59%
+   loss: 193.4125
+Fitting MixPol subj n34, progress: 72.73%
+   loss: 212.6382
+Fitting MixPol subj cb1, progress: 73.86%
+   loss: 210.7886
+Fitting MixPol subj n37, progress: 75.00%
+   loss: 223.8992
+Fitting MixPol subj cb9, progress: 76.14%
+   loss: 301.7955
+Fitting MixPol subj cb101, progress: 77.27%
+   loss: 302.4299
+Fitting MixPol subj n42, progress: 78.41%
+   loss: 261.1982
+Fitting MixPol subj cb107, progress: 79.55%
+   loss: 248.9825
+Fitting MixPol subj n14, progress: 80.68%
+   loss: 260.6994
+Fitting MixPol subj n3, progress: 81.82%
+   loss: 301.0701
+Fitting MixPol subj cb53, progress: 82.95%
+   loss: 280.8961
+Fitting MixPol subj cb4, progress: 84.09%
+   loss: 190.8500
+Fitting MixPol subj n22, progress: 85.23%
+   loss: 219.3654
+Fitting MixPol subj cb46, progress: 86.36%
+   loss: 289.8568
+Fitting MixPol subj cb18, progress: 87.50%
+   loss: 300.2877
+Fitting MixPol subj n19, progress: 88.64%
+   loss: 283.0537
+Fitting MixPol subj cb105, progress: 89.77%
+   loss: 347.5160
+Fitting MixPol subj n21, progress: 90.91%
+   loss: 231.5455
+Fitting MixPol subj cb44, progress: 92.05%
+   loss: 352.2290
+Fitting MixPol subj cb70, progress: 93.18%
+   loss: 345.3046
+Fitting MixPol subj cb30, progress: 94.32%
+   loss: 121.4974
+Fitting MixPol subj cb82, progress: 95.45%
+   loss: 310.4950
+Fitting MixPol subj n8, progress: 96.59%
+   loss: 226.6597
+Fitting MixPol subj cb81, progress: 97.73%
+   loss: 311.5324
+Fitting MixPol subj n29, progress: 98.86%
+   loss: 351.6640
+
+parallel computing spend 21901.89 seconds
+Traceback (most recent call last):
+  File "m1_fit.py", line 150, in <module>
+    if args.group=='ind': summary(data, args)
+  File "m1_fit.py", line 128, in summary
+    log = pd.read_csv(fname, index_col=0)
+  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 676, in parser_f
+    return _read(filepath_or_buffer, kwds)
+  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 448, in _read
+    parser = TextFileReader(fp_or_buf, **kwds)
+  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 880, in __init__
+    self._make_engine(self.engine)
+  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 1114, in _make_engine
+    self._engine = CParserWrapper(self.f, **self.options)
+  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 1891, in __init__
+    self._reader = parsers.TextReader(src, **kwds)
+  File "pandas/_libs/parsers.pyx", line 374, in pandas._libs.parsers.TextReader.__cinit__
+  File "pandas/_libs/parsers.pyx", line 674, in pandas._libs.parsers.TextReader._setup_parser_source
+FileNotFoundError: [Errno 2] File /home/zfang/Documents/github/policy-analysis/fits/exp1data/MixPol/params-exp1data-cb79.csv does not exist: '/home/zfang/Documents/github/policy-analysis/fits/exp1data/MixPol/params-exp1data-cb79.csv'
+Simulating MixPol
+    Using 10 parallel CPU cores
+ 
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+  File "m2_simulate.py", line 55, in simulate
+    params = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
+  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 676, in parser_f
+    return _read(filepath_or_buffer, kwds)
+  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 448, in _read
+    parser = TextFileReader(fp_or_buf, **kwds)
+  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 880, in __init__
+    self._make_engine(self.engine)
+  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 1114, in _make_engine
+    self._engine = CParserWrapper(self.f, **self.options)
+  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 1891, in __init__
+    self._reader = parsers.TextReader(src, **kwds)
+  File "pandas/_libs/parsers.pyx", line 374, in pandas._libs.parsers.TextReader.__cinit__
+  File "pandas/_libs/parsers.pyx", line 674, in pandas._libs.parsers.TextReader._setup_parser_source
+FileNotFoundError: [Errno 2] File /home/zfang/Documents/github/policy-analysis/fits/MixPol/params-exp1data-map-cb79.csv does not exist: '/home/zfang/Documents/github/policy-analysis/fits/MixPol/params-exp1data-map-cb79.csv'
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "m2_simulate.py", line 168, in <module>
+    sim_paral(pool, data, args)
+  File "m2_simulate.py", line 75, in sim_paral
+    sim_data = p.get() 
+  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/multiprocessing/pool.py", line 771, in get
+    raise self._value
+FileNotFoundError: [Errno 2] File /home/zfang/Documents/github/policy-analysis/fits/MixPol/params-exp1data-map-cb79.csv does not exist: '/home/zfang/Documents/github/policy-analysis/fits/MixPol/params-exp1data-map-cb79.csv'
+Data set=exp1data Model=GagModel Method=map
+    Using 40 parallel CPU cores
+ 
+Fitting GagModel subj cb79, progress: 0.00%
+   loss: 283.6479
+Fitting GagModel subj cb84, progress: 1.14%
+   loss: 283.2441
+Fitting GagModel subj cb12, progress: 2.27%
+   loss: 200.5203
+Fitting GagModel subj cb49, progress: 3.41%
+   loss: 154.9796
+Fitting GagModel subj cb57, progress: 4.55%
+   loss: 144.3570
+Fitting GagModel subj cb77, progress: 5.68%
+   loss: 254.0651
+Fitting GagModel subj cb17, progress: 6.82%
+   loss: 208.8319
+Fitting GagModel subj cb14, progress: 7.95%
+   loss: 265.7259
+Fitting GagModel subj cb22, progress: 9.09%
+   loss: 150.1205
+Fitting GagModel subj cb13, progress: 10.23%
+   loss: 283.5698
+Fitting GagModel subj n39, progress: 11.36%
+   loss: 182.6245
+Fitting GagModel subj n28, progress: 12.50%
+   loss: 136.5059
+Fitting GagModel subj n30, progress: 13.64%
+   loss: 123.5074
+Fitting GagModel subj n23, progress: 14.77%
+   loss: 155.7033
+Fitting GagModel subj cb108, progress: 15.91%
+   loss: 253.4563
+Fitting GagModel subj n17, progress: 17.05%
+   loss: 174.1702
+Fitting GagModel subj cb73, progress: 18.18%
+   loss: 280.7195
+Fitting GagModel subj cb3, progress: 19.32%
+   loss: 163.3912
+Fitting GagModel subj n31, progress: 20.45%
+   loss: 191.5182
+Fitting GagModel subj cb5, progress: 21.59%
+   loss: 273.4498
+Fitting GagModel subj n33, progress: 22.73%
+   loss: 152.8376
+Fitting GagModel subj n40, progress: 23.86%
+   loss: 109.7838
+Fitting GagModel subj cb28, progress: 25.00%
+   loss: 265.9415
+Fitting GagModel subj cb75, progress: 26.14%
+   loss: 254.5203
+Fitting GagModel subj n13, progress: 27.27%
+   loss: 162.3233
+Fitting GagModel subj cb2, progress: 28.41%

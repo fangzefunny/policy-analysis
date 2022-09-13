@@ -13,7 +13,7 @@ path = os.path.dirname(os.path.abspath(__file__))
 
 ## pass the hyperparams
 parser = argparse.ArgumentParser(description='Test for argparse')
-parser.add_argument('--data_set',   '-d', help='which_data', type = str, default='gain_exp1data')
+parser.add_argument('--data_set',   '-d', help='which_data', type = str, default='exp1data')
 parser.add_argument('--method',     '-m', help='fitting methods', type = str, default='map')
 parser.add_argument('--group',      '-g', help='fit to ind or fit to the whole group', type=str, default='ind')
 parser.add_argument('--agent_name', '-n', help='choose agent', default='MixPol')
@@ -28,8 +28,9 @@ args.agent = eval(args.agent_name)
 # create the folders for this folder
 if not os.path.exists(f'{path}/simulations'):
     os.mkdir(f'{path}/simulations')
-if not os.path.exists(f'{path}/simulations/{args.agent_name}'):
-    os.mkdir(f'{path}/simulations/{args.agent_name}')
+if not os.path.exists(f'{path}/simulations/{args.data_set}/{args.agent_name}'):
+    os.mkdir(f'{path}/simulations/{args.data_set}')
+    os.mkdir(f'{path}/simulations/{args.data_set}/{args.agent_name}')
 
 # define functions
 def simulate(data, args, seed):
@@ -49,9 +50,9 @@ def simulate(data, args, seed):
         if in_params is None:
             n_params = args.agent.n_params
             if args.group == 'ind': 
-                fname = f'{path}/fits/{args.agent_name}/params-{args.data_set}-{args.method}-{sub_idx}.csv'      
+                fname = f'{path}/fits/{args.data_set}/{args.agent_name}/params-{args.data_set}-{sub_idx}-{args.method}.csv'      
             elif args.group == 'avg':
-                fname = f'{path}/fits/params-{args.data_set}-{args.method}-{args.agent_name}-avg.csv'      
+                fname = f'{path}/fits/{args.data_set}/params-{args.data_set}-{args.method}-{args.agent_name}-avg.csv'      
             params = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
         else:
             params = in_params
@@ -73,8 +74,8 @@ def sim_paral(pool, data, args):
                             for i in range(args.n_sim)]
     for i, p in enumerate(res):
         sim_data = p.get() 
-        fname = f'{path}/simulations/{args.agent_name}/sim-{args.data_set}'
-        fname += f'-{args.method}-idx{i}.csv'
+        fname = f'{path}/simulations/{args.data_set}/{args.agent_name}/'
+        fname += f'sim-{args.data_set}-{args.method}-idx{i}.csv'
         sim_data.to_csv(fname, index = False, header=True)
 
 def sim_subj_paral(pool, args):
@@ -168,4 +169,4 @@ if __name__ == '__main__':
     sim_paral(pool, data, args)
 
     ## STEP 3: SIM SUBJECT
-    sim_subj_paral(pool, args)
+    #sim_subj_paral(pool, args)

@@ -62,7 +62,7 @@ def fit_parallel(pool, data, subj, verbose, args):
         
     ## Save the params + nll + aic + bic 
     col = args.agent.p_name + ['nll', 'aic', 'bic']
-    print(f'   nll: {fit_mat[0, -3]:.4f}')
+    print(f'   loss: {fit_mat[0, -3]:.4f}')
     fit_res = pd.DataFrame(fit_mat, columns=col)
     
     return fit_res 
@@ -74,7 +74,7 @@ def fit(pool, data, args):
     subj = model(args.agent)
 
     ## fit list
-    fname = f'{save_dir}/fitted_subj_lst-{args.data_set}-{args.agent_name}.csv'
+    fname = f'{save_dir}/fitted_subj_lst-{args.data_set}-{args.agent_name}-{args.method}.csv'
     if os.path.exists(fname):
         fitted_sub = pd.read_csv(f'{fname}') 
         fitted_sub_lst = list(fitted_sub['sub_id'].values)
@@ -88,7 +88,7 @@ def fit(pool, data, args):
     ## Fit params to each individual 
     if args.group == 'ind':
         done_subj = 0
-        all_subj  = len(data.keys())
+        all_subj  = len(data.keys()) - len(fitted_sub_lst)
         for sub_idx in data.keys(): 
             if sub_idx not in fitted_sub_lst:  
                 print(f'Fitting {args.agent_name} subj {sub_idx}, progress: {(done_subj*100)/all_subj:.2f}%')
@@ -124,7 +124,7 @@ def summary(data, args):
 
     ## Loop to collect data 
     for i, sub_idx in enumerate(data.keys()):
-        fname = f'{folder}/params-{args.data_set}-{sub_idx}.csv'
+        fname = f'{folder}/params-{args.data_set}-{sub_idx}-{args.method}.csv'
         log = pd.read_csv(fname, index_col=0)
         res_mat[i, :] = log.iloc[0, :].values
         if i == 0: col = log.columns
