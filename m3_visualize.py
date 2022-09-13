@@ -110,7 +110,7 @@ def LR_effect():
             ymin, ymax = data[tar[0]].min(), data[tar[0]].max()
             t_test(data, 'b_type=="sta"', 'b_type=="vol"', tar=tar)
             sns.boxplot(x='b_type', y=tar[0], data=data, width=.65,
-                            palette=viz.RedPairs, ax=ax)
+                            palette=viz.BluePairs, ax=ax)
             ax.set_xlim([-.8, 1.8])
             ax.set_xticks([0, 1])
             ax.set_ylim([ymin-abs(ymin)*.2, ymax+abs(ymax-1)*.5])
@@ -138,7 +138,7 @@ def HC_PAT_policy():
     for idx in range(nc):
         ax  = axs[idx]
         sns.boxplot(x='is_PAT', y=f'{tar[idx]}', data=data, width=.65,
-                        palette=viz.BluePairs, ax=ax)
+                        palette=viz.RedPairs, ax=ax)
         ax.set_xlim([-.8, 1.8])
         ax.set_ylim([-5, 5.8])
         ax.set_xticks([0, 1])
@@ -295,7 +295,7 @@ if __name__ == '__main__':
     #viz_Human()
     LR_effect()
     #viz_PiReward()
-    #HC_PAT_policy()
+    HC_PAT_policy()
     #Policy_Rew()
     #pred_biFactor()
     #pi_effect()
