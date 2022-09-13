@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser(description='Test for argparse')
 parser.add_argument('--data_set',   '-d', help='which_data', type = str, default='exp1data')
 parser.add_argument('--method',     '-m', help='fitting methods', type = str, default='map')
 parser.add_argument('--group',      '-g', help='fit to ind or fit to the whole group', type=str, default='ind')
-parser.add_argument('--agent_name', '-n', help='choose agent', default='MixPol')
+parser.add_argument('--agent_name', '-n', help='choose agent', default='GagModel')
 parser.add_argument('--n_cores',    '-c', help='number of CPU cores used for parallel computing', 
                                             type=int, default=1)
 parser.add_argument('--n_sim',      '-f', help='f simulations', type=int, default=5)
@@ -28,8 +28,9 @@ args.agent = eval(args.agent_name)
 # create the folders for this folder
 if not os.path.exists(f'{path}/simulations'):
     os.mkdir(f'{path}/simulations')
-if not os.path.exists(f'{path}/simulations/{args.data_set}/{args.agent_name}'):
+if not os.path.exists(f'{path}/simulations/{args.data_set}'):
     os.mkdir(f'{path}/simulations/{args.data_set}')
+if not os.path.exists(f'{path}/simulations/{args.data_set}/{args.agent_name}'):
     os.mkdir(f'{path}/simulations/{args.data_set}/{args.agent_name}')
 
 # define functions

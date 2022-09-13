@@ -47,8 +47,18 @@ class viz:
     black   = np.array([  0,   0,   0]) / 255
     Palette3 = [bOrange, Blue, deBrown, ocGreen]
 
+    # ----------- Color pairs ------------- 
+
+    r1 = Red
+    r2 = np.array([235, 179, 169]) / 255
+    RedPairs  = [r1, r2]
+    
+    b1 = np.array([ 14, 107, 168]) / 255
+    b2 = np.array([166, 225, 250]) / 255
+    BluePairs = [b1, b2]
 
     # -----------  Colormap ------------- 
+
     BluePalette   = [dBlue, Blue, lBlue]
     RedPalette    = [dRed, Red, lRed]
     YellowPalette = [dYellow, Yellow, lYellow]

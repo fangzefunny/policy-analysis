@@ -27,24 +27,19 @@ policies       = ['EU', 'MO', 'HA']
 # fit performance 
 def quantTable(agents= ['MixPol', 'GagModel', 'RlRisk']):
     crs = {}
-    fname = f'{path}/data/exp1data.pkl'
-    with open(fname, 'rb') as handle: data=pickle.load(handle)
+    
     for m in agents:
         subj = model(eval(m))
         n_params = eval(m).n_params
         nll, aic = 0, 0 
-        fname = f'{path}/fits/exp1data/fitted_subj_lst-exp1data-GagModel-map.csv'
-        subj_Lst = list(pd.read_csv(fname)['sub_id'])
-        for sub_id in subj_Lst:
-            fname = f'{path}/fits/exp1data/{m}/params-exp1data-{sub_id}-map.csv'
-            params = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
-            eval_data = subj.sim(data[sub_id], params, rng=None)
-            nll += eval_data.loc[:, 'logLike'].sum() / len(subj_Lst)
-        aic = 2*nll + 2*n_params
+        fname = f'{path}/simulations/exp1data/{m}/sim-exp1data-map-idx0.csv'
+        data  = pd.read_csv(fname)
+        nll   = data.groupby(by=['sub_id']).sum()['logLike'].mean()
+        aic   = 2*nll + 2*n_params
         crs[m] = {'nll':nll, 'aic':aic}
 
     for m in agents:
-        print(f'{m} nll: {crs[m]["nll"]:.3f}, aic: {crs[m]["aic"]:.3f}')
+        print(f'{m}({eval(m).n_params}) nll: {crs[m]["nll"]:.3f}, aic: {crs[m]["aic"]:.3f}')
 
 def viz_Human():
 
@@ -109,12 +104,13 @@ def LR_effect():
             ax  = axs[j, idx]
             data = build_pivot_table('map', agent='MixPol', min_q=.01, max_q=.99)
             data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
-            data = data.query(f'is_PAT=={is_pat} & feedback_type=="{f_type}"').groupby(by=['sub_id', 'b_type']).mean().reset_index()
+            data = data.query(f'is_PAT=={is_pat} & feedback_type=="{f_type}"'
+                        ).groupby(by=['sub_id', 'b_type']).mean().reset_index()
             print(f'---------{is_pat}: {f_type}')
             ymin, ymax = data[tar[0]].min(), data[tar[0]].max()
             t_test(data, 'b_type=="sta"', 'b_type=="vol"', tar=tar)
             sns.boxplot(x='b_type', y=tar[0], data=data, width=.65,
-                            palette=viz.Palette, ax=ax)
+                            palette=viz.RedPairs, ax=ax)
             ax.set_xlim([-.8, 1.8])
             ax.set_xticks([0, 1])
             ax.set_ylim([ymin-abs(ymin)*.2, ymax+abs(ymax-1)*.5])
@@ -142,7 +138,7 @@ def HC_PAT_policy():
     for idx in range(nc):
         ax  = axs[idx]
         sns.boxplot(x='is_PAT', y=f'{tar[idx]}', data=data, width=.65,
-                        palette=viz.Palette, ax=ax)
+                        palette=viz.BluePairs, ax=ax)
         ax.set_xlim([-.8, 1.8])
         ax.set_ylim([-5, 5.8])
         ax.set_xticks([0, 1])
@@ -245,7 +241,7 @@ def pred_biFactor():
         corr, pval = pearsonr(x.values, y.values)
         x = sm.add_constant(x)
         res = sm.OLS(y, x).fit()
-        #print(res.summary())
+        print(res.summary())
         print(f' {tar}: r={corr}, p={pval}')
         
         ax  = axs[i]
@@ -295,11 +291,11 @@ def pi_effect():
 
 if __name__ == '__main__':
 
-    #quantTable(['MixPol', 'GagModel'])
+    #quantTable()
     #viz_Human()
     LR_effect()
     #viz_PiReward()
-    HC_PAT_policy()
-    Policy_Rew()
-    pred_biFactor()
+    #HC_PAT_policy()
+    #Policy_Rew()
+    #pred_biFactor()
     #pi_effect()

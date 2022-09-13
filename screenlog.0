@@ -288,3 +288,340 @@ Fitting GagModel subj cb75, progress: 26.14%
 Fitting GagModel subj n13, progress: 27.27%
    loss: 162.3233
 Fitting GagModel subj cb2, progress: 28.41%
+   loss: 279.0778
+Fitting GagModel subj n24, progress: 29.55%
+   loss: 143.9694
+Fitting GagModel subj cb29, progress: 30.68%
+   loss: 69.3903
+Fitting GagModel subj n20, progress: 31.82%
+   loss: 217.5194
+Fitting GagModel subj cb88, progress: 32.95%
+   loss: 270.9494
+Fitting GagModel subj cb68, progress: 34.09%
+   loss: 222.1336
+Fitting GagModel subj cb76, progress: 35.23%
+   loss: 252.2229
+Fitting GagModel subj cb97, progress: 36.36%
+   loss: 252.2212
+Fitting GagModel subj cb25, progress: 37.50%
+   loss: 248.2507
+Fitting GagModel subj cb20, progress: 38.64%
+   loss: 240.9283
+Fitting GagModel subj cb80, progress: 39.77%
+   loss: 278.6169
+Fitting GagModel subj n25, progress: 40.91%
+   loss: 204.0860
+Fitting GagModel subj cb96, progress: 42.05%
+   loss: 170.5092
+Fitting GagModel subj cb99, progress: 43.18%
+   loss: 227.4445
+Fitting GagModel subj cb47, progress: 44.32%
+   loss: 164.5666
+Fitting GagModel subj cb65, progress: 45.45%
+   loss: 287.5340
+Fitting GagModel subj n10, progress: 46.59%
+   loss: 184.9769
+Fitting GagModel subj cb55, progress: 47.73%
+   loss: 200.8729
+Fitting GagModel subj cb52, progress: 48.86%
+   loss: 174.5040
+Fitting GagModel subj cb100, progress: 50.00%
+   loss: 155.5600
+Fitting GagModel subj cb92, progress: 51.14%
+   loss: 260.9965
+Fitting GagModel subj cb6, progress: 52.27%
+   loss: 196.5031
+Fitting GagModel subj n32, progress: 53.41%
+   loss: 204.3031
+Fitting GagModel subj n41, progress: 54.55%
+   loss: 131.6922
+Fitting GagModel subj n35, progress: 55.68%
+   loss: 160.0012
+Fitting GagModel subj cb35, progress: 56.82%
+   loss: 199.0961
+Fitting GagModel subj cb45, progress: 57.95%
+   loss: 252.6603
+Fitting GagModel subj n26, progress: 59.09%
+   loss: 142.9767
+Fitting GagModel subj n11, progress: 60.23%
+   loss: 254.6801
+Fitting GagModel subj cb63, progress: 61.36%
+   loss: 261.0593
+Fitting GagModel subj cb7, progress: 62.50%
+   loss: 230.1125
+Fitting GagModel subj cb19, progress: 63.64%
+   loss: 145.7975
+Fitting GagModel subj cb103, progress: 64.77%
+   loss: 172.6458
+Fitting GagModel subj cb74, progress: 65.91%
+   loss: 258.7927
+Fitting GagModel subj cb200, progress: 67.05%
+   loss: 114.7919
+Fitting GagModel subj cb98, progress: 68.18%
+   loss: 202.8553
+Fitting GagModel subj cb89, progress: 69.32%
+   loss: 123.1145
+Fitting GagModel subj n36, progress: 70.45%
+   loss: 153.1288
+Fitting GagModel subj n38, progress: 71.59%
+   loss: 141.2183
+Fitting GagModel subj n34, progress: 72.73%
+   loss: 158.3705
+Fitting GagModel subj cb1, progress: 73.86%
+   loss: 162.1114
+Fitting GagModel subj n37, progress: 75.00%
+   loss: 152.0853
+Fitting GagModel subj cb9, progress: 76.14%
+   loss: 225.6150
+Fitting GagModel subj cb101, progress: 77.27%
+   loss: 220.1614
+Fitting GagModel subj n42, progress: 78.41%
+   loss: 198.5470
+Fitting GagModel subj cb107, progress: 79.55%
+   loss: 168.7075
+Fitting GagModel subj n14, progress: 80.68%
+   loss: 194.3782
+Fitting GagModel subj n3, progress: 81.82%
+   loss: 249.7819
+Fitting GagModel subj cb53, progress: 82.95%
+   loss: 210.3340
+Fitting GagModel subj cb4, progress: 84.09%
+   loss: 128.8259
+Fitting GagModel subj n22, progress: 85.23%
+   loss: 173.7273
+Fitting GagModel subj cb46, progress: 86.36%
+   loss: 218.0810
+Fitting GagModel subj cb18, progress: 87.50%
+   loss: 231.1145
+Fitting GagModel subj n19, progress: 88.64%
+   loss: 210.1402
+Fitting GagModel subj cb105, progress: 89.77%
+   loss: 282.5711
+Fitting GagModel subj n21, progress: 90.91%
+   loss: 149.6306
+Fitting GagModel subj cb44, progress: 92.05%
+   loss: 295.8717
+Fitting GagModel subj cb70, progress: 93.18%
+   loss: 272.6485
+Fitting GagModel subj cb30, progress: 94.32%
+   loss: 70.5216
+Fitting GagModel subj cb82, progress: 95.45%
+   loss: 253.4718
+Fitting GagModel subj n8, progress: 96.59%
+   loss: 165.1776
+Fitting GagModel subj cb81, progress: 97.73%
+   loss: 258.1511
+Fitting GagModel subj n29, progress: 98.86%
+   loss: 286.9045
+
+parallel computing spend 39417.46 seconds
+Traceback (most recent call last):
+  File "m1_fit.py", line 150, in <module>
+    if args.group=='ind': summary(data, args)
+  File "m1_fit.py", line 128, in summary
+    log = pd.read_csv(fname, index_col=0)
+  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 676, in parser_f
+    return _read(filepath_or_buffer, kwds)
+  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 448, in _read
+    parser = TextFileReader(fp_or_buf, **kwds)
+  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 880, in __init__
+    self._make_engine(self.engine)
+  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 1114, in _make_engine
+    self._engine = CParserWrapper(self.f, **self.options)
+  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 1891, in __init__
+    self._reader = parsers.TextReader(src, **kwds)
+  File "pandas/_libs/parsers.pyx", line 374, in pandas._libs.parsers.TextReader.__cinit__
+  File "pandas/_libs/parsers.pyx", line 674, in pandas._libs.parsers.TextReader._setup_parser_source
+FileNotFoundError: [Errno 2] File /home/zfang/Documents/github/policy-analysis/fits/exp1data/GagModel/params-exp1data-cb79.csv does not exist: '/home/zfang/Documents/github/policy-analysis/fits/exp1data/GagModel/params-exp1data-cb79.csv'
+Traceback (most recent call last):
+  File "m2_simulate.py", line 32, in <module>
+    os.mkdir(f'{path}/simulations/{args.data_set}')
+FileExistsError: [Errno 17] File exists: '/home/zfang/Documents/github/policy-analysis/simulations/exp1data'
+Data set=exp1data Model=RlRisk Method=map
+    Using 40 parallel CPU cores
+ 
+Fitting RlRisk subj cb79, progress: 0.00%
+   loss: 262.6990
+Fitting RlRisk subj cb84, progress: 1.14%
+   loss: 280.5933
+Fitting RlRisk subj cb12, progress: 2.27%
+   loss: 241.6505
+Fitting RlRisk subj cb49, progress: 3.41%
+   loss: 161.5993
+Fitting RlRisk subj cb57, progress: 4.55%
+   loss: 176.6373
+Fitting RlRisk subj cb77, progress: 5.68%
+   loss: 247.1043
+Fitting RlRisk subj cb17, progress: 6.82%
+   loss: 195.8920
+Fitting RlRisk subj cb14, progress: 7.95%
+   loss: 261.0044
+Fitting RlRisk subj cb22, progress: 9.09%
+   loss: 134.0581
+Fitting RlRisk subj cb13, progress: 10.23%
+   loss: 244.4998
+Fitting RlRisk subj n39, progress: 11.36%
+   loss: 268.0693
+Fitting RlRisk subj n28, progress: 12.50%
+   loss: 129.7992
+Fitting RlRisk subj n30, progress: 13.64%
+   loss: 184.6408
+Fitting RlRisk subj n23, progress: 14.77%
+   loss: 121.6265
+Fitting RlRisk subj cb108, progress: 15.91%
+   loss: 266.3837
+Fitting RlRisk subj n17, progress: 17.05%
+   loss: 163.2606
+Fitting RlRisk subj cb73, progress: 18.18%
+   loss: 268.2252
+Fitting RlRisk subj cb3, progress: 19.32%
+   loss: 151.0713
+Fitting RlRisk subj n31, progress: 20.45%
+   loss: 233.0131
+Fitting RlRisk subj cb5, progress: 21.59%
+   loss: 276.3951
+Fitting RlRisk subj n33, progress: 22.73%
+   loss: 156.4315
+Fitting RlRisk subj n40, progress: 23.86%
+   loss: 106.3049
+Fitting RlRisk subj cb28, progress: 25.00%
+   loss: 277.2642
+Fitting RlRisk subj cb75, progress: 26.14%
+   loss: 265.2522
+Fitting RlRisk subj n13, progress: 27.27%
+   loss: 154.2379
+Fitting RlRisk subj cb2, progress: 28.41%
+   loss: 267.2203
+Fitting RlRisk subj n24, progress: 29.55%
+   loss: 121.5534
+Fitting RlRisk subj cb29, progress: 30.68%
+   loss: 69.8938
+Fitting RlRisk subj n20, progress: 31.82%
+   loss: 200.0041
+Fitting RlRisk subj cb88, progress: 32.95%
+   loss: 273.7196
+Fitting RlRisk subj cb68, progress: 34.09%
+   loss: 178.2721
+Fitting RlRisk subj cb76, progress: 35.23%
+   loss: 265.1409
+Fitting RlRisk subj cb97, progress: 36.36%
+   loss: 254.4116
+Fitting RlRisk subj cb25, progress: 37.50%
+   loss: 255.9826
+Fitting RlRisk subj cb20, progress: 38.64%
+   loss: 276.4603
+Fitting RlRisk subj cb80, progress: 39.77%
+   loss: 272.3844
+Fitting RlRisk subj n25, progress: 40.91%
+   loss: 174.6761
+Fitting RlRisk subj cb96, progress: 42.05%
+   loss: 180.7981
+Fitting RlRisk subj cb99, progress: 43.18%
+   loss: 245.2608
+Fitting RlRisk subj cb47, progress: 44.32%
+   loss: 159.1004
+Fitting RlRisk subj cb65, progress: 45.45%
+   loss: 275.9449
+Fitting RlRisk subj n10, progress: 46.59%
+   loss: 161.8404
+Fitting RlRisk subj cb55, progress: 47.73%
+   loss: 274.7950
+Fitting RlRisk subj cb52, progress: 48.86%
+   loss: 165.0700
+Fitting RlRisk subj cb100, progress: 50.00%
+   loss: 148.3135
+Fitting RlRisk subj cb92, progress: 51.14%
+   loss: 267.2587
+Fitting RlRisk subj cb6, progress: 52.27%
+   loss: 223.8476
+Fitting RlRisk subj n32, progress: 53.41%
+   loss: 193.4564
+Fitting RlRisk subj n41, progress: 54.55%
+   loss: 158.3691
+Fitting RlRisk subj n35, progress: 55.68%
+   loss: 136.1127
+Fitting RlRisk subj cb35, progress: 56.82%
+   loss: 217.7036
+Fitting RlRisk subj cb45, progress: 57.95%
+   loss: 247.9151
+Fitting RlRisk subj n26, progress: 59.09%
+   loss: 134.2181
+Fitting RlRisk subj n11, progress: 60.23%
+   loss: 241.1418
+Fitting RlRisk subj cb63, progress: 61.36%
+   loss: 272.1265
+Fitting RlRisk subj cb7, progress: 62.50%
+   loss: 244.1768
+Fitting RlRisk subj cb19, progress: 63.64%
+   loss: 146.2543
+Fitting RlRisk subj cb103, progress: 64.77%
+   loss: 190.8478
+Fitting RlRisk subj cb74, progress: 65.91%
+   loss: 274.7847
+Fitting RlRisk subj cb200, progress: 67.05%
+   loss: 75.9416
+Fitting RlRisk subj cb98, progress: 68.18%
+   loss: 191.4723
+Fitting RlRisk subj cb89, progress: 69.32%
+   loss: 191.6584
+Fitting RlRisk subj n36, progress: 70.45%
+   loss: 227.5238
+Fitting RlRisk subj n38, progress: 71.59%
+   loss: 115.1208
+Fitting RlRisk subj n34, progress: 72.73%
+   loss: 139.7782
+Fitting RlRisk subj cb1, progress: 73.86%
+   loss: 142.4074
+Fitting RlRisk subj n37, progress: 75.00%
+   loss: 129.1214
+Fitting RlRisk subj cb9, progress: 76.14%
+   loss: 236.2925
+Fitting RlRisk subj cb101, progress: 77.27%
+   loss: 234.0388
+Fitting RlRisk subj n42, progress: 78.41%
+   loss: 185.0295
+Fitting RlRisk subj cb107, progress: 79.55%
+   loss: 178.9116
+Fitting RlRisk subj n14, progress: 80.68%
+   loss: 203.3617
+Fitting RlRisk subj n3, progress: 81.82%
+   loss: 215.9691
+Fitting RlRisk subj cb53, progress: 82.95%
+   loss: 205.3480
+Fitting RlRisk subj cb4, progress: 84.09%
+   loss: 104.7905
+Fitting RlRisk subj n22, progress: 85.23%
+   loss: 140.8243
+Fitting RlRisk subj cb46, progress: 86.36%
+   loss: 223.5512
+Fitting RlRisk subj cb18, progress: 87.50%
+   loss: 237.7820
+Fitting RlRisk subj n19, progress: 88.64%
+   loss: 229.0059
+Fitting RlRisk subj cb105, progress: 89.77%
+   loss: 275.5151
+Fitting RlRisk subj n21, progress: 90.91%
+   loss: 208.9193
+Fitting RlRisk subj cb44, progress: 92.05%
+   loss: 270.6565
+Fitting RlRisk subj cb70, progress: 93.18%
+   loss: 271.3396
+Fitting RlRisk subj cb30, progress: 94.32%
+   loss: 70.5544
+Fitting RlRisk subj cb82, progress: 95.45%
+   loss: 230.1324
+Fitting RlRisk subj n8, progress: 96.59%
+   loss: 150.6547
+Fitting RlRisk subj cb81, progress: 97.73%
+   loss: 249.9119
+Fitting RlRisk subj n29, progress: 98.86%
+   loss: 276.2574
+
+parallel computing spend 15494.05 seconds
+Traceback (most recent call last):
+  File "m2_simulate.py", line 32, in <module>
+    os.mkdir(f'{path}/simulations/{args.data_set}')
+FileExistsError: [Errno 17] File exists: '/home/zfang/Documents/github/policy-analysis/simulations/exp1data'
+MixPol(18) nll: 158.547, aic: 353.094
+GagModel(15) nll: 163.309, aic: 356.618
+(py3) zfang@adacog-gpu:~/Documents/github/policy-analysis$ 
