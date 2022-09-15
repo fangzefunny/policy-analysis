@@ -190,6 +190,33 @@ def HC_PAT_policy():
     plt.show()
     plt.savefig(f'{path}/figures/Fig1_HC-PAT-policies.png', dpi=300)
 
+def STA_VOL_policy():
+
+    tar    = ['l1', 'l2', 'l3']
+
+    data = build_pivot_table('map', min_q=.01, max_q=.99)
+    data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
+    data = data.groupby(by=['sub_id', 'feedback_type', 'b_type']).mean().reset_index()
+    
+    nr, nc = 1, len(tar)
+    fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharey=True, sharex=True)
+    for_title = t_test(data, 'b_type=="sta"', 'b_type=="vol"', tar=tar)
+    for idx in range(nc):
+        ax  = axs[idx]
+        sns.boxplot(x='b_type', y=f'{tar[idx]}', data=data, width=.65,
+                        palette=viz.BluePairs, ax=ax)
+        ax.set_xlim([-.8, 1.8])
+        ax.set_ylim([-5, 5.8])
+        ax.set_xticks([0, 1])
+        ax.set_xticklabels(['Stable', 'Volatile'])
+        ax.set_ylabel('')
+        ax.set_xlabel('')
+        ax.set_box_aspect(1)
+
+    plt.tight_layout()
+    plt.show()
+    plt.savefig(f'{path}/figures/Fig4_STA-VOL-policies.png', dpi=300)
+
 def Policy_Rew():
 
     tar    = ['l1', 'l2', 'l3']
@@ -357,7 +384,8 @@ if __name__ == '__main__':
     #LR_effect2()
     #viz_PiReward()
     #HC_PAT_policy()
+    STA_VOL_policy()
     #Policy_Rew()
     #pred_biFactor()
-    pi_effect()
+    #pi_effect()
     #Block_Group_effect()
