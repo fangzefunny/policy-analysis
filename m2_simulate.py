@@ -134,8 +134,8 @@ def sim_subj(mode, seed, n_samples=3):
     n_params = 18
     fname    = f'{path}/fits/{args.data_set}/MixPol/params-{args.data_set}-{sub_id}-map.csv'      
     params   = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
-    params[:3] = [3.9758, 9.5894, 4.4965]
-    params[10] = 4.3274
+    params[:3] = [3.9758, 9.5894, 4]
+    params[10:14] = params[2:6]
         
     rng    = np.random.RandomState(seed)
     
