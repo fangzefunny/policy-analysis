@@ -323,7 +323,7 @@ def pred_biFactor():
 
 def pi_effect():
 
-    fname = f'{path}/simulations/exp1data/MixPol/simsubj-exp1data-sta_first-HC.csv'
+    fname = f'{path}/simulations/exp1data/MixPol/simsubj-exp1data-sta_first-PAT.csv'
     data = pd.read_csv(fname)
 
     data = data.groupby(by=['trials'])[['l1_effect', 'l2_effect', 'l3_effect']].mean()
