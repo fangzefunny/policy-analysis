@@ -90,10 +90,10 @@ def sim_subj_paral(pool, args):
         sim_sta_first += sim_data['sta_first']
         sim_vol_first += sim_data['vol_first']
     
-    fname = f'{path}/simulations/{args.agent_name}/simsubj-{args.data_set}-sta_first.csv'
+    fname = f'{path}/simulations/{args.data_set}/{args.agent_name}/simsubj-{args.data_set}-sta_first.csv'
     sim_sta_first = pd.concat(sim_sta_first, ignore_index=True)
     sim_sta_first.to_csv(fname, index = False, header=True)
-    fname = f'{path}/simulations/{args.agent_name}/simsubj-{args.data_set}-vol_first.csv'
+    fname = f'{path}/simulations/{args.data_set}/{args.agent_name}/simsubj-{args.data_set}-vol_first.csv'
     sim_vol_first = pd.concat(sim_vol_first, ignore_index=True)
     sim_vol_first.to_csv(fname, index = False, header=True)
 
@@ -127,7 +127,11 @@ def sim_subj(seed, n_samples=3):
        
     # decide what to collect
     subj   = model(MixPol)
-    params = [6.0711,6.3353,6.2796,27.3466,7.9464,-7.0917,2.6326,3.6068,-6.1563,0.4109]
+    params = [3.9758,9.5894,
+              4.4965,0.4819,-0.5593,0.0775,
+              4.857,0.1365,-0.1603,0.0238,
+              4.3274,0.7131,-0.7087,-0.0042,
+              4.7329,0.4153,-0.3411,-0.0745,]
     rng    = np.random.RandomState(seed)
     
     # simulate block n times
@@ -145,6 +149,7 @@ def sim_subj(seed, n_samples=3):
             'state':  state.astype(int),
             'psi':    psi,
             'trials': list(range(180)),
+            'feedback_type': ['gain']*180,
         }
         task = pd.DataFrame.from_dict(task)
         
@@ -167,7 +172,7 @@ if __name__ == '__main__':
     with open(fname, 'rb') as handle: data=pickle.load(handle)
 
     # STEP 2: SYNTHESIZE DATA
-    sim_paral(pool, data, args)
+    #sim_paral(pool, data, args)
 
-    ## STEP 3: SIM SUBJECT
-    #sim_subj_paral(pool, args)
+    # STEP 3: SIM SUBJECT
+    sim_subj_paral(pool, args)

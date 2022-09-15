@@ -1,6 +1,5 @@
 
 import os 
-import pickle
 
 import numpy as np
 import pandas as pd 
@@ -77,7 +76,6 @@ def viz_Human():
     ax=axs[1, 0]
     sns.boxplot(x='is_PAT', y='rew', data=data,  width=.65,
                     hue='b_type', palette=viz.Palette2, ax=ax)
-    #for_title = t_test(data, 'b_type=="sta"', 'b_type=="vol"', tar=['rew'])
     ax.set_xlim([-.8, 1.8])
     ax.set_ylim([0.18, 0.65])
     ax.set_xticks([0, 1])
@@ -91,39 +89,80 @@ def viz_Human():
     plt.tight_layout()
     plt.savefig(f'{path}/figures/Fig1_Human_data.png', dpi=300)
 
-def LR_effect():
+def LR_effect1():
 
-    feedback_types = ['gain', 'loss']
-    groups  = [0, 1]
-    tar    = ['log_alpha']
+    tar = ['log_alpha']
 
-    nr, nc = len(groups), len(feedback_types)
+    data = build_pivot_table('map', agent='MixPol', min_q=.01, max_q=.99)
+    data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
+
+    nr, nc = 1, len(feedback_types)
     fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharex='row')
-    for idx, f_type in enumerate(feedback_types):
-        for j, is_pat in enumerate(groups):
-            ax  = axs[j, idx]
-            data = build_pivot_table('map', agent='MixPol', min_q=.01, max_q=.99)
-            data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
-            data = data.query(f'is_PAT=={is_pat} & feedback_type=="{f_type}"'
-                        ).groupby(by=['sub_id', 'b_type']).mean().reset_index()
-            print(f'---------{is_pat}: {f_type}')
-            ymin, ymax = data[tar[0]].min(), data[tar[0]].max()
-            t_test(data, 'b_type=="sta"', 'b_type=="vol"', tar=tar)
-            sns.boxplot(x='b_type', y=tar[0], data=data, width=.65,
-                            palette=viz.BluePairs, ax=ax)
-            ax.set_xlim([-.8, 1.8])
-            ax.set_xticks([0, 1])
-            ax.set_ylim([ymin-abs(ymin)*.2, ymax+abs(ymax-1)*.5])
-            ax.set_xticklabels(['Stable', 'Volatile'])
-            ax.set_ylabel('')
-            ax.set_xlabel('')
-            ax.set_box_aspect(1)
-        
-    plt.tight_layout()
-    plt.show()
-    plt.savefig(f'{path}/figures/Fig0_LR.png', dpi=300)
+    for i, f_type in enumerate(feedback_types):
 
-                
+        ax = axs[i]
+        sel_data = data.query(f'feedback_type=="{f_type}"')
+        ymin, ymax = sel_data[tar[0]].min(), sel_data[tar[0]].max()
+        t_test(sel_data, 'b_type=="sta"', 'b_type=="vol"', tar=tar)
+        sns.boxplot(x='b_type', y=tar[0], data=sel_data, 
+                        width=.65, palette=viz.BluePairs, ax=ax)
+        ax.set_xlim([-.8, 1.8])
+        ax.set_xticks([0, 1])
+        ax.set_ylim([ymin-abs(ymin)*.2, ymax+abs(ymax-1)*.5])
+        ax.set_xticklabels(['Stable', 'Volatile'])
+        ax.set_ylabel('')
+        ax.set_xlabel('')
+        ax.set_box_aspect(1)
+
+    plt.tight_layout()
+    plt.savefig(f'{path}/figures/Fig0_LR_effect1.png', dpi=300)
+
+def LR_effect2():
+    data = build_pivot_table('map', agent='MixPol', min_q=.01, max_q=.99)
+    data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
+    vendors  = data['b_type'].unique()
+    data = pd.concat([data.set_index(['sub_id', 'is_PAT', 'feedback_type', 'g', 'f1', 'f2']).groupby('b_type'
+                    )['log_alpha'].get_group(key) for key in vendors],axis=1)
+    data.columns = ['sta', 'vol']
+    data['log_diff'] = data['sta'] - data['vol']
+    data.reset_index(inplace=True)
+    data = data.groupby(by=['sub_id']).mean().reset_index()
+    data = data.dropna()
+
+    syndromes = ['g', 'f1', 'f2']
+    nr, nc = 1, len(syndromes)
+    fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharey=True)
+    tar = 'log_diff'
+    
+    for i, pred in enumerate(syndromes):
+
+        xmin, xmax = data[pred].values.min()-.4, data[pred].values.max()+.4
+        x = data[pred]
+        y = data[tar]
+        corr, pval = pearsonr(x.values, y.values)
+        x = sm.add_constant(x)
+        res = sm.OLS(y, x).fit()
+        #print(res.summary())
+        print(f' {tar}: r={corr}, p={pval}')
+        
+        ax  = axs[i]
+        x = np.linspace(xmin, xmax, 100)
+        sns.scatterplot(x=pred, y=tar, data=data, s=100, 
+                            color=viz.b1, ax=ax)
+        ax.set_xlim([xmin, xmax]) # for the regression predictor 
+        sns.regplot(x=pred, y=tar, data=data, truncate=False,
+                        color=[.2, .2, .2], scatter=False, ax=ax)
+        ax.set_ylabel(tar)
+        ax.set_xlabel(pred)
+        ax.set_xlim([xmin, xmax])
+        #ax.set_ylim([-3., 3.])
+        ax.set_box_aspect(1)
+
+
+    plt.tight_layout()
+    plt.savefig(f'{path}/figures/Fig0_LR_effect2.png', dpi=300)
+
+
 def HC_PAT_policy():
 
     tar    = ['l1', 'l2', 'l3']
@@ -146,10 +185,7 @@ def HC_PAT_policy():
         ax.set_ylabel('')
         ax.set_xlabel('')
         ax.set_box_aspect(1)
-        #ax.set_title(f'{titles[idx]}')
-        #ax.set_title(f'{titles[idx]} {for_title[idx]}')
-        # if idx == 1: ax.legend(bbox_to_anchor=(1.4, 0), loc='lower right')
-        # else: ax.get_legend().remove()
+
     plt.tight_layout()
     plt.show()
     plt.savefig(f'{path}/figures/Fig1_HC-PAT-policies.png', dpi=300)
@@ -157,14 +193,12 @@ def HC_PAT_policy():
 def Policy_Rew():
 
     tar    = ['l1', 'l2', 'l3']
-    titles = [r'$logit(w_{\text{EU}})$: EU', r'$logit(w_2)$: MO', r'$logit(w_3)$: HA']
 
     data = build_pivot_table('map', min_q=.01, max_q=.99)
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
     data['rew'] = data['rew'].apply(lambda x: x*100)
     data['rawRew'] = data['rawRew'].apply(lambda x: x*100)
     xmin, xmax = -4.9, 4.9 
-    #data[tar].min().min()-.1, data[tar].max().max()+.1
 
     nr, nc = 2, len(tar)
     fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharey='row', sharex='col')
@@ -180,8 +214,7 @@ def Policy_Rew():
             res = sm.OLS(y, x).fit()
             #print(res.summary())
             print(f' {feedback_type}-{lamb}: r={corr:.2f}, p={pval:.3f}')
-            #regress = lambda x: res.params['const'] + res.params[lamb]*x
-
+            
             ax  = axs[j, i]
             x = np.linspace(xmin, xmax, 100)
             sns.scatterplot(x=lamb, y='rawRew', data=sel_data, s=100, 
@@ -263,7 +296,7 @@ def pred_biFactor():
 
 def pi_effect():
 
-    fname = f'{path}/simulations/MixPol/simsubj-gain_exp1data-sta_first.csv'
+    fname = f'{path}/simulations/exp1data/MixPol/simsubj-exp1data-sta_first.csv'
     data = pd.read_csv(fname)
 
     data = data.groupby(by=['trials'])[['l1_effect', 'l2_effect', 'l3_effect']].mean()
@@ -288,14 +321,43 @@ def pi_effect():
     plt.tight_layout()
     plt.savefig(f'{path}/figures/effect.png', dpi=300)
 
+def Block_Group_effect():
+
+    tar = ['l1', 'l2', 'l3']
+   
+    nr, nc = 2, len(tar)
+    fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharey=True, sharex=True)
+       
+    for j in range(2):
+        data = build_pivot_table('map', min_q=.01, max_q=.99)
+        data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
+        sel_data = data.query(f'is_PAT=={j}').groupby(by=['sub_id', 'b_type', 'feedback_type']).mean().reset_index()
+        t_test(sel_data, 'b_type=="sta"', 'b_type=="vol"', tar=tar)
+        for idx in range(nc):
+            ax  = axs[j, idx]
+            sns.boxplot(x='b_type', y=f'{tar[idx]}', data=sel_data, width=.65,
+                            palette=viz.BluePairs, ax=ax)
+            ax.set_xlim([-.8, 1.8])
+            ax.set_ylim([-5, 5.8])
+            ax.set_xticks([0, 1])
+            ax.set_xticklabels(['Stable', 'Volatile'])
+            ax.set_ylabel('')
+            ax.set_xlabel('')
+            ax.set_box_aspect(1)
+        
+    plt.tight_layout()
+    plt.show()
+    plt.savefig(f'{path}/figures/Fig4_block-group-policies.png', dpi=300)
 
 if __name__ == '__main__':
 
     #quantTable()
     #viz_Human()
-    LR_effect()
+    #LR_effect1()
+    #LR_effect2()
     #viz_PiReward()
-    HC_PAT_policy()
+    #HC_PAT_policy()
     #Policy_Rew()
     #pred_biFactor()
-    #pi_effect()
+    pi_effect()
+    #Block_Group_effect()
