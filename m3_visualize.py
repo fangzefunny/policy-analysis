@@ -323,7 +323,7 @@ def pred_biFactor():
 
 def pi_effect():
 
-    fname = f'{path}/simulations/exp1data/MixPol/simsubj-exp1data-sta_first.csv'
+    fname = f'{path}/simulations/exp1data/MixPol/simsubj-exp1data-sta_first-HC.csv'
     data = pd.read_csv(fname)
 
     data = data.groupby(by=['trials'])[['l1_effect', 'l2_effect', 'l3_effect']].mean()
@@ -344,7 +344,7 @@ def pi_effect():
     sns.lineplot(x=np.arange(180), y=psi, color='k', ls='--')
     ax.set_ylabel('Prob. of choosing \nthe left stimulus')
     ax.set_xlabel('Trials')
-    #ax.set_ylim([0, 1.2])
+    ax.set_ylim([-.1, 1.1])
     ax.legend()
     plt.tight_layout()
     plt.savefig(f'{path}/figures/effect.png', dpi=300)
@@ -371,7 +371,7 @@ def pi_effect2():
     ax.set_ylabel('Prob. of choosing \nthe left stimulus')
     ax.set_xlabel('Trials')
     ax.legend()
-    ax.set_ylim([0, 1])
+    ax.set_ylim([-.1, 1.1])
     plt.tight_layout()
     plt.savefig(f'{path}/figures/effect2.png', dpi=300)
 

@@ -314,9 +314,7 @@ class MixPol(baseAgent):
         pi_M  = softmax(self.beta*mag)
         w0, w1, w2 = self.get_w(b, f)
         # creat the mixature model 
-        self.pi_effect = [(pi_SM[1]-pi_SM[0])+.5, 
-                          (pi_M[1]-pi_M[0])+.5, 
-                          (self.q_A[1]-self.q_A[0])+.5]
+        self.pi_effect = [pi_SM[1], pi_M[1], self.q_A[1]]
         return w0*pi_SM + w1*pi_M + w2*self.q_A 
 
     def get_w(self, b, f):

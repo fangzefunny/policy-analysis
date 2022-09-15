@@ -134,6 +134,8 @@ def sim_subj(mode, seed, n_samples=3):
     n_params = 18
     fname    = f'{path}/fits/{args.data_set}/MixPol/params-{args.data_set}-{sub_id}-map.csv'      
     params   = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
+    params[:3] = [3.9758, 9.5894, 4.4965]
+    params[10] = 4.3274
         
     rng    = np.random.RandomState(seed)
     
@@ -178,5 +180,5 @@ if __name__ == '__main__':
     #sim_paral(pool, data, args)
 
     # STEP 3: SIM SUBJECT
-    #sim_subj_paral(pool, 'HC', args)
+    sim_subj_paral(pool, 'HC', args)
     sim_subj_paral(pool, 'PAT', args)
