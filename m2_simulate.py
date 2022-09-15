@@ -79,10 +79,10 @@ def sim_paral(pool, data, args):
         fname += f'sim-{args.data_set}-{args.method}-idx{i}.csv'
         sim_data.to_csv(fname, index = False, header=True)
 
-def sim_subj_paral(pool, args):
+def sim_subj_paral(pool, mode, args, n_sim=500):
 
-    res = [pool.apply_async(sim_subj, args=[args.seed+i])
-                            for i in range(args.n_sim)]
+    res = [pool.apply_async(sim_subj, args=[mode, args.seed+i])
+                            for i in range(n_sim)]
     sim_sta_first = []
     sim_vol_first = [] 
     for _, p in enumerate(res):
@@ -90,10 +90,10 @@ def sim_subj_paral(pool, args):
         sim_sta_first += sim_data['sta_first']
         sim_vol_first += sim_data['vol_first']
     
-    fname = f'{path}/simulations/{args.data_set}/{args.agent_name}/simsubj-{args.data_set}-sta_first.csv'
+    fname = f'{path}/simulations/{args.data_set}/{args.agent_name}/simsubj-{args.data_set}-sta_first-{mode}.csv'
     sim_sta_first = pd.concat(sim_sta_first, ignore_index=True)
     sim_sta_first.to_csv(fname, index = False, header=True)
-    fname = f'{path}/simulations/{args.data_set}/{args.agent_name}/simsubj-{args.data_set}-vol_first.csv'
+    fname = f'{path}/simulations/{args.data_set}/{args.agent_name}/simsubj-{args.data_set}-vol_first-{mode}.csv'
     sim_vol_first = pd.concat(sim_vol_first, ignore_index=True)
     sim_vol_first.to_csv(fname, index = False, header=True)
 
@@ -123,15 +123,18 @@ def get_data(rng, n_trials=180, sta_first=True):
 
     return state, psi, b_type
 
-def sim_subj(seed, n_samples=3):
+def sim_subj(mode, seed, n_samples=3):
        
     # decide what to collect
     subj   = model(MixPol)
-    params = [3.9758,9.5894,
-              4.4965,0.4819,-0.5593,0.0775,
-              4.857,0.1365,-0.1603,0.0238,
-              4.3274,0.7131,-0.7087,-0.0042,
-              4.7329,0.4153,-0.3411,-0.0745,]
+    if mode == 'HC':
+        sub_id = 'cb3'
+    elif mode == 'PAT':
+        sub_id = 'cb25'
+    n_params = 18
+    fname    = f'{path}/fits/{args.data_set}/MixPol/params-{args.data_set}-{sub_id}-map.csv'      
+    params   = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
+        
     rng    = np.random.RandomState(seed)
     
     # simulate block n times
@@ -175,4 +178,5 @@ if __name__ == '__main__':
     #sim_paral(pool, data, args)
 
     # STEP 3: SIM SUBJECT
-    sim_subj_paral(pool, args)
+    #sim_subj_paral(pool, 'HC', args)
+    sim_subj_paral(pool, 'PAT', args)

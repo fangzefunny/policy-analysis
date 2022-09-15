@@ -344,9 +344,36 @@ def pi_effect():
     sns.lineplot(x=np.arange(180), y=psi, color='k', ls='--')
     ax.set_ylabel('Prob. of choosing \nthe left stimulus')
     ax.set_xlabel('Trials')
+    #ax.set_ylim([0, 1.2])
     ax.legend()
     plt.tight_layout()
     plt.savefig(f'{path}/figures/effect.png', dpi=300)
+
+def pi_effect2():
+
+    psi  = np.zeros([180])
+    psi[:90]     = .7
+    psi[90:110]  = .2
+    psi[110:130] = .8
+    psi[130:150] = .2
+    psi[150:170] = .8
+    psi[170:180] = .2
+
+    fig, ax = plt.subplots(1, 1, figsize=(10, 4))
+    ax = ax 
+    for i, g in enumerate(['HC', 'PAT']):
+        fname = f'{path}/simulations/exp1data/MixPol/simsubj-exp1data-sta_first-{g}.csv'
+        data = pd.read_csv(fname)
+        data = data.groupby(by=['trials'])[['pi']].mean()
+        sns.lineplot(x='trials', y=f'pi', lw=3, 
+                    data=data, color=viz.RedPairs[i], label=g)
+    sns.lineplot(x=np.arange(180), y=psi, color='k', ls='--')
+    ax.set_ylabel('Prob. of choosing \nthe left stimulus')
+    ax.set_xlabel('Trials')
+    ax.legend()
+    ax.set_ylim([0, 1])
+    plt.tight_layout()
+    plt.savefig(f'{path}/figures/effect2.png', dpi=300)
 
 def Block_Group_effect():
 
@@ -384,8 +411,10 @@ if __name__ == '__main__':
     #LR_effect2()
     #viz_PiReward()
     #HC_PAT_policy()
-    STA_VOL_policy()
+    #STA_VOL_policy()
     #Policy_Rew()
     #pred_biFactor()
-    #pi_effect()
+    pi_effect()
+    pi_effect2()
     #Block_Group_effect()
+    
