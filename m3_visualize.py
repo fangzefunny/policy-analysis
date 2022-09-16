@@ -40,6 +40,33 @@ def quantTable(agents= ['MixPol', 'GagModel', 'RlRisk']):
     for m in agents:
         print(f'{m}({eval(m).n_params}) nll: {crs[m]["nll"]:.3f}, aic: {crs[m]["aic"]:.3f}')
 
+def viz_Exp():
+
+    # load data 
+    psi  = np.zeros([180])
+    psi[:90]     = .7
+    psi[90:110]  = .2
+    psi[110:130] = .8
+    psi[130:150] = .2
+    psi[150:170] = .8
+    psi[170:180] = .2
+
+    fig, ax = plt.subplots(1, 1, figsize=(6, 5))
+    sns.lineplot(x=list(range(90)), y=psi[:90], 
+                color=viz.b1, ls='--', ax=ax)
+    ax.vlines(x=90, ymin=.2, ymax=.7, color=viz.b1, ls='--')
+    sns.lineplot(x=list(range(90, 180)), y=psi[90:], 
+                color=viz.b2, ls='--', ax=ax)
+    ax.fill_between(list(range(-5,90)), 
+                        y1=[1]*95, color=[.95, .95, .95])
+    ax.set_xlim([-5, 185])
+    ax.set_ylim([0, 1])
+    #ax.set_xlabel('Trials')
+    #ax.set_ylabel('The left stimulus\nresults in feedback')
+    plt.tight_layout()
+    plt.savefig(f'{path}/figures/Fig0_Exp_Design.png', dpi=300)
+
+
 def viz_Human():
 
     # load data 
@@ -407,6 +434,7 @@ if __name__ == '__main__':
 
     #quantTable()
     #viz_Human()
+    viz_Exp()
     #LR_effect1()
     #LR_effect2()
     #viz_PiReward()
@@ -414,7 +442,7 @@ if __name__ == '__main__':
     #STA_VOL_policy()
     #Policy_Rew()
     #pred_biFactor()
-    pi_effect()
-    pi_effect2()
+    #pi_effect()
+    #pi_effect2()
     #Block_Group_effect()
     
