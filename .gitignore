@@ -14,6 +14,7 @@ results/
 tables/
 fits/
 backup/
+simulations/
 analyses/
 
 # ignore some debug files
