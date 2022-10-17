@@ -1,6 +1,6 @@
 import numpy as np 
 import seaborn as sns 
-import matplotlib.colors
+import matplotlib
 
 class viz:
     '''Define the default visualize configure
@@ -85,3 +85,5 @@ class viz:
         # Larger scale for plots in notebooks
         sns.set_context('talk')
         sns.set_style("ticks", {'axes.grid': False})
+        matplotlib.rcParams['font.sans-serif'] = "Arial"
+        matplotlib.rcParams['font.family'] = "sans-serif"
