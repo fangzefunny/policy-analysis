@@ -134,8 +134,8 @@ class gagRL(baseAgent):
 
 # ---------  Two baselines ----------- #
 
-class GagModel(gagRL):
-    name     = 'Gagne best model'
+class FLR(gagRL):
+    name     = 'flexible learning rate'
     bnds     = [(0, 1), (0, 50), (0, 1)] + [(0, 1), (0, 50), (0, 1)]*4
     pbnds    = [(0,.5), (0, 10), (0, 1)] + [(0,.5), (0, 10), (0, 1)]*4
     p_name   = ['α_act', 'β_act', 'r'] + get_param_name(['α', 'β', 'λ'])
@@ -196,8 +196,8 @@ class GagModel(gagRL):
         b, f = self.buffer.sample('b_type', 'f_type')
         return eval(f'self.alpha_{b}_{f}') 
 
-class RlRisk(gagRL):
-    name     = 'RL with risk preference'
+class RP(gagRL):
+    name     = 'risk preference'
     bnds     = [(0, 30)] + [(0, 1), (0, 20)]*4
     pbnds    = [(0, 10)] + [(0,.5), (0, 20)]*4
     p_name   = ['β'] + get_param_name(['α', 'γ'])
@@ -232,16 +232,13 @@ class RlRisk(gagRL):
         ps = np.clip(eval(f'self.gamma_{b}_{f}')*(self.p-.5)+.5, 0, 1)
         self.p_S = np.array([1-ps, ps])
 
-
-# ---------  Mixture models ---------- #
-
-class MixPol(baseAgent):
-    name     = 'mixture policy model'
-    bnds     = [(0,50), (0,50)] + ([(0,50)]+[(-40,40)]*3) * 4
-    pbnds    = [(0, 3), (0, 5)] + ([(0, 2)]+[(-5, 5)]*3) * 4
+class MOS(gagRL):
+    name     = 'mixture of strategy'
+    bnds     = [(0, 1), (0,50)] + ([(0, 1)]+[(-40,40)]*3) * 4
+    pbnds    = [(0,.5), (0, 5)] + ([(0,.5)]+[(-5, 5)]*3) * 4
     p_name   = ['α_act', 'β']   + get_param_name(['α', 'λ1', 'λ2', 'λ3'])
-    p_priors = [gamma(a=3, scale=3), gamma(a=3, scale=3)] + \
-                    ([gamma(a=3, scale=3)]+[norm(loc=0, scale=10)]*3) * 4
+    p_priors = [beta(a=2, b=2), gamma(a=3, scale=3)] + \
+                    ([beta(a=2, b=2)]+[norm(loc=0, scale=10)]*3) * 4
     n_params = len(bnds)
     voi      = ['ps', 'pi', 'alpha', 'w1', 'w2', 'w3', 'l1', 
                 'l2', 'l3', 'l1_effect', 'l2_effect', 'l3_effect']
@@ -277,13 +274,11 @@ class MixPol(baseAgent):
         self.l2_vol_loss    = params[17]
     
     def _init_Critic(self):
-        self.theta = 0 
-        self.p     = sigmoid(self.theta)
-        self.p_S   = np.array([1-self.p, self.p]) 
+        self.p   = .5
+        self.p_S = np.array([1-self.p, self.p]) 
     
     def _init_Actor(self):
-        self.phi = 0 
-        self.q   = sigmoid(self.phi)
+        self.q   = .5
         self.q_A = np.array([1-self.q, self.q]) 
         self.pi_effect = [1/3, 1/3, 1/3]
 
@@ -295,14 +290,12 @@ class MixPol(baseAgent):
 
     def _learnCritic(self):
         b, f, o = self.buffer.sample('b_type', 'f_type', 'state')
-        self.theta += eval(f'self.alpha_{b}_{f}') * (o - self.p)
-        self.p = sigmoid(self.theta)
+        self.p += eval(f'self.alpha_{b}_{f}') * (o - self.p)
         self.p_S = np.array([1-self.p, self.p])
 
     def _learnActor(self):
         a = self.buffer.sample('act')
-        self.phi += self.alpha_act * (a - self.q)
-        self.q = sigmoid(self.phi)
+        self.q += self.alpha_act * (a - self.q)
         self.q_A = np.array([1-self.q, self.q])
 
     #  ------ response strategy ------- #
@@ -367,3 +360,45 @@ class MixPol(baseAgent):
 
     def print_l3_effect(self):
         return self.pi_effect[2]
+
+# ---------  Mixture models ---------- #
+
+class MixPol(MOS):
+    name     = 'mixture policy model'
+    bnds     = [(0,50), (0,50)] + ([(0,50)]+[(-40,40)]*3) * 4
+    pbnds    = [(0, 3), (0, 5)] + ([(0, 2)]+[(-5, 5)]*3) * 4
+    p_name   = ['α_act', 'β']   + get_param_name(['α', 'λ1', 'λ2', 'λ3'])
+    p_priors = [gamma(a=3, scale=3), gamma(a=3, scale=3)] + \
+                    ([gamma(a=3, scale=3)]+[norm(loc=0, scale=10)]*3) * 4
+    n_params = len(bnds)
+    voi      = ['ps', 'pi', 'alpha', 'w1', 'w2', 'w3', 'l1', 
+                'l2', 'l3', 'l1_effect', 'l2_effect', 'l3_effect']
+
+    def _init_Critic(self):
+        self.theta = 0 
+        self.p     = sigmoid(self.theta)
+        self.p_S   = np.array([1-self.p, self.p]) 
+    
+    def _init_Actor(self):
+        self.phi = 0 
+        self.q   = sigmoid(self.phi)
+        self.q_A = np.array([1-self.q, self.q]) 
+        self.pi_effect = [1/3, 1/3, 1/3]
+
+    #  ------ learning the probability ------- #
+
+    def learn(self):
+        self._learnCritic()
+        self._learnActor()
+
+    def _learnCritic(self):
+        b, f, o = self.buffer.sample('b_type', 'f_type', 'state')
+        self.theta += eval(f'self.alpha_{b}_{f}') * (o - self.p)
+        self.p = sigmoid(self.theta)
+        self.p_S = np.array([1-self.p, self.p])
+
+    def _learnActor(self):
+        a = self.buffer.sample('act')
+        self.phi += self.alpha_act * (a - self.q)
+        self.q = sigmoid(self.phi)
+        self.q_A = np.array([1-self.q, self.q])

@@ -6,6 +6,9 @@ import statsmodels.api as sm
 from statsmodels.formula.api import ols 
 from statsmodels.stats.anova import anova_lm
 
+from tabulate import tabulate
+import pingouin as pg 
+
 import seaborn as sns 
 import matplotlib.pyplot as plt 
 
@@ -56,12 +59,12 @@ def model_cmp(quant_crs):
                 t={res[0]:.3f} p={res[1]:.3f}''')
 
 def build_pivot_table(method, agent='MixPol', min_q=.01, max_q=.99):
-    tar_tail = ['l1', 'l2', 'l3'] if agent == 'MixPol' else []
+    tar_tail = ['l1', 'l2', 'l3'] if agent in ['MixPol', 'MOS'] else []
     features = ['rawRew', 'rew', 'match', 'alpha']+tar_tail
     exp1data = pd.read_csv(f'{path}/../simulations/exp1data/{agent}/sim-exp1data-{method}-idx0.csv')
     sub_syndrome = pd.read_csv(f'{path}/../data/bifactor.csv')
     sub_syndrome = sub_syndrome.rename(columns={'Unnamed: 0': 'sub_id', 'F1.': 'f1', 'F2.':'f2'})
-    pivot_table  = exp1data.groupby(by=['sub_id', 'b_type', 'feedback_type', 'group']).mean()[features].reset_index()
+    pivot_table  = exp1data.groupby(by=['sub_id', 'b_type', 'feedback_type', 'group'])[features].mean().reset_index()
     
     #datainfo(pivot_tables)
 
@@ -93,14 +96,9 @@ def t_test(data, cond1, cond2, tar=['l1', 'l2', 'l3']):
     for i in tar:
         x = data.query(cond1)[i].values
         y = data.query(cond2)[i].values
-        res = ttest_ind(x, y)
-        if res[1] < .01:
-            for_title.append('**')
-        elif res[1] < .05:
-            for_title.append('*')
-        else:
-            for_title.append('')
-        print(f'{i} t-test: t={res[0]:.4f}, p-val:{res[1]:.4f}')
+        print(f'\n------{i}:')
+        print(tabulate(pg.ttest(x, y), headers='keys', tablefmt='fancy_grid'))
+
     return for_title
 
 def main_effect(pivot_table, pred, cond1, cond2,

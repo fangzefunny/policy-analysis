@@ -1,627 +1,424 @@
-(py3) zfang@adacog-gpu:~/Documents/github/policy-analysis$ ^C
-(py3) zfang@adacog-gpu:~/Documents/github/policy-analysis$ bash fitmap.sh
-Data set=exp1data Model=MixPol Method=map
+bash fitmap.sh
+Data set=exp1data Model=MOS Method=map
     Using 40 parallel CPU cores
  
-Fitting MixPol subj cb79, progress: 0.00%
-   loss: 339.9976
-Fitting MixPol subj cb84, progress: 1.14%
-   loss: 352.3460
-Fitting MixPol subj cb12, progress: 2.27%
-   loss: 269.8338
-Fitting MixPol subj cb49, progress: 3.41%
-   loss: 214.2929
-Fitting MixPol subj cb57, progress: 4.55%
-   loss: 229.2766
-Fitting MixPol subj cb77, progress: 5.68%
-   loss: 319.4977
-Fitting MixPol subj cb17, progress: 6.82%
-   loss: 276.8290
-Fitting MixPol subj cb14, progress: 7.95%
-   loss: 334.2474
-Fitting MixPol subj cb22, progress: 9.09%
-   loss: 175.6047
-Fitting MixPol subj cb13, progress: 10.23%
-   loss: 323.2863
-Fitting MixPol subj n39, progress: 11.36%
-   loss: 264.2227
-Fitting MixPol subj n28, progress: 12.50%
-   loss: 210.3883
-Fitting MixPol subj n30, progress: 13.64%
-   loss: 209.5505
-Fitting MixPol subj n23, progress: 14.77%
-   loss: 207.0175
-Fitting MixPol subj cb108, progress: 15.91%
-   loss: 328.9391
-Fitting MixPol subj n17, progress: 17.05%
-   loss: 242.0094
-Fitting MixPol subj cb73, progress: 18.18%
-   loss: 347.3524
-Fitting MixPol subj cb3, progress: 19.32%
-   loss: 231.8207
-Fitting MixPol subj n31, progress: 20.45%
-   loss: 289.9817
-Fitting MixPol subj cb5, progress: 21.59%
-   loss: 334.2261
-Fitting MixPol subj n33, progress: 22.73%
-   loss: 222.1067
-Fitting MixPol subj n40, progress: 23.86%
-   loss: 142.3088
-Fitting MixPol subj cb28, progress: 25.00%
-   loss: 333.8510
-Fitting MixPol subj cb75, progress: 26.14%
-   loss: 322.5075
-Fitting MixPol subj n13, progress: 27.27%
-   loss: 229.6447
-Fitting MixPol subj cb2, progress: 28.41%
-   loss: 345.1965
-Fitting MixPol subj n24, progress: 29.55%
-   loss: 204.1677
-Fitting MixPol subj cb29, progress: 30.68%
-   loss: 112.9207
-Fitting MixPol subj n20, progress: 31.82%
-   loss: 282.5561
-Fitting MixPol subj cb88, progress: 32.95%
-   loss: 338.8830
-Fitting MixPol subj cb68, progress: 34.09%
-   loss: 238.9556
-Fitting MixPol subj cb76, progress: 35.23%
-   loss: 323.7962
-Fitting MixPol subj cb97, progress: 36.36%
-   loss: 313.7044
-Fitting MixPol subj cb25, progress: 37.50%
-   loss: 314.2592
-Fitting MixPol subj cb20, progress: 38.64%
-   loss: 306.3736
-Fitting MixPol subj cb80, progress: 39.77%
-   loss: 338.5792
-Fitting MixPol subj n25, progress: 40.91%
-   loss: 256.3922
-Fitting MixPol subj cb96, progress: 42.05%
-   loss: 255.9545
-Fitting MixPol subj cb99, progress: 43.18%
-   loss: 318.6718
-Fitting MixPol subj cb47, progress: 44.32%
-   loss: 228.9073
-Fitting MixPol subj cb65, progress: 45.45%
-   loss: 352.4534
-Fitting MixPol subj n10, progress: 46.59%
-   loss: 229.7026
-Fitting MixPol subj cb55, progress: 47.73%
-   loss: 275.9401
-Fitting MixPol subj cb52, progress: 48.86%
-   loss: 238.0027
-Fitting MixPol subj cb100, progress: 50.00%
-   loss: 223.4774
-Fitting MixPol subj cb92, progress: 51.14%
-   loss: 322.0026
-Fitting MixPol subj cb6, progress: 52.27%
-   loss: 274.5384
-Fitting MixPol subj n32, progress: 53.41%
-   loss: 262.6751
-Fitting MixPol subj n41, progress: 54.55%
-   loss: 221.1675
-Fitting MixPol subj n35, progress: 55.68%
-   loss: 224.2349
-Fitting MixPol subj cb35, progress: 56.82%
-   loss: 273.3283
-Fitting MixPol subj cb45, progress: 57.95%
-   loss: 322.1272
-Fitting MixPol subj n26, progress: 59.09%
-   loss: 210.2687
-Fitting MixPol subj n11, progress: 60.23%
-   loss: 316.9872
-Fitting MixPol subj cb63, progress: 61.36%
-   loss: 323.7212
-Fitting MixPol subj cb7, progress: 62.50%
-   loss: 298.2720
-Fitting MixPol subj cb19, progress: 63.64%
-   loss: 236.7514
-Fitting MixPol subj cb103, progress: 64.77%
-   loss: 254.8541
-Fitting MixPol subj cb74, progress: 65.91%
-   loss: 326.1420
-Fitting MixPol subj cb200, progress: 67.05%
-   loss: 119.0488
-Fitting MixPol subj cb98, progress: 68.18%
-   loss: 249.1319
-Fitting MixPol subj cb89, progress: 69.32%
-   loss: 207.0375
-Fitting MixPol subj n36, progress: 70.45%
-   loss: 237.0868
-Fitting MixPol subj n38, progress: 71.59%
-   loss: 193.4125
-Fitting MixPol subj n34, progress: 72.73%
-   loss: 212.6382
-Fitting MixPol subj cb1, progress: 73.86%
-   loss: 210.7886
-Fitting MixPol subj n37, progress: 75.00%
-   loss: 223.8992
-Fitting MixPol subj cb9, progress: 76.14%
-   loss: 301.7955
-Fitting MixPol subj cb101, progress: 77.27%
-   loss: 302.4299
-Fitting MixPol subj n42, progress: 78.41%
-   loss: 261.1982
-Fitting MixPol subj cb107, progress: 79.55%
-   loss: 248.9825
-Fitting MixPol subj n14, progress: 80.68%
-   loss: 260.6994
-Fitting MixPol subj n3, progress: 81.82%
-   loss: 301.0701
-Fitting MixPol subj cb53, progress: 82.95%
-   loss: 280.8961
-Fitting MixPol subj cb4, progress: 84.09%
-   loss: 190.8500
-Fitting MixPol subj n22, progress: 85.23%
-   loss: 219.3654
-Fitting MixPol subj cb46, progress: 86.36%
-   loss: 289.8568
-Fitting MixPol subj cb18, progress: 87.50%
-   loss: 300.2877
-Fitting MixPol subj n19, progress: 88.64%
-   loss: 283.0537
-Fitting MixPol subj cb105, progress: 89.77%
-   loss: 347.5160
-Fitting MixPol subj n21, progress: 90.91%
-   loss: 231.5455
-Fitting MixPol subj cb44, progress: 92.05%
-   loss: 352.2290
-Fitting MixPol subj cb70, progress: 93.18%
-   loss: 345.3046
-Fitting MixPol subj cb30, progress: 94.32%
-   loss: 121.4974
-Fitting MixPol subj cb82, progress: 95.45%
-   loss: 310.4950
-Fitting MixPol subj n8, progress: 96.59%
-   loss: 226.6597
-Fitting MixPol subj cb81, progress: 97.73%
-   loss: 311.5324
-Fitting MixPol subj n29, progress: 98.86%
-   loss: 351.6640
+Fitting MOS subj cb96, progress: 0.00%
+   loss: 282.2539
+Fitting MOS subj cb7, progress: 1.14%
+   loss: 319.8286
+Fitting MOS subj cb29, progress: 2.27%
+   loss: 123.8587
+Fitting MOS subj cb46, progress: 3.41%
+   loss: 311.9366
+Fitting MOS subj cb92, progress: 4.55%
+   loss: 341.5118
+Fitting MOS subj cb19, progress: 5.68%
+   loss: 260.2480
+Fitting MOS subj n32, progress: 6.82%
+   loss: 284.7018
+Fitting MOS subj n40, progress: 7.95%
+   loss: 153.4599
+Fitting MOS subj cb73, progress: 9.09%
+   loss: 368.1473
+Fitting MOS subj n11, progress: 10.23%
+   loss: 337.2467
+Fitting MOS subj n33, progress: 11.36%
+   loss: 247.6928
+Fitting MOS subj cb1, progress: 12.50%
+   loss: 231.7926
+Fitting MOS subj cb68, progress: 13.64%
+   loss: 257.5049
+Fitting MOS subj n17, progress: 14.77%
+   loss: 270.8540
+Fitting MOS subj n30, progress: 15.91%
+   loss: 232.0073
+Fitting MOS subj n26, progress: 17.05%
+   loss: 239.0845
+Fitting MOS subj cb45, progress: 18.18%
+   loss: 342.8645
+Fitting MOS subj cb49, progress: 19.32%
+   loss: 233.3576
+Fitting MOS subj cb76, progress: 20.45%
+   loss: 344.8671
+Fitting MOS subj n23, progress: 21.59%
+   loss: 235.8543
+Fitting MOS subj cb17, progress: 22.73%
+   loss: 302.1002
+Fitting MOS subj n24, progress: 23.86%
+   loss: 229.9152
+Fitting MOS subj cb88, progress: 25.00%
+   loss: 357.9951
+Fitting MOS subj cb35, progress: 26.14%
+   loss: 295.4005
+Fitting MOS subj n42, progress: 27.27%
+   loss: 283.1556
+Fitting MOS subj cb2, progress: 28.41%
+   loss: 366.1947
+Fitting MOS subj cb4, progress: 29.55%
+   loss: 219.2480
+Fitting MOS subj cb89, progress: 30.68%
+   loss: 228.4332
+Fitting MOS subj cb22, progress: 31.82%
+   loss: 185.2914
+Fitting MOS subj cb25, progress: 32.95%
+   loss: 334.5506
+Fitting MOS subj n36, progress: 34.09%
+   loss: 257.8264
+Fitting MOS subj cb12, progress: 35.23%
+   loss: 290.7497
+Fitting MOS subj cb98, progress: 36.36%
+   loss: 271.3065
+Fitting MOS subj n19, progress: 37.50%
+   loss: 304.1283
+Fitting MOS subj cb70, progress: 38.64%
+   loss: 364.6544
+Fitting MOS subj cb97, progress: 39.77%
+   loss: 335.7904
+Fitting MOS subj cb105, progress: 40.91%
+   loss: 366.6690
+Fitting MOS subj cb79, progress: 42.05%
+   loss: 359.3860
+Fitting MOS subj n8, progress: 43.18%
+   loss: 251.1393
+Fitting MOS subj cb14, progress: 44.32%
+   loss: 356.4972
+Fitting MOS subj cb108, progress: 45.45%
+   loss: 347.7219
+Fitting MOS subj cb100, progress: 46.59%
+   loss: 248.7373
+Fitting MOS subj n39, progress: 47.73%
+   loss: 285.0837
+Fitting MOS subj n3, progress: 48.86%
+   loss: 320.6914
+Fitting MOS subj n22, progress: 50.00%
+   loss: 238.5910
+Fitting MOS subj cb13, progress: 51.14%
+   loss: 344.1912
+Fitting MOS subj cb107, progress: 52.27%
+   loss: 273.9686
+Fitting MOS subj cb103, progress: 53.41%
+   loss: 277.3714
+Fitting MOS subj cb65, progress: 54.55%
+   loss: 372.0454
+Fitting MOS subj n20, progress: 55.68%
+   loss: 309.5463
+Fitting MOS subj n31, progress: 56.82%
+   loss: 314.3250
+Fitting MOS subj n35, progress: 57.95%
+   loss: 251.8475
+Fitting MOS subj cb81, progress: 59.09%
+   loss: 335.1421
+Fitting MOS subj cb44, progress: 60.23%
+   loss: 371.6628
+Fitting MOS subj cb5, progress: 61.36%
+   loss: 354.6967
+Fitting MOS subj cb20, progress: 62.50%
+   loss: 327.4072
+Fitting MOS subj cb55, progress: 63.64%
+   loss: 292.6221
+Fitting MOS subj cb52, progress: 64.77%
+   loss: 260.8660
+Fitting MOS subj cb57, progress: 65.91%
+   loss: 252.4510
+Fitting MOS subj cb18, progress: 67.05%
+   loss: 321.5923
+Fitting MOS subj cb28, progress: 68.18%
+   loss: 355.9425
+Fitting MOS subj cb30, progress: 69.32%
+   loss: 132.6232
+Fitting MOS subj cb77, progress: 70.45%
+   loss: 340.8709
+Fitting MOS subj n38, progress: 71.59%
+   loss: 219.4564
+Fitting MOS subj n25, progress: 72.73%
+   loss: 281.8629
+Fitting MOS subj cb84, progress: 73.86%
+   loss: 372.0188
+Fitting MOS subj n29, progress: 75.00%
+   loss: 371.4980
+Fitting MOS subj n37, progress: 76.14%
+   loss: 252.3692
+Fitting MOS subj cb6, progress: 77.27%
+   loss: 295.0249
+Fitting MOS subj cb53, progress: 78.41%
+   loss: 303.1214
+Fitting MOS subj cb99, progress: 79.55%
+   loss: 337.8925
+Fitting MOS subj n21, progress: 80.68%
+   loss: 253.3741
+Fitting MOS subj cb75, progress: 81.82%
+   loss: 341.9330
+Fitting MOS subj cb80, progress: 82.95%
+   loss: 357.6039
+Fitting MOS subj cb200, progress: 84.09%
+   loss: 129.8890
+Fitting MOS subj cb82, progress: 85.23%
+   loss: 332.0866
+Fitting MOS subj cb47, progress: 86.36%
+   loss: 248.8906
+Fitting MOS subj n14, progress: 87.50%
+   loss: 285.4764
+Fitting MOS subj cb63, progress: 88.64%
+   loss: 343.0172
+Fitting MOS subj cb74, progress: 89.77%
+   loss: 347.2096
+Fitting MOS subj n34, progress: 90.91%
+   loss: 234.3579
+Fitting MOS subj cb9, progress: 92.05%
+   loss: 321.4117
+Fitting MOS subj n10, progress: 93.18%
+   loss: 252.6078
+Fitting MOS subj n28, progress: 94.32%
+   loss: 228.3085
+Fitting MOS subj n13, progress: 95.45%
+   loss: 255.3292
+Fitting MOS subj n41, progress: 96.59%
+   loss: 243.5203
+Fitting MOS subj cb101, progress: 97.73%
+   loss: 323.9817
+Fitting MOS subj cb3, progress: 98.86%
+   loss: 257.3045
 
-parallel computing spend 21901.89 seconds
-Traceback (most recent call last):
-  File "m1_fit.py", line 150, in <module>
-    if args.group=='ind': summary(data, args)
-  File "m1_fit.py", line 128, in summary
-    log = pd.read_csv(fname, index_col=0)
-  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 676, in parser_f
-    return _read(filepath_or_buffer, kwds)
-  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 448, in _read
-    parser = TextFileReader(fp_or_buf, **kwds)
-  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 880, in __init__
-    self._make_engine(self.engine)
-  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 1114, in _make_engine
-    self._engine = CParserWrapper(self.f, **self.options)
-  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 1891, in __init__
-    self._reader = parsers.TextReader(src, **kwds)
-  File "pandas/_libs/parsers.pyx", line 374, in pandas._libs.parsers.TextReader.__cinit__
-  File "pandas/_libs/parsers.pyx", line 674, in pandas._libs.parsers.TextReader._setup_parser_source
-FileNotFoundError: [Errno 2] File /home/zfang/Documents/github/policy-analysis/fits/exp1data/MixPol/params-exp1data-cb79.csv does not exist: '/home/zfang/Documents/github/policy-analysis/fits/exp1data/MixPol/params-exp1data-cb79.csv'
-Simulating MixPol
-    Using 10 parallel CPU cores
+parallel computing spend 24923.95 seconds
+Simulating MOS
+    Using 1 parallel CPU cores
  
-multiprocessing.pool.RemoteTraceback: 
-"""
-Traceback (most recent call last):
-  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/multiprocessing/pool.py", line 125, in worker
-    result = (True, func(*args, **kwds))
-  File "m2_simulate.py", line 55, in simulate
-    params = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
-  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 676, in parser_f
-    return _read(filepath_or_buffer, kwds)
-  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 448, in _read
-    parser = TextFileReader(fp_or_buf, **kwds)
-  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 880, in __init__
-    self._make_engine(self.engine)
-  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 1114, in _make_engine
-    self._engine = CParserWrapper(self.f, **self.options)
-  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 1891, in __init__
-    self._reader = parsers.TextReader(src, **kwds)
-  File "pandas/_libs/parsers.pyx", line 374, in pandas._libs.parsers.TextReader.__cinit__
-  File "pandas/_libs/parsers.pyx", line 674, in pandas._libs.parsers.TextReader._setup_parser_source
-FileNotFoundError: [Errno 2] File /home/zfang/Documents/github/policy-analysis/fits/MixPol/params-exp1data-map-cb79.csv does not exist: '/home/zfang/Documents/github/policy-analysis/fits/MixPol/params-exp1data-map-cb79.csv'
-"""
+/home/zfang/Documents/github/policy-analysis/utils/analyze.py:65: FutureWarning: The default value of numeric_only in DataFrameGroupBy.mean is deprecated. In a future version, numeric_only will default to False. Either specify numeric_only or select only columns which should be valid for the function.
+  pivot_table  = exp1data.groupby(by=['sub_id', 'b_type', 'feedback_type', 'group']).mean()[features].reset_index()
+#-------- Clean Outliers ---------- #
 
-The above exception was the direct cause of the following exception:
+    308 rows
+    90.6% data has been retained
+              T         dof alternative     p-val         CI95%   cohen-d     BF10    power
+T-test  3.92884  229.982741   two-sided  0.000113  [0.33, 1.01]  0.470452  177.756  0.97906
+               T         dof alternative         p-val           CI95%   cohen-d       BF10     power
+T-test -5.529657  233.556289   two-sided  8.565148e-08  [-1.75, -0.83]  0.659085  1.625e+05  0.999862
+               T         dof alternative     p-val         CI95%   cohen-d    BF10     power
+T-test  3.519293  228.820359   two-sided  0.000522  [0.27, 0.97]  0.422049  43.565  0.947782
+(py3) zfang@adacog-gpu:~/Documents/github/policy-analysis$ [K(py3) zfang@adacog-gpu:~/Documents/github/policy-analysis$ bash [K rune[Kmaps[K
+bash: runmap: No such file or directory
+(py3) zfang@adacog-gpu:~/Documents/github/policy-analysis$ barun e[Kfitmap.sh
 
-Traceback (most recent call last):
-  File "m2_simulate.py", line 168, in <module>
-    sim_paral(pool, data, args)
-  File "m2_simulate.py", line 75, in sim_paral
-    sim_data = p.get() 
-  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/multiprocessing/pool.py", line 771, in get
-    raise self._value
-FileNotFoundError: [Errno 2] File /home/zfang/Documents/github/policy-analysis/fits/MixPol/params-exp1data-map-cb79.csv does not exist: '/home/zfang/Documents/github/policy-analysis/fits/MixPol/params-exp1data-map-cb79.csv'
-Data set=exp1data Model=GagModel Method=map
+Command 'barun' not found, did you mean:
+
+  command 'bbrun' from deb bbrun (1.6-7)
+
+Try: sudo apt install <deb name>
+
+(py3) zfang@adacog-gpu:~/Documents/github/policy-analysis$ barun fitmap.sh[1P fitmap.sh[1P fitmap.sh[1P fitmap.shs fitmap.shh fitmap.sh
+Data set=exp1data Model=MOS Method=map
     Using 40 parallel CPU cores
  
-Fitting GagModel subj cb79, progress: 0.00%
-   loss: 283.6479
-Fitting GagModel subj cb84, progress: 1.14%
-   loss: 283.2441
-Fitting GagModel subj cb12, progress: 2.27%
-   loss: 200.5203
-Fitting GagModel subj cb49, progress: 3.41%
-   loss: 154.9796
-Fitting GagModel subj cb57, progress: 4.55%
-   loss: 144.3570
-Fitting GagModel subj cb77, progress: 5.68%
-   loss: 254.0651
-Fitting GagModel subj cb17, progress: 6.82%
-   loss: 208.8319
-Fitting GagModel subj cb14, progress: 7.95%
-   loss: 265.7259
-Fitting GagModel subj cb22, progress: 9.09%
-   loss: 150.1205
-Fitting GagModel subj cb13, progress: 10.23%
-   loss: 283.5698
-Fitting GagModel subj n39, progress: 11.36%
-   loss: 182.6245
-Fitting GagModel subj n28, progress: 12.50%
-   loss: 136.5059
-Fitting GagModel subj n30, progress: 13.64%
-   loss: 123.5074
-Fitting GagModel subj n23, progress: 14.77%
-   loss: 155.7033
-Fitting GagModel subj cb108, progress: 15.91%
-   loss: 253.4563
-Fitting GagModel subj n17, progress: 17.05%
-   loss: 174.1702
-Fitting GagModel subj cb73, progress: 18.18%
-   loss: 280.7195
-Fitting GagModel subj cb3, progress: 19.32%
-   loss: 163.3912
-Fitting GagModel subj n31, progress: 20.45%
-   loss: 191.5182
-Fitting GagModel subj cb5, progress: 21.59%
-   loss: 273.4498
-Fitting GagModel subj n33, progress: 22.73%
-   loss: 152.8376
-Fitting GagModel subj n40, progress: 23.86%
-   loss: 109.7838
-Fitting GagModel subj cb28, progress: 25.00%
-   loss: 265.9415
-Fitting GagModel subj cb75, progress: 26.14%
-   loss: 254.5203
-Fitting GagModel subj n13, progress: 27.27%
-   loss: 162.3233
-Fitting GagModel subj cb2, progress: 28.41%
-   loss: 279.0778
-Fitting GagModel subj n24, progress: 29.55%
-   loss: 143.9694
-Fitting GagModel subj cb29, progress: 30.68%
-   loss: 69.3903
-Fitting GagModel subj n20, progress: 31.82%
-   loss: 217.5194
-Fitting GagModel subj cb88, progress: 32.95%
-   loss: 270.9494
-Fitting GagModel subj cb68, progress: 34.09%
-   loss: 222.1336
-Fitting GagModel subj cb76, progress: 35.23%
-   loss: 252.2229
-Fitting GagModel subj cb97, progress: 36.36%
-   loss: 252.2212
-Fitting GagModel subj cb25, progress: 37.50%
-   loss: 248.2507
-Fitting GagModel subj cb20, progress: 38.64%
-   loss: 240.9283
-Fitting GagModel subj cb80, progress: 39.77%
-   loss: 278.6169
-Fitting GagModel subj n25, progress: 40.91%
-   loss: 204.0860
-Fitting GagModel subj cb96, progress: 42.05%
-   loss: 170.5092
-Fitting GagModel subj cb99, progress: 43.18%
-   loss: 227.4445
-Fitting GagModel subj cb47, progress: 44.32%
-   loss: 164.5666
-Fitting GagModel subj cb65, progress: 45.45%
-   loss: 287.5340
-Fitting GagModel subj n10, progress: 46.59%
-   loss: 184.9769
-Fitting GagModel subj cb55, progress: 47.73%
-   loss: 200.8729
-Fitting GagModel subj cb52, progress: 48.86%
-   loss: 174.5040
-Fitting GagModel subj cb100, progress: 50.00%
-   loss: 155.5600
-Fitting GagModel subj cb92, progress: 51.14%
-   loss: 260.9965
-Fitting GagModel subj cb6, progress: 52.27%
-   loss: 196.5031
-Fitting GagModel subj n32, progress: 53.41%
-   loss: 204.3031
-Fitting GagModel subj n41, progress: 54.55%
-   loss: 131.6922
-Fitting GagModel subj n35, progress: 55.68%
-   loss: 160.0012
-Fitting GagModel subj cb35, progress: 56.82%
-   loss: 199.0961
-Fitting GagModel subj cb45, progress: 57.95%
-   loss: 252.6603
-Fitting GagModel subj n26, progress: 59.09%
-   loss: 142.9767
-Fitting GagModel subj n11, progress: 60.23%
-   loss: 254.6801
-Fitting GagModel subj cb63, progress: 61.36%
-   loss: 261.0593
-Fitting GagModel subj cb7, progress: 62.50%
-   loss: 230.1125
-Fitting GagModel subj cb19, progress: 63.64%
-   loss: 145.7975
-Fitting GagModel subj cb103, progress: 64.77%
-   loss: 172.6458
-Fitting GagModel subj cb74, progress: 65.91%
-   loss: 258.7927
-Fitting GagModel subj cb200, progress: 67.05%
-   loss: 114.7919
-Fitting GagModel subj cb98, progress: 68.18%
-   loss: 202.8553
-Fitting GagModel subj cb89, progress: 69.32%
-   loss: 123.1145
-Fitting GagModel subj n36, progress: 70.45%
-   loss: 153.1288
-Fitting GagModel subj n38, progress: 71.59%
-   loss: 141.2183
-Fitting GagModel subj n34, progress: 72.73%
-   loss: 158.3705
-Fitting GagModel subj cb1, progress: 73.86%
-   loss: 162.1114
-Fitting GagModel subj n37, progress: 75.00%
-   loss: 152.0853
-Fitting GagModel subj cb9, progress: 76.14%
-   loss: 225.6150
-Fitting GagModel subj cb101, progress: 77.27%
-   loss: 220.1614
-Fitting GagModel subj n42, progress: 78.41%
-   loss: 198.5470
-Fitting GagModel subj cb107, progress: 79.55%
-   loss: 168.7075
-Fitting GagModel subj n14, progress: 80.68%
-   loss: 194.3782
-Fitting GagModel subj n3, progress: 81.82%
-   loss: 249.7819
-Fitting GagModel subj cb53, progress: 82.95%
-   loss: 210.3340
-Fitting GagModel subj cb4, progress: 84.09%
-   loss: 128.8259
-Fitting GagModel subj n22, progress: 85.23%
-   loss: 173.7273
-Fitting GagModel subj cb46, progress: 86.36%
-   loss: 218.0810
-Fitting GagModel subj cb18, progress: 87.50%
-   loss: 231.1145
-Fitting GagModel subj n19, progress: 88.64%
-   loss: 210.1402
-Fitting GagModel subj cb105, progress: 89.77%
-   loss: 282.5711
-Fitting GagModel subj n21, progress: 90.91%
-   loss: 149.6306
-Fitting GagModel subj cb44, progress: 92.05%
-   loss: 295.8717
-Fitting GagModel subj cb70, progress: 93.18%
-   loss: 272.6485
-Fitting GagModel subj cb30, progress: 94.32%
-   loss: 70.5216
-Fitting GagModel subj cb82, progress: 95.45%
-   loss: 253.4718
-Fitting GagModel subj n8, progress: 96.59%
-   loss: 165.1776
-Fitting GagModel subj cb81, progress: 97.73%
-   loss: 258.1511
-Fitting GagModel subj n29, progress: 98.86%
-   loss: 286.9045
+Fitting MOS subj cb25, progress: 0.00%
+   loss: 282.1921
+Fitting MOS subj n29, progress: 1.14%
+   loss: 318.7398
+Fitting MOS subj cb7, progress: 2.27%
+   loss: 266.1262
+Fitting MOS subj cb80, progress: 3.41%
+   loss: 313.5717
+Fitting MOS subj n17, progress: 4.55%
+   loss: 208.1996
+Fitting MOS subj cb9, progress: 5.68%
+   loss: 274.3364
+Fitting MOS subj cb100, progress: 6.82%
+   loss: 186.7926
+Fitting MOS subj n25, progress: 7.95%
+   loss: 227.2701
+Fitting MOS subj n35, progress: 9.09%
+   loss: 185.9795
+Fitting MOS subj n3, progress: 10.23%
+   loss: 270.2746
+Fitting MOS subj cb30, progress: 11.36%
+   loss: 105.1439
+Fitting MOS subj n34, progress: 12.50%
+   loss: 182.1468
+Fitting MOS subj cb99, progress: 13.64%
+   loss: 282.5098
+Fitting MOS subj cb103, progress: 14.77%
+   loss: 220.7865
+Fitting MOS subj n38, progress: 15.91%
+   loss: 156.7306
+Fitting MOS subj n33, progress: 17.05%
+   loss: 189.2064
+Fitting MOS subj cb92, progress: 18.18%
+   loss: 293.4848
+Fitting MOS subj cb47, progress: 19.32%
+   loss: 199.2085
+Fitting MOS subj cb76, progress: 20.45%
+   loss: 290.7689
+Fitting MOS subj cb3, progress: 21.59%
+   loss: 193.1311
+Fitting MOS subj cb35, progress: 22.73%
+   loss: 240.5154
+Fitting MOS subj cb96, progress: 23.86%
+   loss: 219.3348
+Fitting MOS subj n36, progress: 25.00%
+   loss: 206.9535
+Fitting MOS subj cb88, progress: 26.14%
+   loss: 311.0082
+Fitting MOS subj cb5, progress: 27.27%
+   loss: 307.4910
+Fitting MOS subj cb22, progress: 28.41%
+   loss: 160.9415
+Fitting MOS subj cb74, progress: 29.55%
+   loss: 291.9319
+Fitting MOS subj cb28, progress: 30.68%
+   loss: 302.7738
+Fitting MOS subj n8, progress: 31.82%
+   loss: 192.2263
+Fitting MOS subj n10, progress: 32.95%
+   loss: 200.8957
+Fitting MOS subj cb70, progress: 34.09%
+   loss: 312.7462
+Fitting MOS subj cb57, progress: 35.23%
+   loss: 193.5468
+Fitting MOS subj cb77, progress: 36.36%
+   loss: 289.5055
+Fitting MOS subj cb49, progress: 37.50%
+   loss: 187.6563
+Fitting MOS subj cb98, progress: 38.64%
+   loss: 221.8853
+Fitting MOS subj cb89, progress: 39.77%
+   loss: 175.4899
+Fitting MOS subj cb101, progress: 40.91%
+   loss: 269.1302
+Fitting MOS subj cb2, progress: 42.05%
+   loss: 312.6832
+Fitting MOS subj cb82, progress: 43.18%
+   loss: 277.4043
+Fitting MOS subj n20, progress: 44.32%
+   loss: 254.2682
+Fitting MOS subj cb52, progress: 45.45%
+   loss: 202.6787
+Fitting MOS subj cb17, progress: 46.59%
+   loss: 242.8836
+Fitting MOS subj cb29, progress: 47.73%
+   loss: 96.6412
+Fitting MOS subj cb44, progress: 48.86%
+   loss: 323.6589
+Fitting MOS subj n23, progress: 50.00%
+   loss: 179.5971
+Fitting MOS subj n41, progress: 51.14%
+   loss: 183.2432
+Fitting MOS subj cb65, progress: 52.27%
+   loss: 322.9168
+Fitting MOS subj n21, progress: 53.41%
+   loss: 200.5163
+Fitting MOS subj cb200, progress: 54.55%
+   loss: 103.7705
+Fitting MOS subj n37, progress: 55.68%
+   loss: 180.7817
+Fitting MOS subj cb68, progress: 56.82%
+   loss: 218.6694
+Fitting MOS subj cb13, progress: 57.95%
+   loss: 293.7126
+Fitting MOS subj cb19, progress: 59.09%
+   loss: 188.2740
+Fitting MOS subj n13, progress: 60.23%
+   loss: 190.9360
+Fitting MOS subj n39, progress: 61.36%
+   loss: 229.3446
+Fitting MOS subj cb18, progress: 62.50%
+   loss: 267.2112
+Fitting MOS subj n30, progress: 63.64%
+   loss: 176.2800
+Fitting MOS subj cb79, progress: 64.77%
+   loss: 314.5410
+Fitting MOS subj cb105, progress: 65.91%
+   loss: 316.9073
+Fitting MOS subj n31, progress: 67.05%
+   loss: 256.8986
+Fitting MOS subj n40, progress: 68.18%
+   loss: 126.6608
+Fitting MOS subj cb1, progress: 69.32%
+   loss: 177.7970
+Fitting MOS subj n26, progress: 70.45%
+   loss: 166.9789
+Fitting MOS subj n32, progress: 71.59%
+   loss: 233.9342
+Fitting MOS subj cb12, progress: 72.73%
+   loss: 236.5492
+Fitting MOS subj cb20, progress: 73.86%
+   loss: 272.5918
+Fitting MOS subj cb75, progress: 75.00%
+   loss: 292.9037
+Fitting MOS subj cb14, progress: 76.14%
+   loss: 300.4591
+Fitting MOS subj cb97, progress: 77.27%
+   loss: 282.9717
+Fitting MOS subj cb6, progress: 78.41%
+   loss: 244.3712
+Fitting MOS subj n14, progress: 79.55%
+   loss: 226.3490
+Fitting MOS subj cb108, progress: 80.68%
+   loss: 298.6479
+Fitting MOS subj cb46, progress: 81.82%
+   loss: 256.8064
+Fitting MOS subj n42, progress: 82.95%
+   loss: 227.6870
+Fitting MOS subj n19, progress: 84.09%
+   loss: 256.6865
+Fitting MOS subj cb4, progress: 85.23%
+   loss: 158.0220
+Fitting MOS subj cb55, progress: 86.36%
+   loss: 241.2840
+Fitting MOS subj n22, progress: 87.50%
+   loss: 185.7188
+Fitting MOS subj n11, progress: 88.64%
+   loss: 288.2423
+Fitting MOS subj cb81, progress: 89.77%
+   loss: 284.2013
+Fitting MOS subj cb107, progress: 90.91%
+   loss: 211.1158
+Fitting MOS subj n28, progress: 92.05%
+   loss: 172.3423
+Fitting MOS subj cb53, progress: 93.18%
+   loss: 248.3746
+Fitting MOS subj cb73, progress: 94.32%
+   loss: 313.0112
+Fitting MOS subj cb63, progress: 95.45%
+   loss: 294.7604
+Fitting MOS subj cb45, progress: 96.59%
+   loss: 288.7185
+Fitting MOS subj cb84, progress: 97.73%
+   loss: 319.9247
+Fitting MOS subj n24, progress: 98.86%
+   loss: 170.0731
 
-parallel computing spend 39417.46 seconds
-Traceback (most recent call last):
-  File "m1_fit.py", line 150, in <module>
-    if args.group=='ind': summary(data, args)
-  File "m1_fit.py", line 128, in summary
-    log = pd.read_csv(fname, index_col=0)
-  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 676, in parser_f
-    return _read(filepath_or_buffer, kwds)
-  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 448, in _read
-    parser = TextFileReader(fp_or_buf, **kwds)
-  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 880, in __init__
-    self._make_engine(self.engine)
-  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 1114, in _make_engine
-    self._engine = CParserWrapper(self.f, **self.options)
-  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/io/parsers.py", line 1891, in __init__
-    self._reader = parsers.TextReader(src, **kwds)
-  File "pandas/_libs/parsers.pyx", line 374, in pandas._libs.parsers.TextReader.__cinit__
-  File "pandas/_libs/parsers.pyx", line 674, in pandas._libs.parsers.TextReader._setup_parser_source
-FileNotFoundError: [Errno 2] File /home/zfang/Documents/github/policy-analysis/fits/exp1data/GagModel/params-exp1data-cb79.csv does not exist: '/home/zfang/Documents/github/policy-analysis/fits/exp1data/GagModel/params-exp1data-cb79.csv'
-Traceback (most recent call last):
-  File "m2_simulate.py", line 32, in <module>
-    os.mkdir(f'{path}/simulations/{args.data_set}')
-FileExistsError: [Errno 17] File exists: '/home/zfang/Documents/github/policy-analysis/simulations/exp1data'
-Data set=exp1data Model=RlRisk Method=map
-    Using 40 parallel CPU cores
+parallel computing spend 40422.72 seconds
+Simulating MOS
+    Using 1 parallel CPU cores
  
-Fitting RlRisk subj cb79, progress: 0.00%
-   loss: 262.6990
-Fitting RlRisk subj cb84, progress: 1.14%
-   loss: 280.5933
-Fitting RlRisk subj cb12, progress: 2.27%
-   loss: 241.6505
-Fitting RlRisk subj cb49, progress: 3.41%
-   loss: 161.5993
-Fitting RlRisk subj cb57, progress: 4.55%
-   loss: 176.6373
-Fitting RlRisk subj cb77, progress: 5.68%
-   loss: 247.1043
-Fitting RlRisk subj cb17, progress: 6.82%
-   loss: 195.8920
-Fitting RlRisk subj cb14, progress: 7.95%
-   loss: 261.0044
-Fitting RlRisk subj cb22, progress: 9.09%
-   loss: 134.0581
-Fitting RlRisk subj cb13, progress: 10.23%
-   loss: 244.4998
-Fitting RlRisk subj n39, progress: 11.36%
-   loss: 268.0693
-Fitting RlRisk subj n28, progress: 12.50%
-   loss: 129.7992
-Fitting RlRisk subj n30, progress: 13.64%
-   loss: 184.6408
-Fitting RlRisk subj n23, progress: 14.77%
-   loss: 121.6265
-Fitting RlRisk subj cb108, progress: 15.91%
-   loss: 266.3837
-Fitting RlRisk subj n17, progress: 17.05%
-   loss: 163.2606
-Fitting RlRisk subj cb73, progress: 18.18%
-   loss: 268.2252
-Fitting RlRisk subj cb3, progress: 19.32%
-   loss: 151.0713
-Fitting RlRisk subj n31, progress: 20.45%
-   loss: 233.0131
-Fitting RlRisk subj cb5, progress: 21.59%
-   loss: 276.3951
-Fitting RlRisk subj n33, progress: 22.73%
-   loss: 156.4315
-Fitting RlRisk subj n40, progress: 23.86%
-   loss: 106.3049
-Fitting RlRisk subj cb28, progress: 25.00%
-   loss: 277.2642
-Fitting RlRisk subj cb75, progress: 26.14%
-   loss: 265.2522
-Fitting RlRisk subj n13, progress: 27.27%
-   loss: 154.2379
-Fitting RlRisk subj cb2, progress: 28.41%
-   loss: 267.2203
-Fitting RlRisk subj n24, progress: 29.55%
-   loss: 121.5534
-Fitting RlRisk subj cb29, progress: 30.68%
-   loss: 69.8938
-Fitting RlRisk subj n20, progress: 31.82%
-   loss: 200.0041
-Fitting RlRisk subj cb88, progress: 32.95%
-   loss: 273.7196
-Fitting RlRisk subj cb68, progress: 34.09%
-   loss: 178.2721
-Fitting RlRisk subj cb76, progress: 35.23%
-   loss: 265.1409
-Fitting RlRisk subj cb97, progress: 36.36%
-   loss: 254.4116
-Fitting RlRisk subj cb25, progress: 37.50%
-   loss: 255.9826
-Fitting RlRisk subj cb20, progress: 38.64%
-   loss: 276.4603
-Fitting RlRisk subj cb80, progress: 39.77%
-   loss: 272.3844
-Fitting RlRisk subj n25, progress: 40.91%
-   loss: 174.6761
-Fitting RlRisk subj cb96, progress: 42.05%
-   loss: 180.7981
-Fitting RlRisk subj cb99, progress: 43.18%
-   loss: 245.2608
-Fitting RlRisk subj cb47, progress: 44.32%
-   loss: 159.1004
-Fitting RlRisk subj cb65, progress: 45.45%
-   loss: 275.9449
-Fitting RlRisk subj n10, progress: 46.59%
-   loss: 161.8404
-Fitting RlRisk subj cb55, progress: 47.73%
-   loss: 274.7950
-Fitting RlRisk subj cb52, progress: 48.86%
-   loss: 165.0700
-Fitting RlRisk subj cb100, progress: 50.00%
-   loss: 148.3135
-Fitting RlRisk subj cb92, progress: 51.14%
-   loss: 267.2587
-Fitting RlRisk subj cb6, progress: 52.27%
-   loss: 223.8476
-Fitting RlRisk subj n32, progress: 53.41%
-   loss: 193.4564
-Fitting RlRisk subj n41, progress: 54.55%
-   loss: 158.3691
-Fitting RlRisk subj n35, progress: 55.68%
-   loss: 136.1127
-Fitting RlRisk subj cb35, progress: 56.82%
-   loss: 217.7036
-Fitting RlRisk subj cb45, progress: 57.95%
-   loss: 247.9151
-Fitting RlRisk subj n26, progress: 59.09%
-   loss: 134.2181
-Fitting RlRisk subj n11, progress: 60.23%
-   loss: 241.1418
-Fitting RlRisk subj cb63, progress: 61.36%
-   loss: 272.1265
-Fitting RlRisk subj cb7, progress: 62.50%
-   loss: 244.1768
-Fitting RlRisk subj cb19, progress: 63.64%
-   loss: 146.2543
-Fitting RlRisk subj cb103, progress: 64.77%
-   loss: 190.8478
-Fitting RlRisk subj cb74, progress: 65.91%
-   loss: 274.7847
-Fitting RlRisk subj cb200, progress: 67.05%
-   loss: 75.9416
-Fitting RlRisk subj cb98, progress: 68.18%
-   loss: 191.4723
-Fitting RlRisk subj cb89, progress: 69.32%
-   loss: 191.6584
-Fitting RlRisk subj n36, progress: 70.45%
-   loss: 227.5238
-Fitting RlRisk subj n38, progress: 71.59%
-   loss: 115.1208
-Fitting RlRisk subj n34, progress: 72.73%
-   loss: 139.7782
-Fitting RlRisk subj cb1, progress: 73.86%
-   loss: 142.4074
-Fitting RlRisk subj n37, progress: 75.00%
-   loss: 129.1214
-Fitting RlRisk subj cb9, progress: 76.14%
-   loss: 236.2925
-Fitting RlRisk subj cb101, progress: 77.27%
-   loss: 234.0388
-Fitting RlRisk subj n42, progress: 78.41%
-   loss: 185.0295
-Fitting RlRisk subj cb107, progress: 79.55%
-   loss: 178.9116
-Fitting RlRisk subj n14, progress: 80.68%
-   loss: 203.3617
-Fitting RlRisk subj n3, progress: 81.82%
-   loss: 215.9691
-Fitting RlRisk subj cb53, progress: 82.95%
-   loss: 205.3480
-Fitting RlRisk subj cb4, progress: 84.09%
-   loss: 104.7905
-Fitting RlRisk subj n22, progress: 85.23%
-   loss: 140.8243
-Fitting RlRisk subj cb46, progress: 86.36%
-   loss: 223.5512
-Fitting RlRisk subj cb18, progress: 87.50%
-   loss: 237.7820
-Fitting RlRisk subj n19, progress: 88.64%
-   loss: 229.0059
-Fitting RlRisk subj cb105, progress: 89.77%
-   loss: 275.5151
-Fitting RlRisk subj n21, progress: 90.91%
-   loss: 208.9193
-Fitting RlRisk subj cb44, progress: 92.05%
-   loss: 270.6565
-Fitting RlRisk subj cb70, progress: 93.18%
-   loss: 271.3396
-Fitting RlRisk subj cb30, progress: 94.32%
-   loss: 70.5544
-Fitting RlRisk subj cb82, progress: 95.45%
-   loss: 230.1324
-Fitting RlRisk subj n8, progress: 96.59%
-   loss: 150.6547
-Fitting RlRisk subj cb81, progress: 97.73%
-   loss: 249.9119
-Fitting RlRisk subj n29, progress: 98.86%
-   loss: 276.2574
+#-------- Clean Outliers ---------- #
 
-parallel computing spend 15494.05 seconds
+    332 rows
+    97.6% data has been retained
+               T         dof alternative     p-val          CI95%   cohen-d   BF10     power
+T-test -1.474363  151.610645   two-sided  0.142457  [-0.25, 0.04]  0.229611  0.457  0.312524
+               T         dof alternative     p-val          CI95%   cohen-d   BF10     power
+T-test -0.073801  163.966968   two-sided  0.941258  [-0.13, 0.12]  0.011456  0.168  0.050617
+#-------- Clean Outliers ---------- #
+
+    332 rows
+    97.6% data has been retained
+m3_visualize.py:157: FutureWarning: The default value of numeric_only in DataFrameGroupBy.mean is deprecated. In a future version, numeric_only will default to False. Either specify numeric_only or select only columns which should be valid for the function.
+  data = data.groupby(by=['sub_id']).mean().reset_index()
+ log_diff: r=0.12662628796101283, p=0.24532321119986827
+ log_diff: r=0.05129304294248252, p=0.6390549651928928
+ log_diff: r=0.12694107675154592, p=0.24414217132826382
+#-------- Clean Outliers ---------- #
+
+    332 rows
+    97.6% data has been retained
 Traceback (most recent call last):
-  File "m2_simulate.py", line 32, in <module>
-    os.mkdir(f'{path}/simulations/{args.data_set}')
-FileExistsError: [Errno 17] File exists: '/home/zfang/Documents/github/policy-analysis/simulations/exp1data'
-MixPol(18) nll: 158.547, aic: 353.094
-GagModel(15) nll: 163.309, aic: 356.618
+  File "m3_visualize.py", line 443, in <module>
+    HC_PAT_policy('MOS')
+  File "m3_visualize.py", line 200, in HC_PAT_policy
+    data = data.groupby(by=['sub_id', 'feedback_type', 'b_type', 'is_PAT']
+  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/core/groupby/generic.py", line 1411, in __getitem__
+    return super().__getitem__(key)
+  File "/home/zfang/anaconda3/envs/py3/lib/python3.8/site-packages/pandas/core/base.py", line 238, in __getitem__
+    raise KeyError(f"Columns not found: {str(bad_keys)[1:-1]}")
+KeyError: "Columns not found: 'l1', 'l3', 'l2'"
 (py3) zfang@adacog-gpu:~/Documents/github/policy-analysis$ 

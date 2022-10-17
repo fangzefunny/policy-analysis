@@ -1,5 +1,5 @@
 
-import os 
+import os
 
 import numpy as np
 import pandas as pd 
@@ -24,21 +24,21 @@ block_types    = ['sta', 'vol']
 policies       = ['EU', 'MO', 'HA']
 
 # fit performance 
-def quantTable(agents= ['MixPol', 'GagModel', 'RlRisk']):
+def quantTable(agents= ['MOS', 'FLR', 'RP']):
     crs = {}
     
     for m in agents:
-        subj = model(eval(m))
         n_params = eval(m).n_params
         nll, aic = 0, 0 
         fname = f'{path}/simulations/exp1data/{m}/sim-exp1data-map-idx0.csv'
         data  = pd.read_csv(fname)
-        nll   = data.groupby(by=['sub_id']).sum()['logLike'].mean()
+        nll   = data.groupby(by=['sub_id'])['logLike'].sum().mean()
         aic   = 2*nll + 2*n_params
-        crs[m] = {'nll':nll, 'aic':aic}
+        bic   = 2*nll + n_params*np.log(data.groupby(by=['sub_id'])['logLike'].sum().shape[0])
+        crs[m] = {'nll': nll, 'aic': aic, 'bic': bic}
 
     for m in agents:
-        print(f'{m}({eval(m).n_params}) nll: {crs[m]["nll"]:.3f}, aic: {crs[m]["aic"]:.3f}')
+        print(f'{m}({eval(m).n_params}) nll: {crs[m]["nll"]:.3f}, aic: {crs[m]["aic"]:.3f}, bic: {crs[m]["bic"]:.3f}')
 
 def viz_Exp():
 
@@ -64,7 +64,7 @@ def viz_Exp():
     #ax.set_xlabel('Trials')
     #ax.set_ylabel('The left stimulus\nresults in feedback')
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/Fig0_Exp_Design.png', dpi=300)
+    plt.savefig(f'{path}/figures/Fig0_Exp_Design.pdf', dpi=300)
 
 
 def viz_Human():
@@ -114,13 +114,13 @@ def viz_Human():
     ax=axs[1, 1]
     ax.set_axis_off()
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/Fig1_Human_data.png', dpi=300)
+    plt.savefig(f'{path}/figures/Fig1_Human_data.pdf', dpi=300)
 
-def LR_effect1():
+def LR_effect1(agent):
 
     tar = ['log_alpha']
 
-    data = build_pivot_table('map', agent='MixPol', min_q=.01, max_q=.99)
+    data = build_pivot_table('map', agent=agent, min_q=.01, max_q=.99)
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
 
     nr, nc = 1, len(feedback_types)
@@ -130,6 +130,7 @@ def LR_effect1():
         ax = axs[i]
         sel_data = data.query(f'feedback_type=="{f_type}"')
         ymin, ymax = sel_data[tar[0]].min(), sel_data[tar[0]].max()
+        print(f'\n-Feedback type: {f_type}')
         t_test(sel_data, 'b_type=="sta"', 'b_type=="vol"', tar=tar)
         sns.boxplot(x='b_type', y=tar[0], data=sel_data, 
                         width=.65, palette=viz.BluePairs, ax=ax)
@@ -142,10 +143,10 @@ def LR_effect1():
         ax.set_box_aspect(1)
 
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/Fig0_LR_effect1.png', dpi=300)
+    plt.savefig(f'{path}/figures/Fig0_LR_effect1.pdf', dpi=300)
 
-def LR_effect2():
-    data = build_pivot_table('map', agent='MixPol', min_q=.01, max_q=.99)
+def LR_effect2(agent):
+    data = build_pivot_table('map', agent=agent, min_q=.01, max_q=.99)
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
     vendors  = data['b_type'].unique()
     data = pd.concat([data.set_index(['sub_id', 'is_PAT', 'feedback_type', 'g', 'f1', 'f2']).groupby('b_type'
@@ -153,7 +154,7 @@ def LR_effect2():
     data.columns = ['sta', 'vol']
     data['log_diff'] = data['sta'] - data['vol']
     data.reset_index(inplace=True)
-    data = data.groupby(by=['sub_id']).mean().reset_index()
+    data = data.groupby(by=['sub_id'])[['log_diff', 'g', 'f1', 'f2']].mean().reset_index()
     data = data.dropna()
 
     syndromes = ['g', 'f1', 'f2']
@@ -168,9 +169,9 @@ def LR_effect2():
         y = data[tar]
         corr, pval = pearsonr(x.values, y.values)
         x = sm.add_constant(x)
-        res = sm.OLS(y, x).fit()
-        #print(res.summary())
-        print(f' {tar}: r={corr}, p={pval}')
+        lm = pg.linear_regression(x, y)
+        print(f'\n-----{tar}:')
+        print(tabulate(lm.round(3), headers='keys', tablefmt='fancy_grid'))
         
         ax  = axs[i]
         x = np.linspace(xmin, xmax, 100)
@@ -187,16 +188,17 @@ def LR_effect2():
 
 
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/Fig0_LR_effect2.png', dpi=300)
+    plt.savefig(f'{path}/figures/Fig0_LR_effect2.pdf', dpi=300)
 
 
-def HC_PAT_policy():
+def HC_PAT_policy(agent):
 
     tar    = ['l1', 'l2', 'l3']
 
-    data = build_pivot_table('map', min_q=.01, max_q=.99)
+    data = build_pivot_table('map',agent=agent, min_q=.01, max_q=.99)
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
-    data = data.groupby(by=['sub_id', 'feedback_type', 'b_type']).mean().reset_index()
+    data = data.groupby(by=['sub_id', 'feedback_type', 'b_type', 'is_PAT']
+                        )[tar].mean().reset_index()
     
     nr, nc = 1, len(tar)
     fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharey=True, sharex=True)
@@ -215,7 +217,7 @@ def HC_PAT_policy():
 
     plt.tight_layout()
     plt.show()
-    plt.savefig(f'{path}/figures/Fig1_HC-PAT-policies.png', dpi=300)
+    plt.savefig(f'{path}/figures/Fig1_HC-PAT-policies.pdf', dpi=300)
 
 def STA_VOL_policy():
 
@@ -242,7 +244,7 @@ def STA_VOL_policy():
 
     plt.tight_layout()
     plt.show()
-    plt.savefig(f'{path}/figures/Fig4_STA-VOL-policies.png', dpi=300)
+    plt.savefig(f'{path}/figures/Fig4_STA-VOL-policies.pdf', dpi=300)
 
 def Policy_Rew():
 
@@ -260,14 +262,14 @@ def Policy_Rew():
     for i, lamb in enumerate(tar):
         for j, feedback_type in enumerate(['gain', 'loss']):
             sel_data = data.query(f'feedback_type=="{feedback_type}"').groupby(
-                            by=['sub_id', 'b_type']).mean().reset_index()
+                            by=['sub_id', 'b_type'])[['rawRew', lamb]].mean().reset_index()
             x = sel_data[lamb]
             y = sel_data['rawRew']
             corr, pval = pearsonr(x.values, y.values)
             x = sm.add_constant(x)
             res = sm.OLS(y, x).fit()
             #print(res.summary())
-            print(f' {feedback_type}-{lamb}: r={corr:.2f}, p={pval:.3f}')
+            print(f' {feedback_type}-{lamb}: r={corr:.3f}, p={pval:.3f}')
             
             ax  = axs[j, i]
             x = np.linspace(xmin, xmax, 100)
@@ -282,7 +284,7 @@ def Policy_Rew():
             ax.set_box_aspect(1)
 
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/Fig2_policies-Rew.png', dpi=300)
+    plt.savefig(f'{path}/figures/Fig2_policies-Rew.pdf', dpi=300)
 
 def reg(pred='l1', tar='rew'):
 
@@ -309,7 +311,7 @@ def reg(pred='l1', tar='rew'):
     ax.set_ylabel('rewarding')
     ax.set_box_aspect(1)
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/Fig2_{pred}-{tar}.png', dpi=300)
+    plt.savefig(f'{path}/figures/Fig2_{pred}-{tar}.pdf', dpi=300)
 
 def pred_biFactor():
 
@@ -317,7 +319,7 @@ def pred_biFactor():
     tars  = ['l1', 'l2', 'l3']
     data = build_pivot_table('map', min_q=.01, max_q=.99)
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
-    data = data.groupby(by=['sub_id']).mean().reset_index()
+    data = data.groupby(by=['sub_id'])[['g', 'l1', 'l2', 'l3']].mean().reset_index()
    
     nr, nc = 1, int(len(tars))
     fig, axs = plt.subplots(nr, nc, figsize=(nc*4, nr*4), sharex='row',)
@@ -327,9 +329,11 @@ def pred_biFactor():
         y = data[tar]
         corr, pval = pearsonr(x.values, y.values)
         x = sm.add_constant(x)
-        res = sm.OLS(y, x).fit()
-        print(res.summary())
-        print(f' {tar}: r={corr}, p={pval}')
+        lm = pg.linear_regression(x, y)
+        print(f'\n-----{tar}:')
+        print(tabulate(lm.round(3), headers='keys', tablefmt='fancy_grid'))
+        #print(res.summary())
+        #print(f' {tar}: r={corr:.3f}, p={pval:.3f}')
         
         ax  = axs[i]
         x = np.linspace(xmin, xmax, 100)
@@ -345,7 +349,7 @@ def pred_biFactor():
         ax.set_box_aspect(1)
 
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/Fig3_pre_syndrome.png', dpi=300)
+    plt.savefig(f'{path}/figures/Fig3_pre_syndrome.pdf', dpi=300)
 
 
 def pi_effect():
@@ -374,7 +378,7 @@ def pi_effect():
     ax.set_ylim([-.1, 1.1])
     ax.legend()
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/effect.png', dpi=300)
+    plt.savefig(f'{path}/figures/effect.pdf', dpi=300)
 
 def pi_effect2():
 
@@ -400,7 +404,7 @@ def pi_effect2():
     ax.legend()
     ax.set_ylim([-.1, 1.1])
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/effect2.png', dpi=300)
+    plt.savefig(f'{path}/figures/effect2.pdf', dpi=300)
 
 def Block_Group_effect():
 
@@ -428,21 +432,21 @@ def Block_Group_effect():
         
     plt.tight_layout()
     plt.show()
-    plt.savefig(f'{path}/figures/Fig4_block-group-policies.png', dpi=300)
+    plt.savefig(f'{path}/figures/Fig4_block-group-policies.pdf', dpi=300)
 
 if __name__ == '__main__':
 
-    #quantTable()
-    #viz_Human()
-    viz_Exp()
-    #LR_effect1()
-    #LR_effect2()
-    #viz_PiReward()
-    #HC_PAT_policy()
-    #STA_VOL_policy()
-    #Policy_Rew()
-    #pred_biFactor()
-    #pi_effect()
-    #pi_effect2()
-    #Block_Group_effect()
+    quantTable()
+    HC_PAT_policy('MOS')
+    Policy_Rew()
+    pred_biFactor()
+    LR_effect1('MOS')
+    LR_effect2('MOS')
+    pi_effect()
+    pi_effect2()
+
+    # viz_Human()
+    # viz_Exp()
+    # STA_VOL_policy()
+    # Block_Group_effect()
     
