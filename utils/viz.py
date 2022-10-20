@@ -1,6 +1,7 @@
 import numpy as np 
 import seaborn as sns 
 import matplotlib
+import matplotlib.pyplot as plt
 
 class viz:
     '''Define the default visualize configure
@@ -57,6 +58,10 @@ class viz:
     b2 = np.array([166, 225, 250]) / 255
     BluePairs = [b1, b2]
 
+    p1 = np.array([142,  65,  98]) / 255
+    p2 = np.array([237, 162, 192]) / 255
+    PurplePairs = [p1, p2]
+
     # -----------  Colormap ------------- 
 
     BluePalette   = [dBlue, Blue, lBlue]
@@ -85,5 +90,6 @@ class viz:
         # Larger scale for plots in notebooks
         sns.set_context('talk')
         sns.set_style("ticks", {'axes.grid': False})
-        matplotlib.rcParams['font.sans-serif'] = "Arial"
-        matplotlib.rcParams['font.family'] = "sans-serif"
+        plt.rcParams['font.family'] = "sans-serif"
+        plt.rcParams['font.sans-serif'] = "Arial"
+        
