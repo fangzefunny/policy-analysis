@@ -128,14 +128,16 @@ def sim_subj(mode, seed, n_samples=3):
     # decide what to collect
     subj   = model(MixPol)
     if mode == 'HC':
-        sub_id = 'cb3'
+        ls = [0.678336, -0.976054, 0.297795]
     elif mode == 'PAT':
-        sub_id = 'cb25'
+        ls = [0.007705, 0.315989, -0.323734]
     n_params = 18
-    fname    = f'{path}/fits/{args.data_set}/MixPol/params-{args.data_set}-{sub_id}-map.csv'      
+    fname    = f'{path}/fits/{args.data_set}/params-{args.data_set}-{args.agent_name}-map-ind.csv'      
     params   = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
-    params[:3] = [3.9758, 9.5894, 4]
-    params[10:14] = params[2:6]
+    params[3:6]   = ls
+    params[7:10]  = ls
+    params[11:14] = ls
+    params[15:18] = ls 
         
     rng    = np.random.RandomState(seed)
     
@@ -177,7 +179,7 @@ if __name__ == '__main__':
     with open(fname, 'rb') as handle: data=pickle.load(handle)
 
     # STEP 2: SYNTHESIZE DATA
-    sim_paral(pool, data, args)
+    #sim_paral(pool, data, args)
 
     # STEP 3: SIM SUBJECT
     sim_subj_paral(pool, 'HC', args)
