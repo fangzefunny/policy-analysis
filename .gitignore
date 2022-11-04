@@ -20,4 +20,3 @@ analyses/
 # ignore some debug files
 debug.py 
 documents/
-notes/
