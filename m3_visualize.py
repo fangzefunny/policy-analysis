@@ -335,8 +335,6 @@ def Pi_Ada():
     plt.tight_layout()
     plt.savefig(f'{path}/figures/effect2.png', dpi=dpi)
 
-
-
 if __name__ == '__main__':
 
     quantTable()
@@ -344,11 +342,11 @@ if __name__ == '__main__':
     ## parameters analyses
     pivot_table = build_pivot_table('map', agent='MOS', min_q=.01, max_q=.99)
 
-    #PrefxGroup(pivot_table)
-    #PrefxSyndrome(pivot_table)
-    #PrefxEnv(pivot_table)
-    #LRxEnv(pivot_table)
-    #LRxGroup(pivot_table)
-    #PrefdiffxGroup(pivot_table)
+    PrefxGroup(pivot_table)
+    PrefxSyndrome(pivot_table)
+    PrefxEnv(pivot_table)
+    LRxEnv(pivot_table)
+    LRxGroup(pivot_table)
+    PrefdiffxGroup(pivot_table)
     Stategy_Ada()
     Pi_Ada()
