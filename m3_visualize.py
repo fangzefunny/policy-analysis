@@ -243,6 +243,7 @@ def PrefdiffxGroup(data):
     data = data.groupby(by=['sub_id', 'is_PAT', 'b_type', 'feedback_type']
                     )[tars].mean().reset_index()
     for i, t in enumerate(tars):
+        print(f'# ------------------ {t} ----------------- #')
         print(pg.anova(dv=t, between=['is_PAT', 'b_type', 
                     'feedback_type'], data=data).round(3))
     
