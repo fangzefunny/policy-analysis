@@ -127,17 +127,15 @@ def sim_subj(mode, seed, n_samples=3):
        
     # decide what to collect
     subj   = model(MixPol)
-    if mode == 'HC':
-        ls = [0.678336, -0.976054, 0.297795]
-    elif mode == 'PAT':
-        ls = [0.007705, 0.315989, -0.323734]
+    
     n_params = 18
     fname    = f'{path}/fits/{args.data_set}/params-{args.data_set}-{args.agent_name}-map-ind.csv'      
-    params   = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
-    params[3:6]   = ls
-    params[7:10]  = ls
-    params[11:14] = ls
-    params[15:18] = ls 
+    raw_params   = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
+    params = np.hstack([raw_params[:2], list((raw_params[2:]).reshape([4, 4]).mean(0))*4])
+    if mode == 'HC':
+        params = np.hstack([params[:2], (list(params[2:3])+[0.678336, -0.976054, 0.297795])*4])
+    elif mode == 'PAT':
+        params = np.hstack([params[:2], (list(params[2:3])+[0.007705, 0.315989, -0.323734])*4])
         
     rng    = np.random.RandomState(seed)
     
@@ -184,3 +182,5 @@ if __name__ == '__main__':
     # STEP 3: SIM SUBJECT
     sim_subj_paral(pool, 'HC', args)
     sim_subj_paral(pool, 'PAT', args)
+    sim_subj_paral(pool, 'AVG', args)
+   

@@ -284,7 +284,7 @@ def PrefdiffxGroup(data):
 
 def Stategy_Ada():
 
-    fname = f'{path}/simulations/exp1data/MOS/simsubj-exp1data-sta_first-PAT.csv'
+    fname = f'{path}/simulations/exp1data/MOS/simsubj-exp1data-sta_first-AVG.csv'
     data = pd.read_csv(fname)
 
     data = data.groupby(by=['trials'])[['l1_effect', 'l2_effect', 'l3_effect']].mean()
@@ -343,11 +343,11 @@ if __name__ == '__main__':
     ## parameters analyses
     pivot_table = build_pivot_table('map', agent='MOS', min_q=.01, max_q=.99)
 
-    PrefxGroup(pivot_table)
-    PrefxSyndrome(pivot_table)
-    PrefxEnv(pivot_table)
-    LRxEnv(pivot_table)
-    LRxGroup(pivot_table)
-    PrefdiffxGroup(pivot_table)
+    # PrefxGroup(pivot_table)
+    # PrefxSyndrome(pivot_table)
+    # PrefxEnv(pivot_table)
+    # LRxEnv(pivot_table)
+    # LRxGroup(pivot_table)
+    # PrefdiffxGroup(pivot_table)
     Stategy_Ada()
     Pi_Ada()
