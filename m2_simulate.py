@@ -177,7 +177,7 @@ if __name__ == '__main__':
     with open(fname, 'rb') as handle: data=pickle.load(handle)
 
     # STEP 2: SYNTHESIZE DATA
-    #sim_paral(pool, data, args)
+    sim_paral(pool, data, args)
 
     # STEP 3: SIM SUBJECT
     sim_subj_paral(pool, 'HC', args)
