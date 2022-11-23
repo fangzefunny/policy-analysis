@@ -15,7 +15,7 @@ path = os.path.dirname(os.path.abspath(__file__))
 parser = argparse.ArgumentParser(description='Test for argparse')
 parser.add_argument('--n_fit',      '-f', help='fit times', type = int, default=1)
 parser.add_argument('--data_set',   '-d', help='which_data', type = str, default='exp1data')
-parser.add_argument('--method',     '-m', help='methods, mle or map', type = str, default='map')
+parser.add_argument('--method',     '-m', help='methods, mle or map', type = str, default='bms')
 parser.add_argument('--group',      '-g', help='fit to ind or fit to the whole group', type=str, default='ind')
 parser.add_argument('--agent_name', '-n', help='choose agent', default='MixPol')
 parser.add_argument('--n_cores',    '-c', help='number of CPU cores used for parallel computing', 
@@ -51,20 +51,25 @@ def fit_parallel(pool, data, subj, verbose, args):
     results = [pool.apply_async(subj.fit, 
                     args=(data, args.method, seed+2*i, verbose)
                     ) for i in range(args.n_fit)]
-    opt_nll   = np.inf 
+    opt_val   = np.inf 
     for p in results:
-        params, loss = p.get()
-        if loss < opt_nll:
-            opt_nll, opt_params = loss, params  
-            aic = n_params*2 + 2*opt_nll
-            bic = n_params*m_data + 2*opt_nll
-    fit_mat = np.hstack([opt_params, opt_nll, aic, bic]).reshape([1, -1])
-        
-    ## Save the params + nll + aic + bic 
-    col = args.agent.p_name + ['nll', 'aic', 'bic']
-    print(f'   loss: {fit_mat[0, -3]:.4f}')
-    fit_res = pd.DataFrame(fit_mat, columns=col)
-    
+        res = p.get()
+        if res.fun < opt_val:
+            opt_val = res.fun
+            opt_res = res
+            
+    ## Save the optimize results 
+    fit_res = {}
+    fit_res['log_post']   = -opt_val
+    fit_res['log_like']   = subj.loglike(opt_res.x, data)
+    fit_res['param']      = opt_res.x
+    fit_res['param_name'] = args.agent.p_name
+    fit_res['n_param']    = n_params
+    fit_res['aic']        = n_params*2 - 2*fit_res['log_like']
+    fit_res['bic']        = n_params*np.log(m_data) - 2*fit_res['log_like']
+    if args.method == 'bms':
+        fit_res['H'] = np.linalg.inv(opt_res.hess_inv.todense())
+
     return fit_res 
 
 def fit(pool, data, args):
@@ -74,13 +79,14 @@ def fit(pool, data, args):
     subj = model(args.agent)
 
     ## fit list
-    fname = f'{save_dir}/fitted_subj_lst-{args.data_set}-{args.agent_name}-{args.method}.csv'
+    fname = f'{path}/fits/{args.data_set}/fit_sub_info-{args.agent_name}-{args.method}.pkl'
     if os.path.exists(fname):
-        fitted_sub = pd.read_csv(f'{fname}') 
-        fitted_sub_lst = list(fitted_sub['sub_id'].values)
+        # load the previous fit resutls
+        with open(fname, 'rb')as handle: fit_sub_info = pickle.load(handle)
+        fitted_sub_lst = [k for k in fit_sub_info.keys()]
     else:
         fitted_sub_lst = []
-    new_sub_lst = []
+        fit_sub_info = {}
 
     ## Start 
     start_time = datetime.datetime.now()
@@ -92,16 +98,12 @@ def fit(pool, data, args):
         for sub_idx in data.keys(): 
             if sub_idx not in fitted_sub_lst:  
                 print(f'Fitting {args.agent_name} subj {sub_idx}, progress: {(done_subj*100)/all_subj:.2f}%')
-                fit_res = fit_parallel(pool, data[sub_idx], subj, False, args)
-                pname = f'{save_dir}/{args.agent_name}/params-{args.data_set}-{sub_idx}-{args.method}.csv'
-                fit_res.to_csv(pname)
-                new_sub_lst.append(sub_idx)
+                fit_info = fit_parallel(pool, data[sub_idx], subj, False, args)
+                fit_sub_info[sub_idx] = fit_info
+                with open(fname, 'wb')as handle: 
+                    pickle.dump(fit_sub_info, handle)
                 done_subj += 1
-                # save the fitted subjects
-                fname = f'{save_dir}/fitted_subj_lst-{args.data_set}-{args.agent_name}-{args.method}.csv'
-                df = pd.DataFrame(data={'sub_id': fitted_sub_lst + new_sub_lst})
-                df.to_csv(fname)
-
+                
     ## Fit params to the population level
     elif args.group == 'avg':
         fit_res = fit_parallel(data, pool, subj, True, args)
@@ -118,16 +120,21 @@ def summary(data, args):
     ## Prepare storage
     n_sub    = len(data.keys())
     n_params = args.agent.n_params
-    res_mat  = np.zeros([n_sub, n_params+3]) + np.nan 
-    res_smry = np.zeros([2, n_params+3]) + np.nan 
-    folder   = f'{save_dir}/{args.agent_name}'
+    field    = ['log_post', 'log_like', 'aic', 'bic']
+    res_mat  = np.zeros([n_sub, n_params+len(field)]) + np.nan 
+    res_smry = np.zeros([2, n_params+len(field)]) + np.nan 
+    fname =  f'{path}/fits/{args.data_set}/'
+    fname += f'fit_sub_info-{args.agent_name}-{args.method}.pkl'
 
-    ## Loop to collect data 
-    for i, sub_idx in enumerate(data.keys()):
-        fname = f'{folder}/params-{args.data_set}-{sub_idx}-{args.method}.csv'
-        log = pd.read_csv(fname, index_col=0)
-        res_mat[i, :] = log.iloc[0, :].values
-        if i == 0: col = log.columns
+    ## Loop to collect dat 
+    with open(fname, 'rb')as handle: 
+        fit_sub_info = pickle.load(handle)
+
+    for i, sub_idx in enumerate(fit_sub_info.key()):
+        sub_info = fit_sub_info['sub_idx']
+        res_mat[i, :] = np.hstack([sub_info[p] 
+                        for p in ['param']+field])
+        if i==0: col = sub_info['param_name'] + field
     
     ## Compute and save the mean and sem
     res_smry[0, :] = np.mean(res_mat, axis=0)

@@ -28,6 +28,7 @@ class model:
         bnds  = self.agent.bnds
         pbnds = self.agent.pbnds
         if method == 'mle': self.param_priors = None 
+        fit_method = 'L-BFGS-B' if method == 'bms' else 'Nelder-Mead'
 
         # Init params
         if init:
@@ -41,12 +42,12 @@ class model:
                      
         ## Fit the params 
         if verbose: print('init with params: ', param0) 
-        res = minimize(self.loss_fn, param0, args=(data), 
+        res = minimize(self.loss_fn, param0, args=(data), method=fit_method,
                         bounds=bnds, options={'disp': verbose})
         if verbose: print(f'''  Fitted params: {res.x}, 
                     MLE loss: {res.fun}''')
         
-        return res.x, res.fun 
+        return res
 
     def loss_fn(self, params, data):
         '''Total likelihood
@@ -55,13 +56,18 @@ class model:
         or Maximum a posterior 
         log p(θ|D) = ∑_i -log p(D_i|θ ) + -log p(θ)
         '''
-        tot_loss = [self._loglike(params, data[key])
-                  + self._logprior(params) 
+        tot_loss = [self._negloglike(params, data[key])
+                  + self._neglogprior(params) 
                     for key in data.keys()]        
 
         return np.sum(tot_loss)
 
-    def _loglike(self, params, block_data):
+    def loglike(self, params, data):
+        tot_loglike = [-self._negloglike(params, data[key])
+                    for key in data.keys()]  
+        return np.sum(tot_loglike) 
+
+    def _negloglike(self, params, block_data):
         '''Likelihood for one sample
         -log p(D_i|θ )
         In RL, each sample is a block of experiment,
@@ -97,7 +103,7 @@ class model:
 
         return nLL
           
-    def _logprior(self, params):
+    def _neglogprior(self, params):
         '''Add the prior of the parameters
         '''
         tot_pr = 0.

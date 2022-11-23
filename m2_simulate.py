@@ -33,6 +33,8 @@ if not os.path.exists(f'{path}/simulations/{args.data_set}'):
 if not os.path.exists(f'{path}/simulations/{args.data_set}/{args.agent_name}'):
     os.mkdir(f'{path}/simulations/{args.data_set}/{args.agent_name}')
 
+# --------- Simulate for Analysis ---------- #
+
 # define functions
 def simulate(data, args, seed):
 
@@ -47,14 +49,16 @@ def simulate(data, args, seed):
     ## Loop to choose the best model for simulation
     # the last column is the loss, so we ignore that
     sim_data = []
+    fname = f'{path}/fits/{args.data_set}/fit_sub_info-{args.data_set}-{args.method}.csv'      
+    with open(fname, 'rb')as handle: fit_sub_info = pickle.load(handle)
     for sub_idx in data.keys(): 
         if in_params is None:
             n_params = args.agent.n_params
             if args.group == 'ind': 
-                fname = f'{path}/fits/{args.data_set}/{args.agent_name}/params-{args.data_set}-{sub_idx}-{args.method}.csv'      
+                params = fit_sub_info[sub_idx]['param']
             elif args.group == 'avg':
                 fname = f'{path}/fits/{args.data_set}/params-{args.data_set}-{args.method}-{args.agent_name}-avg.csv'      
-            params = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
+                params = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
         else:
             params = in_params
         
@@ -164,7 +168,38 @@ def sim_subj(mode, seed, n_samples=3):
             sim_data[cond].append(sim_sample)
         
     return sim_data 
-            
+
+# --------- Simulate for recovery ---------- #
+
+def sim_for_recovery(data, n_sub=4, n_rep=5):
+
+    # load fitting info 
+    fname = f'{path}/fits/{args.data_set}/fit_sub_info-{args.data_set}-{args.method}.csv'      
+    with open(fname, 'rb')as handle: fit_sub_info = pickle.load(handle)
+
+    # select 
+    rng = np.random.RandomState(args.seed+1)
+    sub_for_sim  = rng.choice(list(fit_sub_info.keys()), size=n_sub)
+    sim_task_ind = rng.choice(list(fit_sub_info.keys()), size=n_sub*n_rep)
+    sim_tasks    = [data[idx][0] for idx in sim_task_ind]
+
+    # init model 
+    subj = model(args.agent)
+
+    i = 0
+    sim_data = {}
+    for sub_idx in sub_for_sim:
+        param = fit_sub_info[sub_idx]['param']
+        sim_data[sub_idx] = {}
+        for sim_id in range(n_rep):
+            sim_sample = subj.sim({sub_idx: sim_tasks[i]}, param, rng=rng)
+            sim_sample['humanAct'] = sim_sample['act']
+            sim_data[sub_idx][sim_id] = sim_sample 
+            i += 1
+    
+    with open(f'{path}/data/{args.data_set}-{args.agent_name}.pkl', 'wb')as handle:
+        pickle.dump(sim_data, handle)
+                
 
 if __name__ == '__main__':
     
@@ -180,7 +215,12 @@ if __name__ == '__main__':
     sim_paral(pool, data, args)
 
     # STEP 3: SIM SUBJECT
-    sim_subj_paral(pool, 'HC', args)
-    sim_subj_paral(pool, 'PAT', args)
-    sim_subj_paral(pool, 'AVG', args)
+    # sim_subj_paral(pool, 'HC', args)
+    # sim_subj_paral(pool, 'PAT', args)
+    # sim_subj_paral(pool, 'AVG', args)
+    pool.close()
+
+    # STEP 4: SIM FOR RECOVERY
+    sim_for_recovery(data)
+
    

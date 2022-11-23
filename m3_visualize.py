@@ -41,48 +41,163 @@ def quantTable(agents= ['MOS', 'FLR', 'RP']):
     for m in agents:
         print(f'{m}({eval(m).n_params}) nll: {crs[m]["nll"]:.3f}, aic: {crs[m]["aic"]:.3f}, bic: {crs[m]["bic"]:.3f}')
 
-def PrefxGroup(data):
-    '''Decision preference X patient group
-    '''
+def StylexConds(data, cond, fig_id):
+    '''Decision style over different conditions
 
+    Args:
+        data: the preprocessed data 
+        cond: the condition on the x axis
+            - group: PAT, HC
+            - volatility: stable, volatile
+            - feedback: reward, aversive
+        fig_id: figure id
+    
+    Outputs: 
+        A bar plot 
+    '''
+    # prepare the inputs 
     tars = ['l1', 'l2', 'l3']
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
-    data = data.groupby(by=['sub_id', 'is_PAT', 'feedback_type', 'b_type']
+    data = data.groupby(by=['sub_id', 'group', 'feedback_type', 'b_type']
                     )[tars].mean().reset_index()
-    
+
+    # select condition
+    if cond == 'group':
+        varr, case1, case2 = 'group', 'HC', 'PAT'
+        ticks = ['HC', 'PAT']
+        colors = viz.PurplePairs
+    elif cond == 'volatility':
+        varr, case1, case2 = 'b_type', 'sta', 'vol'
+        ticks = ['Stable', 'Volatile']
+        colors = viz.BluePairs
+    elif cond == 'feedback':
+        varr, case1, case2 = 'feedback_type', 'gain', 'loss'
+        ticks = ['Reward', 'Aversive']
+        colors = viz.YellowPairs
+
+    # show bar plot 
     fig, axs = plt.subplots(1, 3, figsize=(11, 4), sharey=True, sharex=True)
-    t_test(data, 'is_PAT==False', 'is_PAT==True', tar=tars)
+    t_test(data, f'{varr}=="{case1}"', f'{varr}=="{case2}"', tar=tars)
 
     for i, t in enumerate(tars):
         ax = axs[i]
-        sns.boxplot(x='is_PAT', y=t, data=data, 
+        sns.boxplot(x=varr, y=t, data=data, 
                 width=width,
-                palette=viz.PurplePairs, ax=ax)
+                palette=colors, ax=ax)
 
         p =0 
         for box in ax.patches:
             if box.__class__.__name__ == 'PathPatch':
-                box.set_edgecolor(viz.PurplePairs[p%2])
+                box.set_edgecolor(colors[p%2])
                 box.set_facecolor('white')
                 for k in range(6*p, 6*(p+1)):
-                    ax.lines[k].set_color(viz.PurplePairs[p%2])
+                    ax.lines[k].set_color(colors[p%2])
                 p += 1
-        sns.stripplot(x='is_PAT', y=t, data=data, 
+        sns.stripplot(x=varr, y=t, data=data, 
                         jitter=True, dodge=True, marker='o', size=7,
-                        palette=viz.PurplePairs, alpha=0.5,
+                        palette=colors, alpha=0.5,
                         ax=ax)
         ax.set_ylim([-5, 5])
         ax.set_xticks([0, 1])
-        ax.set_xticklabels(['HC', 'PAT'])
+        ax.set_xticklabels(ticks)
         ax.set_xlabel('')
         ax.set_ylabel('  \n ')
         ax.spines.right.set_visible(False)
         ax.spines.top.set_visible(False)
 
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/PrefxGroup.png', dpi=dpi)
+    plt.savefig(f'{path}/figures/Fig{fig_id}_Stylex{cond}.png', dpi=300)
 
-def PrefxSyndrome(data):
+def StyleInter(data, cond, fig_id):
+    '''Decision style over different conditions
+
+    Args:
+        data: the preprocessed data 
+        cond: the condition on the x axis
+            - group x volatitility
+            - group x feedback: stable
+            - volatility x feedback: reward
+        fig_id: figure id
+    
+    Outputs: 
+        A bar plot 
+    '''
+    # prepare the inputs 
+    tars = ['l1', 'l2', 'l3']
+    data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
+    data = data.groupby(by=['sub_id', 'group', 'feedback_type', 'b_type']
+                    )[tars].mean().reset_index()
+
+    # select condition
+    if cond == 'group-volatility':
+        varr1, case11, case12 = 'group', 'HC', 'PAT'
+        varr2, case21, case22 = 'b_type', 'sta', 'vol'
+        ticks = ['HC', 'PAT']
+        legs  = ['Stable', 'Volatile']
+        colors = viz.BluePairs
+    elif cond == 'group-feedback':
+        varr1, case11, case12 = 'group', 'HC', 'PAT'
+        varr2, case21, case22 = 'feedback_type', 'gain', 'loss'
+        ticks = ['HC', 'PAT']
+        legs  = ['Reward', 'Aversive']
+        colors = viz.YellowPairs
+    elif cond == 'volatility-feedback':
+        varr1, case11, case12 = 'b_type', 'sta', 'vol'
+        varr2, case21, case22 = 'feedback_type', 'gain', 'loss'
+        ticks = ['Stable', 'Volatile']
+        legs  = ['Reward', 'Aversive']
+        colors = viz.YellowPairs
+
+    # show bar plot 
+    fig, axs = plt.subplots(1, 4, figsize=(14.5, 4), sharey=True, sharex=True)
+
+    for i, t in enumerate(tars):
+        ax = axs[i]
+        sns.boxplot(x=varr1, y=t, data=data, hue=varr2,
+                width=width,
+                palette=colors, ax=ax)
+
+        p =0 
+        for box in ax.patches:
+            if box.__class__.__name__ == 'PathPatch':
+                box.set_edgecolor(colors[p%2])
+                box.set_facecolor('white')
+                for k in range(6*p, 6*(p+1)):
+                    ax.lines[k].set_color(colors[p%2])
+                p += 1
+        sns.stripplot(x=varr1, y=t, data=data, hue=varr2, 
+                        jitter=True, dodge=True, marker='o', size=7,
+                        palette=colors, alpha=0.5, 
+                        ax=ax)
+        ax.set_ylim([-5, 5])
+        ax.set_xticks([0, 1])
+        ax.set_xticklabels(ticks)
+        ax.set_xlabel('')
+        ax.set_ylabel('  \n ')
+        ax.get_legend().remove()
+        ax.spines.right.set_visible(False)
+        ax.spines.top.set_visible(False)
+    
+    ax=axs[3]
+    for i in range(2):
+        sns.scatterplot(x=[0,1], y=[np.nan]*2, marker='s',
+                s=120, color=colors[i], ax=ax)
+    ax.set_axis_off()
+    ax.legend(legs)
+
+    plt.tight_layout()
+    plt.savefig(f'{path}/figures/Fig{fig_id}_Stylex{cond}.png', dpi=300)
+
+def StylexSyndrome(data, fig_id):
+    '''Decision style over sydrome 
+
+    Args:
+        data: the preprocessed data 
+        fig_id: figure id
+    
+    Outputs: 
+        A bar plot 
+    '''
 
     tars  = ['g', 'g', 'g']
     preds = ['l1', 'l2', 'l3']
@@ -115,176 +230,71 @@ def PrefxSyndrome(data):
         ax.spines.top.set_visible(False)
  
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/PrefxSyndrome.png', dpi=300)
+    plt.savefig(f'{path}/figures/Fig{fig_id}_PrefxSyndrome.png', dpi=300)
 
-def PrefxEnv(data):
-    '''Decision preference X Env volatility
-    '''
+def LRxConds(data, cond, fig_id):
+    '''Learning rate over different conditions
 
-    tars = ['l1', 'l2', 'l3']
-    data = data.groupby(by=['sub_id', 'b_type'])[tars].mean().reset_index()
+    Args:
+        data: the preprocessed data 
+        cond: the condition on the x axis
+            - group: PAT, HC
+            - volatility: stable, volatile
+            - feedback: reward, aversive
+        fig_id: figure id
     
-    fig, ax = plt.subplots(1, 1, figsize=(10, 4))
-    t_test(data, 'b_type=="sta"', 'b_type=="vol"', tar=tars)
-
-    new_data = []
-    for t in tars:
-        temp_data = data.loc[:, ['b_type', t]].rename(columns={t: 'weights'})
-        temp_data['params'] = t
-        new_data.append(temp_data)
-    new_data = pd.concat(new_data, axis=0)
-
-    sns.boxplot(x='params', y='weights', hue='b_type', data=new_data, 
-                palette=viz.BluePairs, ax=ax)
-    p =0 
-    for box in ax.patches:
-        if box.__class__.__name__ == 'PathPatch':
-            box.set_edgecolor(viz.BluePairs[p%2])
-            box.set_facecolor('white')
-            for k in range(6*p, 6*(p+1)):
-                ax.lines[k].set_color(viz.BluePairs[p%2])
-            p += 1
-    sns.stripplot(x='params', y='weights', hue='b_type', data=new_data, 
-                    jitter=True, dodge=True, marker='o', size=7,
-                    palette=viz.BluePairs, alpha=0.5,
-                    ax=ax)
-    ax.set_ylim([-5, 5])
-    ax.set_xticks([0, 1, 2])
-    ax.set_xticklabels([r'$log(W_{EU})$',r'$log(W_{MO})$',r'$log(W_{HA})$'])
-    ax.set_xlabel('')
-    ax.set_ylabel('Decision \nPreference (A.U.)')
-    
-    handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles=handles, labels=['Stable', 'Volatile'], 
-                bbox_to_anchor=(1.3, .6), loc='right')
-    ax.spines.right.set_visible(False)
-    ax.spines.top.set_visible(False)
-    plt.tight_layout()
-    plt.savefig(f'{path}/figures/PrefxEnv.png', dpi=dpi)
-
-def LRxEnv(data):
-    '''learning rate X Env volatility
+    Outputs: 
+        A bar plot 
     '''
-
+    # prepare for the fit
     tars = ['log_alpha']
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
-    data = data.groupby(by=['sub_id', 'is_PAT', 'feedback_type', 'b_type']
+    data = data.groupby(by=['sub_id', 'group', 'feedback_type', 'b_type']
                         )[tars].mean().reset_index()
+
+    # select condition
+    if cond == 'group':
+        varr, case1, case2 = 'group', 'HC', 'PAT'
+        ticks = ['HC', 'PAT']
+        colors = viz.PurplePairs
+    elif cond == 'volatility':
+        varr, case1, case2 = 'b_type', 'sta', 'vol'
+        ticks = ['Stable', 'Volatile']
+        colors = viz.BluePairs
+    elif cond == 'feedback':
+        varr, case1, case2 = 'feedback_type', 'gain', 'loss'
+        ticks = ['Reward', 'Aversive']
+        colors = viz.YellowPairs
     
+    t_test(data, f'{varr}=="{case1}"', f'{varr}=="{case2}"', tar=tars)
+
     fig, ax = plt.subplots(1, 1, figsize=(3.9, 4))
-    t_test(data, 'b_type=="sta"', 'b_type=="vol"', tar=tars)
-    sns.boxplot(x='b_type', y='log_alpha', data=data, 
+    sns.boxplot(x=varr, y='log_alpha', data=data, 
                 width=width,
-                palette=viz.BluePairs, ax=ax)
+                palette=colors, ax=ax)
     p =0 
     for box in ax.patches:
         if box.__class__.__name__ == 'PathPatch':
-            box.set_edgecolor(viz.BluePairs[p%2])
+            box.set_edgecolor(colors[p%2])
             box.set_facecolor('white')
             for k in range(6*p, 6*(p+1)):
-                ax.lines[k].set_color(viz.BluePairs[p%2])
+                ax.lines[k].set_color(colors[p%2])
             p += 1
-    sns.stripplot(x='b_type', y='log_alpha', data=data, 
+    sns.stripplot(x=varr, y='log_alpha', data=data, 
                     jitter=True, dodge=True, marker='o', size=7,
-                    palette=viz.BluePairs, alpha=0.5,
+                    palette=colors, alpha=0.5,
                     ax=ax)
     ax.set_ylim([-2.4, 0])
     ax.set_xlabel('')
     ax.set_ylabel(' ')
     ax.set_xticks([0, 1])
-    ax.set_xticklabels(['Stable', 'Volatile'])
-
+    ax.set_xticklabels(ticks)
     ax.spines.right.set_visible(False)
     ax.spines.top.set_visible(False)
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/LRxEnv.png', dpi=dpi)
+    plt.savefig(f'{path}/figures/Fig{fig_id}_LRx{cond}.png', dpi=dpi)
 
-def LRxGroup(data):
-    '''learning rate X patient group
-    '''
-
-    tars = ['log_alpha']
-    data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
-    data = data.groupby(by=['sub_id', 'is_PAT', 'feedback_type', 'b_type']
-                    )[tars].mean().reset_index()
-    
-    fig, ax = plt.subplots(1, 1, figsize=(3.9, 4))
-    t_test(data, 'is_PAT==False', 'is_PAT==True', tar=tars)
-
-    sns.boxplot(x='is_PAT', y='log_alpha', data=data, 
-                palette=viz.PurplePairs, ax=ax)
-    p =0 
-    for box in ax.patches:
-        if box.__class__.__name__ == 'PathPatch':
-            box.set_edgecolor(viz.PurplePairs[p%2])
-            box.set_facecolor('white')
-            for k in range(6*p, 6*(p+1)):
-                ax.lines[k].set_color(viz.PurplePairs[p%2])
-            p += 1
-    sns.stripplot(x='is_PAT', y='log_alpha', data=data, 
-                    jitter=True, dodge=True, marker='o', size=7,
-                    palette=viz.PurplePairs, alpha=0.5,
-                    ax=ax)
-    ax.set_ylim([-2.4, 0])
-    ax.set_xlabel('')
-    ax.set_ylabel(' ')
-    ax.set_xticks([0, 1])
-    ax.set_xticklabels(['HC', 'PAT'])
-
-    ax.spines.right.set_visible(False)
-    ax.spines.top.set_visible(False)
-    plt.tight_layout()
-    plt.savefig(f'{path}/figures/LRxGroup.png', dpi=dpi)
-
-def PrefdiffxGroup(data):
-    '''Preference difference X patient group
-    '''
-
-    tars = ['l1', 'l2', 'l3']
-    data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
-    data = data.groupby(by=['sub_id', 'is_PAT', 'b_type', 'feedback_type']
-                    )[tars].mean().reset_index()
-    for i, t in enumerate(tars):
-        print(f'# ------------------ {t} ----------------- #')
-        print(pg.anova(dv=t, between=['is_PAT', 'b_type', 
-                    'feedback_type'], data=data).round(3))
-    
-    fig, axs = plt.subplots(1, 3, figsize=(14, 4))
-    data = data.groupby(by=['sub_id', 'is_PAT', 'b_type']
-                    )[tars].mean().reset_index()
-    for i, t in enumerate(tars):
-        
-        ax = axs[i]
-        sns.boxplot(x='is_PAT', y=t, hue='b_type', data=data, 
-                width=width,
-                palette=viz.BluePairs, ax=ax)
-       
-        p =0 
-        for box in ax.patches:
-            if box.__class__.__name__ == 'PathPatch':
-                box.set_edgecolor(viz.BluePairs[p%2])
-                box.set_facecolor('white')
-                for k in range(6*p, 6*(p+1)):
-                    ax.lines[k].set_color(viz.BluePairs[p%2])
-                p += 1
-        sns.stripplot(x='is_PAT', y=t, hue='b_type', data=data, 
-                        jitter=True, dodge=True, marker='o', size=7,
-                        palette=viz.BluePairs, alpha=0.5,
-                        ax=ax)
-        
-        ax.set_xlabel('')
-        ax.set_ylabel('  \n ')
-        ax.spines.right.set_visible(False)
-        ax.spines.top.set_visible(False)
-        ax.set_xticks([0, 1])
-        ax.set_xticklabels(['HC', 'PAT'])
-        ax.get_legend().remove()
-
-    plt.tight_layout()
-    plt.savefig(f'{path}/figures/PrefdiffxGroup.png', dpi=dpi)
-
-
-def Stategy_Ada():
+def StrategyAda(fig_id):
 
     fname = f'{path}/simulations/exp1data/MOS/simsubj-exp1data-sta_first-AVG.csv'
     data = pd.read_csv(fname)
@@ -310,9 +320,9 @@ def Stategy_Ada():
     ax.set_ylim([-.1, 1.1])
     ax.legend()
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/effect.png', dpi=dpi)
+    plt.savefig(f'{path}/figures/Fig{fig_id}_StrategySim.png', dpi=dpi)
 
-def Pi_Ada():
+def PolicyAda(fig_id):
 
     psi  = np.zeros([180])
     psi[:90]     = .7
@@ -336,9 +346,17 @@ def Pi_Ada():
     ax.legend()
     ax.set_ylim([-.1, 1.1])
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/effect2.png', dpi=dpi)
+    plt.savefig(f'{path}/figures/Fig{fig_id}_PolicySim.png', dpi=dpi)
 
-def humanAda(mode):
+def HumanAda(mode, fig_id):
+
+    psi  = np.zeros([180])
+    psi[:90]     = .7
+    psi[90:110]  = .2
+    psi[110:130] = .8
+    psi[130:150] = .2
+    psi[150:170] = .8
+    psi[170:180] = .2
 
     with open(f'data/{mode}_exp1data.pkl', 'rb')as handle:
         data = pickle.load(handle)
@@ -370,7 +388,7 @@ def humanAda(mode):
             
     cs = ['group=="HC"', 'group!="HC"']
     sel_data = pd.concat(cases['sta0.7-vol0.2']).reset_index()
-    sns.lineplot(x='trial', y='p0', data=sel_data, ls='--', color='k')
+    sns.lineplot(x=np.arange(180), y=psi, color='k', ls='--')
     lbs = ['HC', 'PAT']
     for i, c in enumerate(cs):
         sel_data = pd.concat(cases['sta0.7-vol0.2']).query(c).reset_index()
@@ -394,23 +412,44 @@ def humanAda(mode):
     plt.xlabel('Trials')
     plt.ylabel('Prob. of choosing \nthe left stimulus')
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/human_{mode}.png', dpi=300)
+    plt.savefig(f'{path}/figures/Fig{fig_id}_HumanSim-{mode}.png', dpi=dpi)
 
 
 if __name__ == '__main__':
 
-    quantTable()
-
     ## parameters analyses
     pivot_table = build_pivot_table('map', agent='MOS', min_q=.01, max_q=.99)
+    pivot_table['group'] = pivot_table['group'].map(
+                    {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
 
-    # PrefxGroup(pivot_table)
-    # PrefxSyndrome(pivot_table)
-    # PrefxEnv(pivot_table)
-    # LRxEnv(pivot_table)
-    # LRxGroup(pivot_table)
-    # PrefdiffxGroup(pivot_table)
-    # Stategy_Ada()
-    # Pi_Ada()
-    humanAda('gain')
-    humanAda('loss')
+    # --------- Main results --------- #
+
+    # Table1: quantitative fit table 
+    quantTable()
+    
+    # Fig 2: Decision style effect
+    StylexConds(pivot_table, 'group', fig_id='2A')   # Fig 2A
+    StylexSyndrome(pivot_table, fig_id='2B')         # Fig 2B
+
+    # Fig 3: Learning rate effect
+    LRxConds(pivot_table, 'volatility', fig_id='3A') # Fig 3A
+    LRxConds(pivot_table, 'group', fig_id='3B')      # Fig 3B
+
+    # Fig 4: Understand the flexible behaviors
+    HumanAda('loss', fig_id='4A')                    # Fig 4A
+    PolicyAda(fig_id='4B')                           # Fig 4B
+    StrategyAda(fig_id='4C')                         # Fig 4C
+
+    # ------ Supplementary materials ------- #
+
+    #Fig S1: Decision style effect 
+    StylexConds(pivot_table, 'volatility', fig_id='S1A')   # Fig S1A
+    StylexConds(pivot_table, 'feedback', fig_id='S1B')     # Fig S1b
+
+    # Fig S2: Decision style interaction effect
+    StyleInter(pivot_table, 'group-volatility', fig_id='S2A')     # Fig S2A
+    StyleInter(pivot_table, 'group-feedback', fig_id='S2B')       # Fig S2B
+    StyleInter(pivot_table, 'volatility-feedback', fig_id='S2C')  # Fig S2C
+    
+    # Fig S3: Understand the flexible behaviors
+    HumanAda('gain', fig_id='S3')   # Fig S3

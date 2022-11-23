@@ -62,6 +62,8 @@ class viz:
     p2 = np.array([237, 162, 192]) / 255
     PurplePairs = [p1, p2]
 
+    YellowPairs = [dYellow, Yellow]
+
     # -----------  Colormap ------------- 
 
     BluePalette   = [dBlue, Blue, lBlue]
