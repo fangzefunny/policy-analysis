@@ -20,3 +20,4 @@ analyses/
 # ignore some debug files
 debug.py 
 documents/
+screenlog.0
