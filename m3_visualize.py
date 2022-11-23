@@ -1,10 +1,12 @@
 import os
+import pickle
 
 import numpy as np
 import pandas as pd 
 import matplotlib.pyplot as plt 
 import seaborn as sns
 import pingouin as pg
+from scipy.ndimage import gaussian_filter1d
 
 from utils.agent import *
 from utils.analyze import *
@@ -336,6 +338,65 @@ def Pi_Ada():
     plt.tight_layout()
     plt.savefig(f'{path}/figures/effect2.png', dpi=dpi)
 
+def humanAda(mode):
+
+    with open(f'data/{mode}_exp1data.pkl', 'rb')as handle:
+        data = pickle.load(handle)
+
+    cases = {'sta0.7-vol0.2':[], 'sta0.3-vol0.8':[]}
+
+    for subj in data.keys():
+        datum = data[subj][0]
+        ind = {}
+        for btype in ['sta', 'vol']:
+            ind[btype] = list(range(90)) if datum.loc[0, 'b_type'] == btype\
+                            else list(range(90, 180)) 
+
+        ## stable 
+        sel_data = datum.query('b_type=="sta"'
+                ).groupby(by='state').count()['trial']
+        datum.loc[ind['sta'], 'p0'] = np.round(sel_data[0] / 90, 2)
+
+        ## volatile 
+        idx1, idx2 = ind['vol'][0], ind['vol'][0]+19
+        n = datum.loc[idx1:idx2].groupby(by='state').count()['trial'][0] / 20
+        datum.loc[ind['vol'], 'p0'] = [.2]*20+[.8]*20+[.2]*20+[.8]*20+[.2]*10 if n==.2 else\
+                                    [.8]*20+[.2]*20+[.8]*20+[.2]*20+[.8]*10 
+        cond = f'{datum.loc[0, "b_type"]}{datum.loc[0, "p0"]}-{datum.loc[90, "b_type"]}{datum.loc[90, "p0"]}'
+        if cond in cases.keys():
+            cases[cond].append(datum) 
+             
+    plt.figure(figsize=(10, 4))
+            
+    cs = ['group=="HC"', 'group!="HC"']
+    sel_data = pd.concat(cases['sta0.7-vol0.2']).reset_index()
+    sns.lineplot(x='trial', y='p0', data=sel_data, ls='--', color='k')
+    lbs = ['HC', 'PAT']
+    for i, c in enumerate(cs):
+        sel_data = pd.concat(cases['sta0.7-vol0.2']).query(c).reset_index()
+        sel_data['humanAct'] = sel_data['humanAct'].apply(
+            lambda x: x if mode=='loss' else 1-x)
+        sel_data2 = pd.concat(cases['sta0.3-vol0.8']).query(c).reset_index()
+        sel_data2['humanAct'] = sel_data2['humanAct'].apply(
+            lambda x: 1-x if mode=='loss' else x)
+        sdata = pd.concat([sel_data, sel_data2],axis=0, ignore_index=True)
+        print(f'{lbs[i]}: {sdata.shape[0]/180}')
+        a = sdata.groupby(by='trial')[['humanAct']].mean().reset_index().rolling(5
+                        ).mean().values[5-1:]
+        b = gaussian_filter1d(a[:,1], sigma=2)
+        c = a[:177, 0]
+        sdata = pd.DataFrame(np.vstack([c.reshape([-1]), b]).T, columns=['trial', 'humanAct'])
+        # sdata = pd.DataFrame(sdata.groupby(by='trial')[['humanAct']].mean().reset_index().rolling(5
+        #                 ).mean().values[5-1:], columns=['trial', 'humanAct'])
+        sns.lineplot(x='trial', y='humanAct', data=sdata, color=viz.PurplePairs[i], ci=0, label=lbs[i])
+    plt.legend()
+    plt.ylim([-.1, 1.1])
+    plt.xlabel('Trials')
+    plt.ylabel('Prob. of choosing \nthe left stimulus')
+    plt.tight_layout()
+    plt.savefig(f'{path}/figures/human_{mode}.png', dpi=300)
+
+
 if __name__ == '__main__':
 
     quantTable()
@@ -343,11 +404,13 @@ if __name__ == '__main__':
     ## parameters analyses
     pivot_table = build_pivot_table('map', agent='MOS', min_q=.01, max_q=.99)
 
-    PrefxGroup(pivot_table)
-    PrefxSyndrome(pivot_table)
-    PrefxEnv(pivot_table)
-    LRxEnv(pivot_table)
-    LRxGroup(pivot_table)
-    PrefdiffxGroup(pivot_table)
-    Stategy_Ada()
-    Pi_Ada()
+    # PrefxGroup(pivot_table)
+    # PrefxSyndrome(pivot_table)
+    # PrefxEnv(pivot_table)
+    # LRxEnv(pivot_table)
+    # LRxGroup(pivot_table)
+    # PrefdiffxGroup(pivot_table)
+    # Stategy_Ada()
+    # Pi_Ada()
+    humanAda('gain')
+    humanAda('loss')
