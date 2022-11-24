@@ -14,7 +14,7 @@ path = os.path.dirname(os.path.abspath(__file__))
 ## pass the hyperparams
 parser = argparse.ArgumentParser(description='Test for argparse')
 parser.add_argument('--data_set',   '-d', help='which_data', type = str, default='exp1data')
-parser.add_argument('--method',     '-m', help='fitting methods', type = str, default='map')
+parser.add_argument('--method',     '-m', help='fitting methods', type = str, default='bms')
 parser.add_argument('--group',      '-g', help='fit to ind or fit to the whole group', type=str, default='ind')
 parser.add_argument('--agent_name', '-n', help='choose agent', default='MOS')
 parser.add_argument('--n_cores',    '-c', help='number of CPU cores used for parallel computing', 
@@ -22,6 +22,7 @@ parser.add_argument('--n_cores',    '-c', help='number of CPU cores used for par
 parser.add_argument('--n_sim',      '-f', help='f simulations', type=int, default=5)
 parser.add_argument('--seed',       '-s', help='random seed', type=int, default=120)
 parser.add_argument('--params',     '-p', help='params', type=str, default='')
+parser.add_argument('--recovery',   '-r', help='recovery', type=str, default=1)
 args = parser.parse_args()
 args.agent = eval(args.agent_name)
 
@@ -49,7 +50,7 @@ def simulate(data, args, seed):
     ## Loop to choose the best model for simulation
     # the last column is the loss, so we ignore that
     sim_data = []
-    fname = f'{path}/fits/{args.data_set}/fit_sub_info-{args.data_set}-{args.method}.csv'      
+    fname = f'{path}/fits/{args.data_set}/fit_sub_info-{args.agent_name}-{args.method}.pkl'      
     with open(fname, 'rb')as handle: fit_sub_info = pickle.load(handle)
     for sub_idx in data.keys(): 
         if in_params is None:
@@ -174,7 +175,7 @@ def sim_subj(mode, seed, n_samples=3):
 def sim_for_recovery(data, n_sub=4, n_rep=5):
 
     # load fitting info 
-    fname = f'{path}/fits/{args.data_set}/fit_sub_info-{args.data_set}-{args.method}.csv'      
+    fname = f'{path}/fits/{args.data_set}/fit_sub_info-{args.agent_name}-{args.method}.pkl'      
     with open(fname, 'rb')as handle: fit_sub_info = pickle.load(handle)
 
     # select 
@@ -193,7 +194,8 @@ def sim_for_recovery(data, n_sub=4, n_rep=5):
         sim_data[sub_idx] = {}
         for sim_id in range(n_rep):
             sim_sample = subj.sim({sub_idx: sim_tasks[i]}, param, rng=rng)
-            sim_sample['humanAct'] = sim_sample['act']
+            sim_sample['humanAct'] = sim_sample['act'].astype(int)
+            sim_sample = sim_sample.drop(columns=subj.agent.voi+['act'])
             sim_data[sub_idx][sim_id] = sim_sample 
             i += 1
     
@@ -221,6 +223,6 @@ if __name__ == '__main__':
     pool.close()
 
     # STEP 4: SIM FOR RECOVERY
-    sim_for_recovery(data)
+    if args.recovery: sim_for_recovery(data)
 
    

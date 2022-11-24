@@ -10,6 +10,7 @@ from scipy.ndimage import gaussian_filter1d
 
 from utils.agent import *
 from utils.analyze import *
+from utils.bms import fit_bms
 from utils.viz import viz
 viz.get_style()
 
@@ -23,6 +24,8 @@ block_types    = ['sta', 'vol']
 policies       = ['EU', 'MO', 'HA']
 dpi = 300
 width = .85
+
+# ------------  Model comparison ------------- #
 
 # fit performance 
 def quantTable(agents= ['MOS', 'FLR', 'RP']):
@@ -40,6 +43,45 @@ def quantTable(agents= ['MOS', 'FLR', 'RP']):
 
     for m in agents:
         print(f'{m}({eval(m).n_params}) nll: {crs[m]["nll"]:.3f}, aic: {crs[m]["aic"]:.3f}, bic: {crs[m]["bic"]:.3f}')
+
+
+def show_bms():
+    '''group-level bayesian model selection
+    '''
+    models = ['MOS', 'FLR', 'RP']
+    fit_sub_info = []
+
+    for i, m in enumerate(models):
+        with open(f'fits/exp1data/fit_sub_info-{m}-bms.pkl', 'rb')as handle:
+            fit_info = pickle.load(handle)
+        # get the subject list 
+        if i==0: subj_lst = fit_info.keys() 
+        # get log post
+        log_post = [fit_info[idx]['log_post'] for idx in subj_lst]
+        bic      = [fit_info[idx]['bic'] for idx in subj_lst]
+        h        = [fit_info[idx]['H'] for idx in subj_lst]
+        n_param  = fit_info[list(subj_lst)[0]]['n_param']
+        fit_sub_info.append({
+            'log_post': log_post, 
+            'bic': bic, 
+            'n_param': n_param, 
+            'H': h
+        })
+
+    bms_results = fit_bms(fit_sub_info)
+
+    # show protected exceedence 
+    _, ax = plt.subplots(1, 1, figsize=(5, 4))
+    xx = list(range(len(models)))
+    sns.barplot(x=xx, y=bms_results['pxp'], palette=viz.Palette[:len(models)], ax=ax)
+    ax.set_xticks(xx)
+    ax.set_xticklabels(models)
+    ax.set_xlim([0-.8, len(models)-1+.8])
+    ax.set_ylabel('PXP')
+    plt.tight_layout()
+    plt.savefig(f'{path}/figures/BMS.png', dpi=300)
+
+# ---------- Model-based analysis ----------- #
 
 def StylexConds(data, cond, fig_id):
     '''Decision style over different conditions
@@ -417,39 +459,41 @@ def HumanAda(mode, fig_id):
 
 if __name__ == '__main__':
 
-    ## parameters analyses
-    pivot_table = build_pivot_table('map', agent='MOS', min_q=.01, max_q=.99)
-    pivot_table['group'] = pivot_table['group'].map(
-                    {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
+    # ## parameters analyses
+    # pivot_table = build_pivot_table('map', agent='MOS', min_q=.01, max_q=.99)
+    # pivot_table['group'] = pivot_table['group'].map(
+    #                 {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
 
-    # --------- Main results --------- #
+    # # --------- Main results --------- #
 
-    # Table1: quantitative fit table 
-    quantTable()
+    # # Table1: quantitative fit table 
+    # quantTable()
     
-    # Fig 2: Decision style effect
-    StylexConds(pivot_table, 'group', fig_id='2A')   # Fig 2A
-    StylexSyndrome(pivot_table, fig_id='2B')         # Fig 2B
+    # # Fig 2: Decision style effect
+    # StylexConds(pivot_table, 'group', fig_id='2A')   # Fig 2A
+    # StylexSyndrome(pivot_table, fig_id='2B')         # Fig 2B
 
-    # Fig 3: Learning rate effect
-    LRxConds(pivot_table, 'volatility', fig_id='3A') # Fig 3A
-    LRxConds(pivot_table, 'group', fig_id='3B')      # Fig 3B
+    # # Fig 3: Learning rate effect
+    # LRxConds(pivot_table, 'volatility', fig_id='3A') # Fig 3A
+    # LRxConds(pivot_table, 'group', fig_id='3B')      # Fig 3B
 
-    # Fig 4: Understand the flexible behaviors
-    HumanAda('loss', fig_id='4A')                    # Fig 4A
-    PolicyAda(fig_id='4B')                           # Fig 4B
-    StrategyAda(fig_id='4C')                         # Fig 4C
+    # # Fig 4: Understand the flexible behaviors
+    # HumanAda('loss', fig_id='4A')                    # Fig 4A
+    # PolicyAda(fig_id='4B')                           # Fig 4B
+    # StrategyAda(fig_id='4C')                         # Fig 4C
 
-    # ------ Supplementary materials ------- #
+    # # ------ Supplementary materials ------- #
 
-    #Fig S1: Decision style effect 
-    StylexConds(pivot_table, 'volatility', fig_id='S1A')   # Fig S1A
-    StylexConds(pivot_table, 'feedback', fig_id='S1B')     # Fig S1b
+    # #Fig S1: Decision style effect 
+    # StylexConds(pivot_table, 'volatility', fig_id='S1A')   # Fig S1A
+    # StylexConds(pivot_table, 'feedback', fig_id='S1B')     # Fig S1b
 
-    # Fig S2: Decision style interaction effect
-    StyleInter(pivot_table, 'group-volatility', fig_id='S2A')     # Fig S2A
-    StyleInter(pivot_table, 'group-feedback', fig_id='S2B')       # Fig S2B
-    StyleInter(pivot_table, 'volatility-feedback', fig_id='S2C')  # Fig S2C
+    # # Fig S2: Decision style interaction effect
+    # StyleInter(pivot_table, 'group-volatility', fig_id='S2A')     # Fig S2A
+    # StyleInter(pivot_table, 'group-feedback', fig_id='S2B')       # Fig S2B
+    # StyleInter(pivot_table, 'volatility-feedback', fig_id='S2C')  # Fig S2C
     
-    # Fig S3: Understand the flexible behaviors
-    HumanAda('gain', fig_id='S3')   # Fig S3
+    # # Fig S3: Understand the flexible behaviors
+    # HumanAda('gain', fig_id='S3')   # Fig S3
+
+    show_bms()
