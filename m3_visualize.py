@@ -482,9 +482,9 @@ if __name__ == '__main__':
     pivot_table['group'] = pivot_table['group'].map(
                     {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
 
-    --------- Main results --------- #
+    # --------- Main results --------- #
 
-    Table1: quantitative fit table 
+    # Table1: quantitative fit table 
     quantTable(['MOS', 'FLR', 'RP', 'MOS_fix', 'FLR_fix', 'RP_fix'])
     
     # Fig 2: Decision style effect
