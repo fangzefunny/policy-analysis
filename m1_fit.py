@@ -34,8 +34,6 @@ if not os.path.exists(f'{path}/fits'):
     os.mkdir(f'{path}/fits')
 if not os.path.exists(f'{path}/fits/{args.data_set}'):
     os.mkdir(f'{path}/fits/{args.data_set}')
-if not os.path.exists(f'{path}/fits/{args.data_set}/{args.agent_name}'):
-    os.mkdir(f'{path}/fits/{args.data_set}/{args.agent_name}')
 
 def fit_parallel(pool, data, subj, verbose, args):
     '''A worker in the parallel computing pool 
