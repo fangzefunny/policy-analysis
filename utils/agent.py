@@ -196,6 +196,46 @@ class FLR(gagRL):
         b, f = self.buffer.sample('b_type', 'f_type')
         return eval(f'self.alpha_{b}_{f}') 
 
+class FLR_fix(FLR):
+    name     = 'flexible learning rate, fix params for four conditions'
+    bnds     = [(0, 1), (0, 50), (0, 1), (0, 1), (0, 50), (0, 1)]
+    pbnds    = [(0,.5), (0, 10), (0, 1), (0,.5), (0, 10), (0, 1)]
+    p_name   = ['α_act', 'β_act', 'r', 'α', 'β', 'λ']
+    p_priors = [beta(a=2, b=2), gamma(a=3, scale=3), gamma(a=3, scale=3), 
+                beta(a=2, b=2), gamma(a=3, scale=3), beta(a=2, b=2)]
+    n_params = len(bnds)
+    voi      = ['ps', 'pi', 'alpha'] 
+   
+    def load_params(self, params):
+
+        # ---- General ----- #
+        self.alpha_act      = params[0]
+        self.beta_act       = params[1]
+        self.r              = params[2]
+        self.alpha_fix      = params[3]
+        self.beta_fix       = params[4]
+        self.lamb_fix       = params[5]
+
+        # ---- Stable & gain ---- #
+        self.alpha_sta_gain = self.alpha_fix
+        self.beta_sta_gain  = self.beta_fix
+        self.lamb_sta_gain  = self.lamb_fix
+
+        # ---- Stable & loss ---- #
+        self.alpha_sta_loss = self.alpha_fix
+        self.beta_sta_loss  = self.beta_fix
+        self.lamb_sta_loss  = self.lamb_fix
+
+        # ---- Volatile & gain ---- #
+        self.alpha_vol_gain = self.alpha_fix
+        self.beta_vol_gain  = self.beta_fix
+        self.lamb_vol_gain  = self.lamb_fix
+
+        # ---- Voatile & gain ---- #
+        self.alpha_vol_loss = self.alpha_fix
+        self.beta_vol_loss  = self.beta_fix
+        self.lamb_vol_loss  = self.lamb_fix
+
 class RP(gagRL):
     name     = 'risk preference'
     bnds     = [(0, 30)] + [(0, 1), (0, 20)]*4
@@ -232,6 +272,38 @@ class RP(gagRL):
         ps = np.clip(eval(f'self.gamma_{b}_{f}')*(self.p-.5)+.5, 0, 1)
         self.p_S = np.array([1-ps, ps])
 
+class RP_fix(RP):
+    name     = 'risk preference, fix parameters for all conditions'
+    bnds     = [(0, 30), (0, 1), (0, 20)]
+    pbnds    = [(0, 10), (0,.5), (0, 20)]
+    p_name   = ['β', 'α', 'γ']
+    n_params = len(bnds)
+    p_priors = [gamma(a=3, scale=3), beta(a=2, b=2), gamma(a=3, scale=3)]*4
+    voi      = ['ps', 'pi'] 
+
+    def load_params(self, params):
+
+        # ---- General ----- #
+        self.beta           = params[0]
+        self.alpha_fix      = params[1]
+        self.gamma_fix      = params[2]
+
+        # ---- Stable & gain ---- #
+        self.alpha_sta_gain = self.alpha_fix
+        self.gamma_sta_gain = self.gamma_fix
+
+        # ---- Stable & loss ---- #
+        self.alpha_sta_loss = self.alpha_fix
+        self.gamma_sta_loss = self.gamma_fix
+
+        # ---- Volatile & gain ---- #
+        self.alpha_vol_gain = self.alpha_fix
+        self.gamma_vol_gain = self.gamma_fix
+
+        # ---- Voatile & gain ---- #
+        self.alpha_vol_loss = self.alpha_fix
+        self.gamma_vol_loss = self.gamma_fix
+   
 class MOS(gagRL):
     name     = 'mixture of strategy'
     bnds     = [(0, 1), (0,50)] + ([(0, 1)]+[(-40,40)]*3) * 4
@@ -360,6 +432,51 @@ class MOS(gagRL):
 
     def print_l3_effect(self):
         return self.pi_effect[2]
+
+class MOS_fix(MOS):
+    name     = 'mixture of strategy, fix parameters for all conditions'
+    bnds     = [(0, 1), (0,50), (0, 1)] + [(-40,40)]*3
+    pbnds    = [(0,.5), (0, 5), (0,.5)] + [(-5, 5)]*3
+    p_name   = ['α_act', 'β', 'α', 'λ1', 'λ2', 'λ3']
+    p_priors = [beta(a=2, b=2), gamma(a=3, scale=3)] + \
+                [beta(a=2, b=2)]+[norm(loc=0, scale=10)]*3
+    n_params = len(bnds)
+    voi      = ['ps', 'pi', 'alpha', 'w1', 'w2', 'w3', 'l1', 
+                'l2', 'l3', 'l1_effect', 'l2_effect', 'l3_effect']
+
+    def load_params(self, params):
+
+        # ---- General ----- #
+        self.alpha_act      = params[0]
+        self.beta           = params[1]
+        self.alpha_fix      = params[2]
+        self.l0_fix         = params[3]
+        self.l1_fix         = params[4]
+        self.l2_fix         = params[5]
+
+        # ---- Stable & gain ---- #
+        self.alpha_sta_gain = self.alpha_fix
+        self.l0_sta_gain    = self.l0_fix
+        self.l1_sta_gain    = self.l1_fix
+        self.l2_sta_gain    = self.l2_fix
+
+        # ---- Stable & loss ---- #
+        self.alpha_sta_loss = self.alpha_fix
+        self.l0_sta_loss    = self.l0_fix
+        self.l1_sta_loss    = self.l1_fix
+        self.l2_sta_loss    = self.l2_fix
+
+        # ---- Volatile & gain ---- #
+        self.alpha_vol_gain = self.alpha_fix
+        self.l0_vol_gain    = self.l0_fix
+        self.l1_vol_gain    = self.l1_fix
+        self.l2_vol_gain    = self.l2_fix
+
+        # ---- Volatile & loss ---- #
+        self.alpha_vol_loss = self.alpha_fix
+        self.l0_vol_loss    = self.l0_fix
+        self.l1_vol_loss    = self.l1_fix
+        self.l2_vol_loss    = self.l2_fix
 
 # ---------  Mixture models ---------- #
 

@@ -1,16 +1,19 @@
 import numpy as np 
+import warnings
 
 from scipy.special import softmax, psi, gammaln
 from scipy.stats import gamma
 
 eps_ = 1e-16
 
-def fit_bms(fit_sub_info, tol=1e-4):
+def fit_bms(fit_sub_info, use_bic=False, tol=1e-4):
     '''Fit group-level Bayesian model seletion
     Nm is the number of model
     Args: 
         fit_sub_info: [Nm, list] a list of model fitting results
-    
+        use_bic: use bic to approximate lme
+        tol: 
+
     Outputs:
         BMS result: a dict including 
             -alpha: [1, Nm] posterior of the model probability
@@ -34,10 +37,11 @@ def fit_bms(fit_sub_info, tol=1e-4):
     Based on: https://github.com/sjgershm/mfit
     @ ZF
     '''
-    
     ## get log model evidence
-    lme = np.vstack([calc_lme(fit_sub_info[k]) 
-                    for k in fit_sub_info.keys()]).T
+    if use_bic:
+        lme = np.vstack([-.5*np.array(fit_info['bic']) for fit_info in fit_sub_info]).T
+    else:
+        lme = np.vstack([calc_lme(fit_info) for fit_info in fit_sub_info]).T
     
     ## get group-level posterior
     Nm = lme.shape[1]
@@ -111,9 +115,12 @@ def calc_lme(fit_info):
         l = fit_info['log_post'][s] + \
             .5*(fit_info['n_param']*np.log(2*np.pi)-h)
         lme.append(l)
+        
     # use BIC if any Hessians are degenerate 
     ind = np.isnan(lme) | np.isinf(lme)| (np.imag(lme)!=0)
-    if any(ind.reshape([-1])): lme = -.5 * fit_info['bic']
+    if any(ind.reshape([-1])): 
+        warnings.warn("Hessians are degenerated, use BIC")
+        lme = -.5 * np.array(fit_info['bic'])
             
     return np.array(lme)
 

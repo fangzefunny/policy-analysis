@@ -26,7 +26,7 @@ class viz:
     ocGreen = np.array([ 90, 196, 164]) / 255
     Gray    = np.array([163, 161, 165]) / 255
 
-    Palette = [Blue, Red, Yellow, ocGreen, Purple]
+    Palette = [Blue, Red, Yellow, ocGreen, Purple, Gray]
 
     # -----------  Palette 2 ------------- 
 
