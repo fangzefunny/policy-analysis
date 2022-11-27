@@ -54,11 +54,11 @@ def quantTable(agents= ['MOS', 'FLR', 'RP']):
         ax = axs[i]
         sns.barplot(x=xx, y=cr, palette=viz.Palette[:len(agents)], ax=ax)
         ax.set_xticks(xx)
-        ax.set_xticklabels(ticks, rotation=45)
+        ax.set_xticklabels(ticks, rotation=30, fontsize=13)
         ax.set_xlim([0-.8, len(agents)-1+.8])
-        ax.set_ylabel(f'Delta {c}')
+        ax.set_ylabel(r'$\Delta$'+f'{c}')
         plt.tight_layout()
-        plt.savefig(f'{path}/figures/quant.png', dpi=300)
+        plt.savefig(f'{path}/figures/quant.pdf', dpi=300)
 
 
 def show_bms(models = ['MOS', 'FLR', 'RP', 'MOS_fix', 'FLR_fix', 'RP_fix'], 
@@ -93,11 +93,11 @@ def show_bms(models = ['MOS', 'FLR', 'RP', 'MOS_fix', 'FLR_fix', 'RP_fix'],
     xx = list(range(len(models)))
     sns.barplot(x=xx, y=bms_results['pxp'], palette=viz.Palette[:len(models)], ax=ax)
     ax.set_xticks(xx)
-    ax.set_xticklabels(ticks, rotation=45)
+    ax.set_xticklabels(ticks, rotation=30, fontsize=13)
     ax.set_xlim([0-.8, len(models)-1+.8])
     ax.set_ylabel('PXP')
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/BMS.png', dpi=300)
+    plt.savefig(f'{path}/figures/BMS.pdf', dpi=300)
 
 # ---------- Model-based analysis ----------- #
 
