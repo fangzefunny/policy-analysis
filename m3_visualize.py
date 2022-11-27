@@ -395,7 +395,7 @@ def PolicyAda(fig_id):
     fig, ax = plt.subplots(1, 1, figsize=(10, 4))
     ax = ax 
     for i, g in enumerate(['HC', 'PAT']):
-        fname = f'{path}/simulations/exp1data/MOS/simsubj-exp1data-sta_first-{g}.csv'
+        fname = f'{path}/simulations/exp1data/MOS/simsubj-exp1data-sta_first-{g}-fix_lr.csv'
         data = pd.read_csv(fname)
         data = data.groupby(by=['trials'])[['pi']].mean()
         sns.lineplot(x='trials', y=f'pi', lw=3, 
@@ -478,7 +478,7 @@ def HumanAda(mode, fig_id):
 if __name__ == '__main__':
 
     ## parameters analyses
-    pivot_table = build_pivot_table('map', agent='MOS', min_q=.01, max_q=.99)
+    pivot_table = build_pivot_table('bms', agent='MOS', min_q=.01, max_q=.99)
     pivot_table['group'] = pivot_table['group'].map(
                     {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
 

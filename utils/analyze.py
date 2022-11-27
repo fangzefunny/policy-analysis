@@ -58,7 +58,7 @@ def model_cmp(quant_crs):
                 {p[0]}:{np.mean(x):.3f}, {p[1]}:{np.mean(y):.3f}
                 t={res[0]:.3f} p={res[1]:.3f}''')
 
-def build_pivot_table(method, agent='MixPol', min_q=.01, max_q=.99):
+def build_pivot_table(method, agent='MOS', min_q=.01, max_q=.99):
     tar_tail = ['l1', 'l2', 'l3'] if agent in ['MixPol', 'MOS'] else []
     features = ['rawRew', 'rew', 'match', 'alpha']+tar_tail
     exp1data = pd.read_csv(f'{path}/../simulations/exp1data/{agent}/sim-exp1data-{method}-idx0.csv')
