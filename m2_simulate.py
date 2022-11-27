@@ -13,7 +13,7 @@ path = os.path.dirname(os.path.abspath(__file__))
 
 ## pass the hyperparams
 parser = argparse.ArgumentParser(description='Test for argparse')
-parser.add_argument('--data_set',   '-d', help='which_data', type = str, default='exp1data')
+parser.add_argument('--data_set',   '-d', help='which_data', type = str, default='param_recovery-MOS')
 parser.add_argument('--method',     '-m', help='fitting methods', type = str, default='bms')
 parser.add_argument('--group',      '-g', help='fit to ind or fit to the whole group', type=str, default='ind')
 parser.add_argument('--agent_name', '-n', help='choose agent', default='MOS')
@@ -22,7 +22,7 @@ parser.add_argument('--n_cores',    '-c', help='number of CPU cores used for par
 parser.add_argument('--n_sim',      '-f', help='f simulations', type=int, default=5)
 parser.add_argument('--seed',       '-s', help='random seed', type=int, default=120)
 parser.add_argument('--params',     '-p', help='params', type=str, default='')
-parser.add_argument('--recovery',   '-r', help='recovery', type=str, default=1)
+parser.add_argument('--recovery',   '-r', help='recovery', type=int, default=1)
 args = parser.parse_args()
 args.agent = eval(args.agent_name)
 
@@ -86,7 +86,7 @@ def sim_paral(pool, data, args):
 
 def sim_subj_paral(pool, mode, args, n_sim=500):
 
-    res = [pool.apply_async(sim_subj, args=[mode, args.seed+i])
+    res = [pool.apply_async(sim_subj, args=[mode, i, args.seed+i])
                             for i in range(n_sim)]
     sim_sta_first = []
     sim_vol_first = [] 
@@ -128,20 +128,24 @@ def get_data(rng, n_trials=180, sta_first=True):
 
     return state, psi, b_type
 
-def sim_subj(mode, seed, n_samples=3):
+def sim_subj(mode, sim_id, seed, n_samples=3):
        
     # decide what to collect
-    subj   = model(MixPol)
+    subj   = model(MOS)
     
     n_params = 18
-    fname    = f'{path}/fits/{args.data_set}/params-{args.data_set}-{args.agent_name}-map-ind.csv'      
+    fname    = f'{path}/fits/{args.data_set}/params-{args.data_set}-{args.agent_name}-bms-ind.csv'      
     raw_params   = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
     params = np.hstack([raw_params[:2], list((raw_params[2:]).reshape([4, 4]).mean(0))*4])
-    if mode == 'HC':
-        params = np.hstack([params[:2], (list(params[2:3])+[0.678336, -0.976054, 0.297795])*4])
-    elif mode == 'PAT':
-        params = np.hstack([params[:2], (list(params[2:3])+[0.007705, 0.315989, -0.323734])*4])
-        
+    if mode == 'HC-fix_lr':
+        params = np.hstack([params[:2], (list(params[2:3])+[0.8954, -1.2135, 0.3179])*4])
+    elif mode == 'PAT-fix_lr':
+        params = np.hstack([params[:2], (list(params[2:3])+[0.0393, -0.2128, 0.1736])*4])
+    elif mode == 'HC-vary_lr':
+        params = np.hstack([params[:2], ([.2]+list(params[3:6]))*4])
+    elif mode == 'PAT-vary_lr':
+        params = np.hstack([params[:2], ([.05]+list(params[3:6]))*4])
+
     rng    = np.random.RandomState(seed)
     
     # simulate block n times
@@ -162,8 +166,10 @@ def sim_subj(mode, seed, n_samples=3):
             'feedback_type': ['gain']*180,
         }
         task = pd.DataFrame.from_dict(task)
+        task['group'] = mode.split('-')[0]
         
         for j in range(n_samples):
+            task['sub_id'] = mode.split('-')[1]
             sim_rng = np.random.RandomState(seed+j)
             sim_sample = subj.sim_block(task, params, rng=sim_rng, is_eval=False)
             sim_data[cond].append(sim_sample)
@@ -202,6 +208,33 @@ def sim_for_recovery(data, n_sub=4, n_rep=5):
     with open(f'{path}/data/{args.data_set}-{args.agent_name}.pkl', 'wb')as handle:
         pickle.dump(sim_data, handle)
                 
+def for_param_recovery(n_sample=30):
+
+    # select 
+    rng = np.random.RandomState(args.seed+1)
+
+    modes = ['HC-fix_lr', 'PAT-fix_lr', 'HC-vary_lr', 'PAT-vary_lr']
+    d = {}
+    i = 0
+    for m in modes:
+        fname = f'{path}/simulations/exp1data/MOS/simsubj-exp1data-sta_first-{m}.csv'
+        data = pd.read_csv(fname)
+        data['humanAct'] = data['act'].astype(int)
+        data = data.drop(columns=['ps', 'pi', 'alpha', 'acc',
+            'w1', 'w2', 'w3', 'l1', 'l2', 'l3', 
+            'l1_effect', 'l2_effect', 'l3_effect', 
+            'act'])
+        ind = list(rng.choice(data['sim_id'].unique(), size=n_sample))
+        for idx in ind:
+            sub_data = data.query(f'sim_id == "{idx}"')
+            sub_data = sub_data.drop(columns=['sim_id'])
+            sub_data['sim_id'] = f'sub{i}'
+            sub_data['sub_typ'] = m.split('-')[1]
+            d[i] = {0: sub_data}
+            i += 1
+    
+    with open(f'{path}/data/param_recovery-MOS.pkl', 'wb')as handle:
+        pickle.dump(d, handle)
 
 if __name__ == '__main__':
     
@@ -216,13 +249,15 @@ if __name__ == '__main__':
     # STEP 2: SYNTHESIZE DATA
     sim_paral(pool, data, args)
 
-    # STEP 3: SIM SUBJECT
-    # sim_subj_paral(pool, 'HC', args)
-    # sim_subj_paral(pool, 'PAT', args)
-    # sim_subj_paral(pool, 'AVG', args)
-    pool.close()
+    # # STEP 3: SIM SUBJECT
+    # modes = ['HC-fix_lr', 'PAT-fix_lr', 'HC-vary_lr', 'PAT-vary_lr', 'AVG-all']
+    # for m in modes: sim_subj_paral(pool, m, args)
+    # pool.close()
 
-    # STEP 4: SIM FOR RECOVERY
-    if args.recovery: sim_for_recovery(data)
+    # # STEP 4: SIM FOR RECOVERY
+    # if args.recovery: 
+    #     sim_for_recovery(data)
+    #     if args.agent_name == 'MOS': 
+    #         for_param_recovery(n_sample=30)
 
    

@@ -118,7 +118,10 @@ class model:
         sim_data = [] 
         for block_id in data.keys():
             block_data = data[block_id].copy()
-            block_data = block_data.drop(columns=['rew'])
+            try:
+                block_data = block_data.drop(columns=['rew'])
+            except:
+                pass 
             sim_data.append(self.sim_block(block_data, params, rng))
         
         return pd.concat(sim_data, ignore_index=True)
