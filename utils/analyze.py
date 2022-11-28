@@ -59,7 +59,7 @@ def model_cmp(quant_crs):
                 t={res[0]:.3f} p={res[1]:.3f}''')
 
 def build_pivot_table(method, agent='MOS', min_q=.01, max_q=.99):
-    tar_tail = ['l1', 'l2', 'l3'] if agent in ['MixPol', 'MOS'] else []
+    tar_tail = ['l1', 'l2', 'l3'] if agent in ['MixPol', 'MOS', 'MOS_fix'] else []
     features = ['rawRew', 'rew', 'match', 'alpha']+tar_tail
     exp1data = pd.read_csv(f'{path}/../simulations/exp1data/{agent}/sim-exp1data-{method}-idx0.csv')
     sub_syndrome = pd.read_csv(f'{path}/../data/bifactor.csv')

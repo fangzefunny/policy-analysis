@@ -60,7 +60,7 @@ class viz:
 
     p1 = np.array([142,  65,  98]) / 255
     p2 = np.array([237, 162, 192]) / 255
-    PurplePairs = [p1, p2]
+    PurplePairs = [p1, p2, r1]
 
     YellowPairs = [dYellow, Yellow]
 

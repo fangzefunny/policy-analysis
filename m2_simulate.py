@@ -13,7 +13,7 @@ path = os.path.dirname(os.path.abspath(__file__))
 
 ## pass the hyperparams
 parser = argparse.ArgumentParser(description='Test for argparse')
-parser.add_argument('--data_set',   '-d', help='which_data', type = str, default='param_recovery-MOS')
+parser.add_argument('--data_set',   '-d', help='which_data', type = str, default='exp1data')
 parser.add_argument('--method',     '-m', help='fitting methods', type = str, default='bms')
 parser.add_argument('--group',      '-g', help='fit to ind or fit to the whole group', type=str, default='ind')
 parser.add_argument('--agent_name', '-n', help='choose agent', default='MOS')
@@ -86,7 +86,7 @@ def sim_paral(pool, data, args):
 
 def sim_subj_paral(pool, mode, args, n_sim=500):
 
-    res = [pool.apply_async(sim_subj, args=[mode, i, args.seed+i])
+    res = [pool.apply_async(sim_subj, args=[mode, args.seed+i])
                             for i in range(n_sim)]
     sim_sta_first = []
     sim_vol_first = [] 
@@ -128,7 +128,7 @@ def get_data(rng, n_trials=180, sta_first=True):
 
     return state, psi, b_type
 
-def sim_subj(mode, sim_id, seed, n_samples=3):
+def sim_subj(mode, seed, n_samples=3):
        
     # decide what to collect
     subj   = model(MOS)
