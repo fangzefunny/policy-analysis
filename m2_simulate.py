@@ -6,6 +6,7 @@ import pandas as pd
 
 from utils.parallel import get_pool 
 from utils.model import model
+from utils.analyze import build_pivot_table
 from utils.agent import *
 
 # find the current path
@@ -16,7 +17,7 @@ parser = argparse.ArgumentParser(description='Test for argparse')
 parser.add_argument('--data_set',   '-d', help='which_data', type = str, default='exp1data')
 parser.add_argument('--method',     '-m', help='fitting methods', type = str, default='bms')
 parser.add_argument('--group',      '-g', help='fit to ind or fit to the whole group', type=str, default='ind')
-parser.add_argument('--agent_name', '-n', help='choose agent', default='MOS')
+parser.add_argument('--agent_name', '-n', help='choose agent', default='MOS_fix')
 parser.add_argument('--n_cores',    '-c', help='number of CPU cores used for parallel computing', 
                                             type=int, default=1)
 parser.add_argument('--n_sim',      '-f', help='f simulations', type=int, default=5)
@@ -86,7 +87,9 @@ def sim_paral(pool, data, args):
 
 def sim_subj_paral(pool, mode, args, n_sim=500):
 
-    res = [pool.apply_async(sim_subj, args=[mode, args.seed+i])
+    fn = eval(f'sim_subj_{args.agent_name}')
+
+    res = [pool.apply_async(fn, args=[mode, args.seed+i])
                             for i in range(n_sim)]
     sim_sta_first = []
     sim_vol_first = [] 
@@ -128,7 +131,7 @@ def get_data(rng, n_trials=180, sta_first=True):
 
     return state, psi, b_type
 
-def sim_subj(mode, seed, n_samples=3):
+def sim_subj_MOS(mode, seed, n_samples=3):
        
     # decide what to collect
     subj   = model(MOS)
@@ -176,38 +179,191 @@ def sim_subj(mode, seed, n_samples=3):
         
     return sim_data 
 
+def sim_subj_FLR(mode, seed, n_samples=3):
+       
+    # decide what to collect
+    subj   = model(FLR)
+    
+    n_params = 15
+    fname    = f'{path}/fits/{args.data_set}/params-{args.data_set}-FLR-bms-ind.csv'      
+    raw_params   = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
+    params = np.hstack([raw_params[:3], list((raw_params[3:]).reshape([4, 3]).mean(0))*4])
+    if mode == 'HC-vary_lr':
+        params = np.hstack([params[:3], ([.4]+list(params[4:6]))*4])
+    elif mode == 'PAT-vary_lr':
+        params = np.hstack([params[:3], ([.1]+list(params[4:6]))*4])
+
+    rng    = np.random.RandomState(seed)
+    
+    # simulate block n times
+    sim_data = {'sta_first': [], 'vol_first': []}
+    for i, cond in enumerate(['sta_first', 'vol_first']):
+        m1 = np.linspace(0, 1, 180).round(2)
+        rng.shuffle(m1)
+        m2 = np.linspace(0, 1, 180).round(2)
+        rng.shuffle(m2)
+        state, psi, b_type = get_data(rng, sta_first=(1-i))
+        task = {
+            'mag0':   m1,
+            'mag1':   m2,
+            'b_type': b_type,
+            'state':  state.astype(int),
+            'psi':    psi,
+            'trials': list(range(180)),
+            'feedback_type': ['gain']*180,
+        }
+        task = pd.DataFrame.from_dict(task)
+        task['group'] = mode.split('-')[0]
+        
+        for j in range(n_samples):
+            task['sub_id'] = mode.split('-')[1]
+            sim_rng = np.random.RandomState(seed+j)
+            sim_sample = subj.sim_block(task, params, rng=sim_rng, is_eval=False)
+            sim_data[cond].append(sim_sample)
+        
+    return sim_data 
+
+def sim_subj_RP(mode, seed, n_samples=3):
+       
+    # decide what to collect
+    subj   = model(RP)
+    
+    n_params = 9
+    fname    = f'{path}/fits/{args.data_set}/params-{args.data_set}-RP-bms-ind.csv'      
+    raw_params   = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
+    params = np.hstack([raw_params[:1], list((raw_params[1:]).reshape([4, 2]).mean(0))*4])
+    if mode == 'HC-vary_lr':
+        params = np.hstack([params[:1], ([.35]+list(params[2:3]))*4])
+    elif mode == 'PAT-vary_lr':
+        params = np.hstack([params[:1], ([.1]+list(params[2:3]))*4])
+
+    rng    = np.random.RandomState(seed)
+    
+    # simulate block n times
+    sim_data = {'sta_first': [], 'vol_first': []}
+    for i, cond in enumerate(['sta_first', 'vol_first']):
+        m1 = np.linspace(0, 1, 180).round(2)
+        rng.shuffle(m1)
+        m2 = np.linspace(0, 1, 180).round(2)
+        rng.shuffle(m2)
+        state, psi, b_type = get_data(rng, sta_first=(1-i))
+        task = {
+            'mag0':   m1,
+            'mag1':   m2,
+            'b_type': b_type,
+            'state':  state.astype(int),
+            'psi':    psi,
+            'trials': list(range(180)),
+            'feedback_type': ['gain']*180,
+        }
+        task = pd.DataFrame.from_dict(task)
+        task['group'] = mode.split('-')[0]
+        
+        for j in range(n_samples):
+            task['sub_id'] = mode.split('-')[1]
+            sim_rng = np.random.RandomState(seed+j)
+            sim_sample = subj.sim_block(task, params, rng=sim_rng, is_eval=False)
+            sim_data[cond].append(sim_sample)
+        
+    return sim_data 
+
+
 # --------- Simulate for recovery ---------- #
 
-def sim_for_recovery(data, n_sub=4, n_rep=5):
+def sim_for_recovery(data, n_sub=20, n_block=10):
 
-    # load fitting info 
-    fname = f'{path}/fits/{args.data_set}/fit_sub_info-{args.agent_name}-{args.method}.pkl'      
-    with open(fname, 'rb')as handle: fit_sub_info = pickle.load(handle)
-
-    # select 
+    # set seed
     rng = np.random.RandomState(args.seed+1)
-    sub_for_sim  = rng.choice(list(fit_sub_info.keys()), size=n_sub)
-    sim_task_ind = rng.choice(list(fit_sub_info.keys()), size=n_sub*n_rep)
-    sim_tasks    = [data[idx][0] for idx in sim_task_ind]
 
     # init model 
     subj = model(args.agent)
 
-    i = 0
-    sim_data = {}
-    for sub_idx in sub_for_sim:
-        param = fit_sub_info[sub_idx]['param']
-        sim_data[sub_idx] = {}
-        for sim_id in range(n_rep):
-            sim_sample = subj.sim({sub_idx: sim_tasks[i]}, param, rng=rng)
-            sim_sample['humanAct'] = sim_sample['act'].astype(int)
-            sim_sample = sim_sample.drop(columns=subj.agent.voi+['act'])
-            sim_data[sub_idx][sim_id] = sim_sample 
-            i += 1
+    ## get parameters 
+    fname = f'{path}/fits/exp1data/params-exp1data-MOS_fix-bms-ind.csv'
+    p1_mu  = pd.read_csv(fname, index_col=0).iloc[0, 0:2].values
+    p1_sig = pd.read_csv(fname, index_col=0).iloc[1, 0:2].values
     
-    with open(f'{path}/data/{args.data_set}-{args.agent_name}.pkl', 'wb')as handle:
-        pickle.dump(sim_data, handle)
-                
+    ## get the mean parameters from the fit results 
+    m_types = ['vary_w', 'vary_lr']
+    groups  = ['HC', 'PAT']
+    pTable = build_pivot_table('bms', agent='MOS_fix')
+    pTable['group'] = pTable['group'].map({'HC': 'HC', 'GAD': 'PAT', 'MDD': 'PAT'})
+
+    cases = {'vary_w' :{'HC':{}, 'PAT':{}}, 
+            'vary_lr':{'HC':{}, 'PAT':{}}}
+
+    ## get param for vary weights
+    for g_type in groups:
+        lst = pTable.groupby(by=['group']
+                        ).mean(numeric_only=True).reset_index(
+                        ).query(f'group=="{g_type}"').loc[:, 
+                        ['alpha', 'l1', 'l2', 'l3']].values.reshape([-1])
+        cases['vary_w'][g_type]['mu'] = np.hstack([p1_mu, lst])
+        
+        lst = pTable.groupby(by=['group']
+                        ).std(numeric_only=True).reset_index(
+                        ).query(f'group=="{g_type}"').loc[:, 
+                        ['alpha', 'l1', 'l2', 'l3']].values.reshape([-1])
+        cases['vary_w'][g_type]['sig'] = np.hstack([p1_sig, lst])
+
+    ## get param for vary weights
+    for g_type, lr in zip(groups, [.2, .05]):
+        lst = pTable.loc[:, ['l1', 'l2', 'l3']].mean().values.reshape([-1])
+        cases['vary_lr'][g_type]['mu'] = np.hstack([p1_mu, lr, lst])
+        
+        lst = pTable.loc[:, ['l1', 'l2', 'l3']].std().values.reshape([-1])
+        cases['vary_lr'][g_type]['sig'] = np.hstack([p1_sig, .05, lst])
+
+    truth_params = {p: [] for p in subj.agent.p_name}
+    truth_params['m_type'] = []
+    truth_params['group']  = [] 
+    truth_params['sub_id'] = []
+
+    sim_id = 0
+    for m_type in m_types:
+        for g_type in groups:
+            HC_var  = [norm(loc=cases[m_type][g_type]['mu'][i],  
+                        scale=cases[m_type][g_type]['sig'][i]) 
+                        for i in range(subj.agent.n_params)]
+            for _ in range(n_sub):
+                # load parameters
+                for i in range(subj.agent.n_params):
+                    param = np.clip(HC_var[i].rvs().round(4), 
+                                    subj.agent.bnds[i][0],
+                                    subj.agent.bnds[i][1])
+                    truth_params[subj.agent.p_name[i]].append(param)
+                truth_params['m_type'].append(m_type)
+                truth_params['group'].append(g_type)
+                truth_params['sub_id'].append(sim_id)
+                sim_id += 1
+
+    ## save the ground turth parameters             
+    truth_params_lst = pd.DataFrame.from_dict(truth_params)
+    fname = f'{path}/data/params_truth-{args.data_set}-{args.agent_name}.csv'
+    truth_params_lst.to_csv(fname)
+    
+    ## start simulate with the generated parameters  
+    data_for_recovery = {}
+    for i, row in truth_params_lst.iterrows():
+        # get task 
+        ind = rng.choice(list(data.keys()), size=n_block)
+        param = list(row[subj.agent.p_name].values)
+        data_for_recovery[row['sub_id']] = {}
+        for idx in ind:
+            sim_data = subj.sim({0: data[idx][list(data[idx].keys())[0]]}, param, rng)
+            sim_data['humanAct'] = sim_data['act'].astype(int)
+            sim_data = sim_data.drop(columns=['ps', 'pi', 'alpha', 'acc',
+            'w1', 'w2', 'w3', 'l1', 'l2', 'l3', 
+            'l1_effect', 'l2_effect', 'l3_effect', 
+            'act'])
+            data_for_recovery[row['sub_id']][idx] = sim_data
+    
+    ## save for recovery
+    fname = f'{path}/data/param_recovery-{args.agent_name}.pkl'
+    with open(fname, 'wb')as handle:
+        pickle.dump(data_for_recovery, handle)
+    
+      
 def for_param_recovery(n_sample=30):
 
     # select 
@@ -246,18 +402,18 @@ if __name__ == '__main__':
     fname = f'{path}/data/{args.data_set}.pkl'
     with open(fname, 'rb') as handle: data=pickle.load(handle)
 
-    # STEP 2: SYNTHESIZE DATA
-    sim_paral(pool, data, args)
+    ## STEP 2: SYNTHESIZE DATA
+    #sim_paral(pool, data, args)
 
-    # # STEP 3: SIM SUBJECT
-    # modes = ['HC-fix_lr', 'PAT-fix_lr', 'HC-vary_lr', 'PAT-vary_lr', 'AVG-all']
+    # # # STEP 3: SIM SUBJECT
+    # modes = ['HC-vary_lr', 'PAT-vary_lr']
     # for m in modes: sim_subj_paral(pool, m, args)
-    # pool.close()
+    pool.close()
 
-    # # STEP 4: SIM FOR RECOVERY
-    # if args.recovery: 
-    #     sim_for_recovery(data)
-    #     if args.agent_name == 'MOS': 
-    #         for_param_recovery(n_sample=30)
+    # STEP 4: SIM FOR RECOVERY
+    if args.recovery: 
+        sim_for_recovery(data)
+        #if args.agent_name == 'MOS': 
+            #for_param_recovery()
 
    

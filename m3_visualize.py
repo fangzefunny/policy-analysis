@@ -28,47 +28,11 @@ width = .85
 # ------------  Model comparison ------------- #
 
 # fit performance 
-def quantTable(agents= ['MOS', 'FLR', 'RP']):
-    crs = {}
-    n_param =[18, 15, 9, 6, 6, 3]
-    ticks = [f'{m}({n})' for n, m in zip(n_param, agents)]
-
-    for m in agents:
-        n_params = eval(m).n_params
-        nll, aic = 0, 0 
-        fname = f'{path}/fits/exp1data/params-exp1data-{m}-bms-ind.csv'
-        data  = pd.read_csv(fname)
-        nll   = -data.loc[0, 'log_like']
-        aic   = data.loc[0, 'aic']
-        bic   = data.loc[0, 'bic']
-        crs[m] = {'NLL': nll, 'AIC': aic, 'BIC': bic}
-
-    for m in agents:
-        print(f'{m}({eval(m).n_params}) nll: {crs[m]["NLL"]:.3f}, aic: {crs[m]["AIC"]:.3f}, bic: {crs[m]["BIC"]:.3f}')
-
-    fig, axs = plt.subplots(3, 1, figsize=(6, 11))
-    xx = list(range(len(agents)))
-    for i, c in enumerate(['NLL', 'AIC', 'BIC']):
-        cr = np.array([crs[m][c] for m in agents])
-        cr -= cr.min()
-        ax = axs[i]
-        sns.barplot(x=xx, y=cr, palette=viz.Palette[:len(agents)], ax=ax)
-        ax.set_xticks(xx)
-        ax.set_xticklabels(ticks, rotation=30, fontsize=13)
-        ax.set_xlim([0-.8, len(agents)-1+.8])
-        ax.set_ylabel(r'$\Delta$'+f'{c}')
-        plt.tight_layout()
-        plt.savefig(f'{path}/figures/quant.pdf', dpi=300)
-
-
-def show_bms(models = ['MOS', 'FLR', 'RP', 'MOS_fix', 'FLR_fix', 'RP_fix'], 
-             n_param =[18, 15, 9, 6, 6, 3]):
-    '''group-level bayesian model selection
-    '''
+def quantTable(models= ['MOS', 'FLR', 'RP'], 
+               ticks=['MOS', 'FLR', 'RP']):
     
-    ticks = [f'{m}({n})' for n, m in zip(n_param, models)]
+    ## get BMS
     fit_sub_info = []
-
     for i, m in enumerate(models):
         with open(f'fits/exp1data/fit_sub_info-{m}-bms.pkl', 'rb')as handle:
             fit_info = pickle.load(handle)
@@ -85,19 +49,33 @@ def show_bms(models = ['MOS', 'FLR', 'RP', 'MOS_fix', 'FLR_fix', 'RP_fix'],
             'n_param': n_param, 
             'H': h
         })
-
     bms_results = fit_bms(fit_sub_info)
 
-    # show protected exceedence 
-    _, ax = plt.subplots(1, 1, figsize=(5, 4))
+     ## get nll, aic ,bic 
+    crs = {k: [] for k in ['NLL', 'AIC', 'BIC']}
+    for m in models:
+        fname = f'{path}/fits/exp1data/params-exp1data-{m}-bms-ind.csv'
+        data  = pd.read_csv(fname)
+        crs['NLL'].append(-data.loc[0, 'log_like'])
+        crs['AIC'].append(data.loc[0, 'aic'])
+        crs['BIC'].append(data.loc[0, 'bic'])
+    crs['PXP'] = bms_results['pxp']
+
+    fig, axs = plt.subplots(2, 2, figsize=(12, 8))
     xx = list(range(len(models)))
-    sns.barplot(x=xx, y=bms_results['pxp'], palette=viz.Palette[:len(models)], ax=ax)
-    ax.set_xticks(xx)
-    ax.set_xticklabels(ticks, rotation=30, fontsize=13)
-    ax.set_xlim([0-.8, len(models)-1+.8])
-    ax.set_ylabel('PXP')
+    for i, c in enumerate(['NLL', 'AIC', 'BIC', 'PXP']):
+        cr = np.array(crs[c])
+        cr -= cr.min()
+        ax = axs[i//2, i%2]
+        sns.barplot(x=xx, y=cr, palette=viz.divPalette[:len(models)], ax=ax)
+        ax.set_xticks(xx)
+        ax.set_xticklabels(ticks, rotation=0, fontsize=13)
+        ax.set_xlim([0-.8, len(models)-1+.8])
+        ax.set_ylabel('\n'+r'$\Delta$'+f'{c}')
+        ax.set_xlabel(' ')
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/BMS.pdf', dpi=300)
+    plt.savefig(f'{path}/figures/quant.png', dpi=300)
+
 
 # ---------- Model-based analysis ----------- #
 
@@ -474,44 +452,105 @@ def HumanAda(mode, fig_id):
     plt.tight_layout()
     plt.savefig(f'{path}/figures/Fig{fig_id}_HumanSim-{mode}.png', dpi=dpi)
 
+    # ----------- PARAMETER RECOVERY ----------- #
+
+def show_param_recovery(model):
+
+    ## load ground truth parameters
+    fname = f'{path}/data/params_truth-exp1data-{model}.csv'
+    truth = pd.read_csv(fname, index_col=False)
+    truth = truth.rename(columns={
+        'α': 'alpha-tr', 'λ1': 'l1-tr', 'λ2': 'l2-tr', 'λ3': 'l3-tr'})
+
+    ## load recovered parameters 
+    fname =  f'{path}/fits/param_recovery-MOS_fix/'
+    fname += f'fit_sub_info-{model}-bms.pkl'
+    with open(fname, 'rb')as handle: r_info = pickle.load(handle)
+    param_name = r_info[list(r_info.keys())[0]]['param_name']
+    recovered  = {k: [] for k in param_name}
+    recovered['sub_id'] = []
+    for sub_id in r_info.keys():
+        recovered['sub_id'].append(sub_id)
+        for i, pname in enumerate(param_name):
+            recovered[pname].append(r_info[sub_id]['param'][i])
+    recovered = pd.DataFrame(recovered)
+    recovered = recovered.rename(columns={
+        'α': 'alpha-re', 'λ1': 'l1-re', 'λ2': 'l2-re', 'λ3': 'l3-re'})
+
+    data = truth.merge(recovered, on='sub_id')
+    
+    groups = ['HC', 'PAT']
+    tars = ['alpha', 'l1', 'l2', 'l3']
+    colors = [viz.BluePairs]+[viz.PurplePairs]*3
+
+    m_type = 'vary_lr'
+    for m_type in ['vary_w', 'vary_lr']:
+        ticks = [r'$\alpha$', r'$\lambda_1$', r'$\lambda_2$', r'$\lambda_3$']
+        colors = [viz.BluePairs] + [viz.PurplePairs]*3
+        fig, axs = plt.subplots(1, 4, figsize=(13, 4))
+        for i, tar in enumerate(tars):
+            ax = axs[i]
+            for j, g in enumerate(groups):
+                sel_data = data.query(f'm_type=="{m_type}" & group=="{g}"')
+                sns.scatterplot(x=sel_data[f'{tar}-tr'], 
+                                y=sel_data[f'{tar}-re'],
+                                color=colors[i][j], s=60, ax=ax)
+                sns.lineplot(x=sel_data[f'{tar}-tr'],
+                             y=sel_data[f'{tar}-tr'],
+                             color='k', ls='--', lw=.5, ax=ax)
+            ax.set_xlabel('turth')
+            ax.set_ylabel('recovered')
+            ax.set_title(ticks[i])
+            ax.set_box_aspect(1)
+        plt.tight_layout()
+        plt.savefig(f'{path}/figures/Fig_param_recovery-{m_type}.png', dpi=dpi)
+
+
+
+
+
+
 
 if __name__ == '__main__':
 
-    ## parameters analyses
-    pivot_table = build_pivot_table('bms', agent='MOS', min_q=.01, max_q=.99)
-    pivot_table['group'] = pivot_table['group'].map(
-                    {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
+    # ## parameters analyses
+    # pivot_table = build_pivot_table('bms', agent='MOS', min_q=.01, max_q=.99)
+    # pivot_table['group'] = pivot_table['group'].map(
+    #                 {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
 
-    # --------- Main results --------- #
+    # # --------- Main results --------- #
 
     # Table1: quantitative fit table 
-    quantTable(['MOS', 'FLR', 'RP', 'MOS_fix', 'FLR_fix', 'RP_fix'])
+    quantTable(models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
+               ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'])
     
-    # Fig 2: Decision style effect
-    StylexConds(pivot_table, 'group', fig_id='2A')   # Fig 2A
-    StylexSyndrome(pivot_table, fig_id='2B')         # Fig 2B
+    # # Fig 2: Decision style effect
+    # StylexConds(pivot_table, 'group', fig_id='2A')   # Fig 2A
+    # StylexSyndrome(pivot_table, fig_id='2B')         # Fig 2B
 
-    # Fig 3: Learning rate effect
-    LRxConds(pivot_table, 'volatility', fig_id='3A') # Fig 3A
-    LRxConds(pivot_table, 'group', fig_id='3B')      # Fig 3B
+    # # Fig 3: Learning rate effect
+    # LRxConds(pivot_table, 'volatility', fig_id='3A') # Fig 3A
+    # LRxConds(pivot_table, 'group', fig_id='3B')      # Fig 3B
 
-    # Fig 4: Understand the flexible behaviors
-    HumanAda('loss', fig_id='4A')                    # Fig 4A
-    PolicyAda(fig_id='4B')                           # Fig 4B
-    StrategyAda(fig_id='4C')                         # Fig 4C
+    # # Fig 4: Understand the flexible behaviors
+    # HumanAda('loss', fig_id='4A')                    # Fig 4A
+    # PolicyAda(fig_id='4B')                           # Fig 4B
+    # StrategyAda(fig_id='4C')                         # Fig 4C
 
-    # ------ Supplementary materials ------- #
+    # # ------ Supplementary materials ------- #
 
-    #Fig S1: Decision style effect 
-    StylexConds(pivot_table, 'volatility', fig_id='S1A')   # Fig S1A
-    StylexConds(pivot_table, 'feedback', fig_id='S1B')     # Fig S1b
+    # #Fig S1: Decision style effect 
+    # StylexConds(pivot_table, 'volatility', fig_id='S1A')   # Fig S1A
+    # StylexConds(pivot_table, 'feedback', fig_id='S1B')     # Fig S1b
 
-    # Fig S2: Decision style interaction effect
-    StyleInter(pivot_table, 'group-volatility', fig_id='S2A')     # Fig S2A
-    StyleInter(pivot_table, 'group-feedback', fig_id='S2B')       # Fig S2B
-    StyleInter(pivot_table, 'volatility-feedback', fig_id='S2C')  # Fig S2C
+    # # Fig S2: Decision style interaction effect
+    # StyleInter(pivot_table, 'group-volatility', fig_id='S2A')     # Fig S2A
+    # StyleInter(pivot_table, 'group-feedback', fig_id='S2B')       # Fig S2B
+    # StyleInter(pivot_table, 'volatility-feedback', fig_id='S2C')  # Fig S2C
     
-    # Fig S3: Understand the flexible behaviors
-    HumanAda('gain', fig_id='S3')   # Fig S3
+    # # Fig S3: Understand the flexible behaviors
+    # HumanAda('gain', fig_id='S3')   # Fig S3
 
-    show_bms()
+    # show_bms()
+
+    #show_param_recovery(model='MOS_fix')

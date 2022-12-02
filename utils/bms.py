@@ -147,10 +147,9 @@ def dirchlet_exceedence(alpha_post, nSample=1e6):
 
         # sample from a gamma distribution and normalized
         r = np.vstack([gamma(a).rvs(size=blk[i]) for a in alpha_post]).T
-        r = r / r.sum(1, keepdims=True)
 
         # use the max decision rule and count 
-        xp += np.bincount(np.argmax(r, axis=1))
+        xp += (r == np.amax(r, axis=1, keepdims=True)).sum(axis=0)
 
     return xp / nSample
 

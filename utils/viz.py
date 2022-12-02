@@ -48,6 +48,16 @@ class viz:
     black   = np.array([  0,   0,   0]) / 255
     Palette3 = [bOrange, Blue, deBrown, ocGreen]
 
+    # -----------  Divergence Palette -------------  
+
+    r1 = np.array([248, 150,  30]) / 255
+    r2 = np.array([249, 132,  74]) / 255
+    r3 = np.array([249, 199,  79]) / 255
+    g1 = np.array([144, 190, 109]) / 255
+    g2 = np.array([ 67, 170, 139]) / 255
+    g3 = np.array([ 77, 144, 142]) / 255
+    divPalette = [r1, r2 ,r3, g1, g2, g3]
+
     # ----------- Color pairs ------------- 
 
     r1 = Red

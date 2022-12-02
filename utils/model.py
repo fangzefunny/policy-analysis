@@ -126,7 +126,7 @@ class model:
         
         return pd.concat(sim_data, ignore_index=True)
 
-    def sim_block(self, block_data, params, rng=False, is_eval=True):
+    def sim_block(self, block_data, params, rng=False, is_eval=False):
 
         ## init the agent 
         nA = block_data['state'].unique().shape[0]
