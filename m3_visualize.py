@@ -71,10 +71,10 @@ def quantTable(models= ['MOS', 'FLR', 'RP'],
         ax.set_xticks(xx)
         ax.set_xticklabels(ticks, rotation=0, fontsize=13)
         ax.set_xlim([0-.8, len(models)-1+.8])
-        ax.set_ylabel('\n'+r'$\Delta$'+f'{c}')
+        ax.set_ylabel('\n'+r'$\Delta$'+f'{c}') if i < 3 else ax.set_ylabel(f'\n{c}')
         ax.set_xlabel(' ')
     plt.tight_layout()
-    plt.savefig(f'{path}/figures/quant.png', dpi=300)
+    plt.savefig(f'{path}/figures/quant.pdf', dpi=300)
 
 
 # ---------- Model-based analysis ----------- #
