@@ -120,7 +120,7 @@ def StylexConds(data, cond, fig_id):
     for i, t in enumerate(tars):
         ax = axs[i]
         sns.boxplot(x=varr, y=t, data=data, 
-                width=width,
+                width=width, order=[case1, case2],
                 palette=colors, ax=ax)
 
         p =0 
@@ -133,7 +133,7 @@ def StylexConds(data, cond, fig_id):
                 p += 1
         sns.stripplot(x=varr, y=t, data=data, 
                         jitter=True, dodge=True, marker='o', size=7,
-                        palette=colors, alpha=0.5,
+                        palette=colors, alpha=0.5, order=[case1, case2],
                         ax=ax)
         ax.set_ylim([-5, 5])
         ax.set_xticks([0, 1])
@@ -261,7 +261,7 @@ def StylexSyndrome(data, fig_id):
         ax.set_xlim([xmin, xmax]) # for the regression predictor 
         sns.regplot(x=pred, y=tar, data=data, truncate=False,
                         color=viz.Palette2[i], scatter=False, ax=ax)
-        ax.set_ylabel('General factor (A.U.)')
+        ax.set_ylabel('General factor (a.u.)')
         ax.set_xlabel(predlabels[i])
         ax.set_box_aspect(1)
         ax.spines.right.set_visible(False)
@@ -521,15 +521,18 @@ if __name__ == '__main__':
     # Fig 2: Decision style effect
     StylexConds(pivot_table, 'group', fig_id='2A')   # Fig 2A
     StylexSyndrome(pivot_table, fig_id='2B')         # Fig 2B
+    plt.close()
 
     # Fig 3: Learning rate effect
     LRxConds(pivot_table, 'volatility', fig_id='3A') # Fig 3A
     LRxConds(pivot_table, 'group', fig_id='3B')      # Fig 3B
+    plt.close()
 
     # Fig 4: Understand the flexible behaviors
     HumanAda('loss', fig_id='4A')                    # Fig 4A
     PolicyAda(fig_id='4B')                           # Fig 4B
     StrategyAda(fig_id='4C')                         # Fig 4C
+    plt.close()
 
     # # ------ Supplementary materials ------- #
 
@@ -548,3 +551,4 @@ if __name__ == '__main__':
     # show_bms()
 
     show_param_recovery(model='MOS_fix')
+    plt.close()

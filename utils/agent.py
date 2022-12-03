@@ -438,8 +438,8 @@ class MOS_fix(MOS):
     bnds     = [(0, 1), (0,50), (0, 1)] + [(-40,40)]*3
     pbnds    = [(0,.5), (0, 5), (0,.5)] + [(-5, 5)]*3
     p_name   = ['α_act', 'β', 'α', 'λ1', 'λ2', 'λ3']
-    p_priors = [beta(a=1, b=1), gamma(a=3, scale=3)] + \
-                [beta(a=1, b=1)]+[norm(loc=0, scale=10)]*3
+    p_priors = [beta(a=2, b=2), gamma(a=3, scale=3)] + \
+                [beta(a=2, b=2)]+[norm(loc=0, scale=10)]*3
     n_params = len(bnds)
     voi      = ['ps', 'pi', 'alpha', 'w1', 'w2', 'w3', 'l1', 
                 'l2', 'l3', 'l1_effect', 'l2_effect', 'l3_effect']
