@@ -58,7 +58,7 @@ def model_cmp(quant_crs):
                 {p[0]}:{np.mean(x):.3f}, {p[1]}:{np.mean(y):.3f}
                 t={res[0]:.3f} p={res[1]:.3f}''')
 
-def build_pivot_table(method, agent='MOS', min_q=.01, max_q=.99):
+def build_pivot_table(method, agent='MOS', min_q=.01, max_q=.99, verbose=True):
     tar_tail = ['l1', 'l2', 'l3'] if agent in ['MixPol', 'MOS', 'MOS_fix'] else []
     features = ['rawRew', 'rew', 'match', 'alpha']+tar_tail
     exp1data = pd.read_csv(f'{path}/../simulations/exp1data/{agent}/sim-exp1data-{method}-idx0.csv')
@@ -67,8 +67,7 @@ def build_pivot_table(method, agent='MOS', min_q=.01, max_q=.99):
     pivot_table  = exp1data.groupby(by=['sub_id', 'b_type', 'feedback_type', 'group'])[features].mean().reset_index()
     
     #datainfo(pivot_tables)
-
-    print('#-------- Clean Outliers ---------- #\n')
+    if verbose: print('#-------- Clean Outliers ---------- #\n')
     # concate to build a table
     pivot_table['log_alpha'] = pivot_table['alpha'].apply(lambda x: np.log(x+1e-12))
     oldN = pivot_table.shape[0]
@@ -79,8 +78,9 @@ def build_pivot_table(method, agent='MOS', min_q=.01, max_q=.99):
         qhigh = pivot_table[i].quantile(max_q)
         qlow  = pivot_table[i].quantile(min_q)
         pivot_table = pivot_table.query(f'{i}<{qhigh} & {i}>{qlow}')
-    print(f'    {pivot_table.shape[0]} rows')
-    print(f'    {pivot_table.shape[0] * 100/ oldN:.1f}% data has been retained')
+    if verbose:
+        print(f'    {pivot_table.shape[0]} rows')
+        print(f'    {pivot_table.shape[0] * 100/ oldN:.1f}% data has been retained')
 
     # add syndrome 
     pivot_table = pivot_table.join(sub_syndrome.set_index('sub_id'), 

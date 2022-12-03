@@ -334,7 +334,7 @@ def LRxConds(data, cond, fig_id):
 
 def StrategyAda(fig_id):
 
-    fname = f'{path}/simulations/exp1data/MOS/simsubj-exp1data-sta_first-AVG.csv'
+    fname = f'{path}/simulations/exp1data/MOS_fix/simsubj-exp1data-sta_first-AVG.csv'
     data = pd.read_csv(fname)
 
     data = data.groupby(by=['trials'])[['l1_effect', 'l2_effect', 'l3_effect']].mean()
@@ -373,7 +373,7 @@ def PolicyAda(fig_id):
     fig, ax = plt.subplots(1, 1, figsize=(10, 4))
     ax = ax 
     for i, g in enumerate(['HC', 'PAT']):
-        fname = f'{path}/simulations/exp1data/MOS/simsubj-exp1data-sta_first-{g}-fix_lr.csv'
+        fname = f'{path}/simulations/exp1data/MOS_fix/simsubj-exp1data-sta_first-{g}.csv'
         data = pd.read_csv(fname)
         data = data.groupby(by=['trials'])[['pi']].mean()
         sns.lineplot(x='trials', y=f'pi', lw=3, 
@@ -505,37 +505,31 @@ def show_param_recovery(model):
         plt.tight_layout()
         plt.savefig(f'{path}/figures/Fig_param_recovery-{m_type}.png', dpi=dpi)
 
-
-
-
-
-
-
 if __name__ == '__main__':
 
-    # ## parameters analyses
-    # pivot_table = build_pivot_table('bms', agent='MOS', min_q=.01, max_q=.99)
-    # pivot_table['group'] = pivot_table['group'].map(
-    #                 {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
+    ## parameters analyses
+    pivot_table = build_pivot_table('bms', agent='MOS_fix', min_q=.01, max_q=.99)
+    pivot_table['group'] = pivot_table['group'].map(
+                    {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
 
-    # # --------- Main results --------- #
+    # --------- Main results --------- #
 
     # Table1: quantitative fit table 
     quantTable(models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
                ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'])
     
-    # # Fig 2: Decision style effect
-    # StylexConds(pivot_table, 'group', fig_id='2A')   # Fig 2A
-    # StylexSyndrome(pivot_table, fig_id='2B')         # Fig 2B
+    # Fig 2: Decision style effect
+    StylexConds(pivot_table, 'group', fig_id='2A')   # Fig 2A
+    StylexSyndrome(pivot_table, fig_id='2B')         # Fig 2B
 
-    # # Fig 3: Learning rate effect
-    # LRxConds(pivot_table, 'volatility', fig_id='3A') # Fig 3A
-    # LRxConds(pivot_table, 'group', fig_id='3B')      # Fig 3B
+    # Fig 3: Learning rate effect
+    LRxConds(pivot_table, 'volatility', fig_id='3A') # Fig 3A
+    LRxConds(pivot_table, 'group', fig_id='3B')      # Fig 3B
 
-    # # Fig 4: Understand the flexible behaviors
-    # HumanAda('loss', fig_id='4A')                    # Fig 4A
-    # PolicyAda(fig_id='4B')                           # Fig 4B
-    # StrategyAda(fig_id='4C')                         # Fig 4C
+    # Fig 4: Understand the flexible behaviors
+    HumanAda('loss', fig_id='4A')                    # Fig 4A
+    PolicyAda(fig_id='4B')                           # Fig 4B
+    StrategyAda(fig_id='4C')                         # Fig 4C
 
     # # ------ Supplementary materials ------- #
 
@@ -553,4 +547,4 @@ if __name__ == '__main__':
 
     # show_bms()
 
-    #show_param_recovery(model='MOS_fix')
+    show_param_recovery(model='MOS_fix')

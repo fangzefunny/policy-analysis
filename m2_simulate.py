@@ -87,9 +87,7 @@ def sim_paral(pool, data, args):
 
 def sim_subj_paral(pool, mode, args, n_sim=500):
 
-    fn = eval(f'sim_subj_{args.agent_name}')
-
-    res = [pool.apply_async(fn, args=[mode, args.seed+i])
+    res = [pool.apply_async(sim_subj, args=[mode, args.seed+i])
                             for i in range(n_sim)]
     sim_sta_first = []
     sim_vol_first = [] 
@@ -131,24 +129,21 @@ def get_data(rng, n_trials=180, sta_first=True):
 
     return state, psi, b_type
 
-def sim_subj_MOS(mode, seed, n_samples=3):
+def sim_subj(mode, seed, n_samples=3):
        
     # decide what to collect
-    subj   = model(MOS)
-    
-    n_params = 18
+    subj   = model(MOS_fix)
+
+    # load parameters 
+    pTable = build_pivot_table('bms', agent='MOS_fix', verbose=False)
+    pTable['group'] = pTable['group'].map({'HC': 'HC', 'GAD': 'PAT', 'MDD': 'PAT'})
+    g_param = pTable.groupby(by='group').mean(numeric_only=True)[['alpha', 'l1', 'l2', 'l3']]
+    n_params = subj.agent.n_params
     fname    = f'{path}/fits/{args.data_set}/params-{args.data_set}-{args.agent_name}-bms-ind.csv'      
-    raw_params   = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
-    params = np.hstack([raw_params[:2], list((raw_params[2:]).reshape([4, 4]).mean(0))*4])
-    if mode == 'HC-fix_lr':
-        params = np.hstack([params[:2], (list(params[2:3])+[0.8954, -1.2135, 0.3179])*4])
-    elif mode == 'PAT-fix_lr':
-        params = np.hstack([params[:2], (list(params[2:3])+[0.0393, -0.2128, 0.1736])*4])
-    elif mode == 'HC-vary_lr':
-        params = np.hstack([params[:2], ([.2]+list(params[3:6]))*4])
-    elif mode == 'PAT-vary_lr':
-        params = np.hstack([params[:2], ([.05]+list(params[3:6]))*4])
+    params   = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
+    if mode != 'AVG': params = np.hstack([params[:2], g_param.loc[mode, :].values])
 
+    # start simulation
     rng    = np.random.RandomState(seed)
     
     # simulate block n times
@@ -169,104 +164,14 @@ def sim_subj_MOS(mode, seed, n_samples=3):
             'feedback_type': ['gain']*180,
         }
         task = pd.DataFrame.from_dict(task)
-        task['group'] = mode.split('-')[0]
+        task['group'] = mode
         
         for j in range(n_samples):
-            task['sub_id'] = mode.split('-')[1]
             sim_rng = np.random.RandomState(seed+j)
             sim_sample = subj.sim_block(task, params, rng=sim_rng, is_eval=False)
             sim_data[cond].append(sim_sample)
         
     return sim_data 
-
-def sim_subj_FLR(mode, seed, n_samples=3):
-       
-    # decide what to collect
-    subj   = model(FLR)
-    
-    n_params = 15
-    fname    = f'{path}/fits/{args.data_set}/params-{args.data_set}-FLR-bms-ind.csv'      
-    raw_params   = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
-    params = np.hstack([raw_params[:3], list((raw_params[3:]).reshape([4, 3]).mean(0))*4])
-    if mode == 'HC-vary_lr':
-        params = np.hstack([params[:3], ([.4]+list(params[4:6]))*4])
-    elif mode == 'PAT-vary_lr':
-        params = np.hstack([params[:3], ([.1]+list(params[4:6]))*4])
-
-    rng    = np.random.RandomState(seed)
-    
-    # simulate block n times
-    sim_data = {'sta_first': [], 'vol_first': []}
-    for i, cond in enumerate(['sta_first', 'vol_first']):
-        m1 = np.linspace(0, 1, 180).round(2)
-        rng.shuffle(m1)
-        m2 = np.linspace(0, 1, 180).round(2)
-        rng.shuffle(m2)
-        state, psi, b_type = get_data(rng, sta_first=(1-i))
-        task = {
-            'mag0':   m1,
-            'mag1':   m2,
-            'b_type': b_type,
-            'state':  state.astype(int),
-            'psi':    psi,
-            'trials': list(range(180)),
-            'feedback_type': ['gain']*180,
-        }
-        task = pd.DataFrame.from_dict(task)
-        task['group'] = mode.split('-')[0]
-        
-        for j in range(n_samples):
-            task['sub_id'] = mode.split('-')[1]
-            sim_rng = np.random.RandomState(seed+j)
-            sim_sample = subj.sim_block(task, params, rng=sim_rng, is_eval=False)
-            sim_data[cond].append(sim_sample)
-        
-    return sim_data 
-
-def sim_subj_RP(mode, seed, n_samples=3):
-       
-    # decide what to collect
-    subj   = model(RP)
-    
-    n_params = 9
-    fname    = f'{path}/fits/{args.data_set}/params-{args.data_set}-RP-bms-ind.csv'      
-    raw_params   = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
-    params = np.hstack([raw_params[:1], list((raw_params[1:]).reshape([4, 2]).mean(0))*4])
-    if mode == 'HC-vary_lr':
-        params = np.hstack([params[:1], ([.35]+list(params[2:3]))*4])
-    elif mode == 'PAT-vary_lr':
-        params = np.hstack([params[:1], ([.1]+list(params[2:3]))*4])
-
-    rng    = np.random.RandomState(seed)
-    
-    # simulate block n times
-    sim_data = {'sta_first': [], 'vol_first': []}
-    for i, cond in enumerate(['sta_first', 'vol_first']):
-        m1 = np.linspace(0, 1, 180).round(2)
-        rng.shuffle(m1)
-        m2 = np.linspace(0, 1, 180).round(2)
-        rng.shuffle(m2)
-        state, psi, b_type = get_data(rng, sta_first=(1-i))
-        task = {
-            'mag0':   m1,
-            'mag1':   m2,
-            'b_type': b_type,
-            'state':  state.astype(int),
-            'psi':    psi,
-            'trials': list(range(180)),
-            'feedback_type': ['gain']*180,
-        }
-        task = pd.DataFrame.from_dict(task)
-        task['group'] = mode.split('-')[0]
-        
-        for j in range(n_samples):
-            task['sub_id'] = mode.split('-')[1]
-            sim_rng = np.random.RandomState(seed+j)
-            sim_sample = subj.sim_block(task, params, rng=sim_rng, is_eval=False)
-            sim_data[cond].append(sim_sample)
-        
-    return sim_data 
-
 
 # --------- Simulate for recovery ---------- #
 
@@ -405,14 +310,15 @@ if __name__ == '__main__':
     ## STEP 2: SYNTHESIZE DATA
     #sim_paral(pool, data, args)
 
-    # # # STEP 3: SIM SUBJECT
-    # modes = ['HC-vary_lr', 'PAT-vary_lr']
-    # for m in modes: sim_subj_paral(pool, m, args)
+    # # STEP 3: SIM SUBJECT
+    if args.agent_name == 'MOS_fix': 
+        for m in ['HC', 'PAT', 'AVG']: sim_subj_paral(pool, m, args)
+
     pool.close()
 
     # STEP 4: SIM FOR RECOVERY
-    if args.recovery: 
-        sim_for_recovery(data)
+    # if args.recovery: 
+    #     sim_for_recovery(data)
         #if args.agent_name == 'MOS': 
             #for_param_recovery()
 
