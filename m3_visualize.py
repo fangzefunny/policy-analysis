@@ -79,7 +79,7 @@ def quantTable(models= ['MOS', 'FLR', 'RP'],
 
 # ---------- Model-based analysis ----------- #
 
-def StylexConds(data, cond, fig_id):
+def StylexConds(data, cond, fig_id, mode='fix'):
     '''Decision style over different conditions
 
     Args:
@@ -96,8 +96,9 @@ def StylexConds(data, cond, fig_id):
     # prepare the inputs 
     tars = ['l1', 'l2', 'l3']
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
-    data = data.groupby(by=['sub_id', 'group', 'feedback_type', 'b_type']
-                    )[tars].mean().reset_index()
+    gby = ['sub_id', 'group'] if mode=='fix' else [
+        'sub_id', 'group', 'feedback_type', 'b_type']
+    data = data.groupby(by=gby)[tars].mean().reset_index()
 
     # select condition
     if cond == 'group':
@@ -270,7 +271,7 @@ def StylexSyndrome(data, fig_id):
     plt.tight_layout()
     plt.savefig(f'{path}/figures/Fig{fig_id}_PrefxSyndrome.png', dpi=300)
 
-def LRxConds(data, cond, fig_id):
+def LRxConds(data, cond, fig_id, mode='fix'):
     '''Learning rate over different conditions
 
     Args:
@@ -284,12 +285,6 @@ def LRxConds(data, cond, fig_id):
     Outputs: 
         A bar plot 
     '''
-    # prepare for the fit
-    tars = ['log_alpha']
-    data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
-    data = data.groupby(by=['sub_id', 'group', 'feedback_type', 'b_type']
-                        )[tars].mean().reset_index()
-
     # select condition
     if cond == 'group':
         varr, case1, case2 = 'group', 'HC', 'PAT'
@@ -303,7 +298,14 @@ def LRxConds(data, cond, fig_id):
         varr, case1, case2 = 'feedback_type', 'gain', 'loss'
         ticks = ['Reward', 'Aversive']
         colors = viz.YellowPairs
-    
+
+    # prepare for the fit
+    tars = ['log_alpha']
+    data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
+    gby = ['sub_id', varr] if mode=='fix' else [
+        'sub_id', 'group', 'feedback_type', 'b_type']
+    data = data.groupby(by=gby)[tars].mean().reset_index()
+
     t_test(data, f'{varr}=="{case1}"', f'{varr}=="{case2}"', tar=tars)
 
     fig, ax = plt.subplots(1, 1, figsize=(3.9, 4))
@@ -454,13 +456,14 @@ def HumanAda(mode, fig_id):
 
     # ----------- PARAMETER RECOVERY ----------- #
 
-def show_param_recovery(model):
+def show_param_recovery(model, min_q=.0001, max_q=.999):
 
     ## load ground truth parameters
     fname = f'{path}/data/params_truth-exp1data-{model}.csv'
     truth = pd.read_csv(fname, index_col=False)
     truth = truth.rename(columns={
-        'α': 'alpha-tr', 'λ1': 'l1-tr', 'λ2': 'l2-tr', 'λ3': 'l3-tr'})
+        'α': 'log_alpha_tr', 'λ1': 'l1_tr', 'λ2': 'l2_tr', 'λ3': 'l3_tr'})
+    truth['log_alpha_tr'] = truth['log_alpha_tr']
 
     ## load recovered parameters 
     fname =  f'{path}/fits/param_recovery-MOS_fix/'
@@ -475,12 +478,27 @@ def show_param_recovery(model):
             recovered[pname].append(r_info[sub_id]['param'][i])
     recovered = pd.DataFrame(recovered)
     recovered = recovered.rename(columns={
-        'α': 'alpha-re', 'λ1': 'l1-re', 'λ2': 'l2-re', 'λ3': 'l3-re'})
+        'α': 'log_alpha_re', 'λ1': 'l1_re', 'λ2': 'l2_re', 'λ3': 'l3_re'})
+    recovered['log_alpha_re'] = recovered['log_alpha_re']
 
+    # combine data set 
+    tars = ['log_alpha_re', 'l1_re', 'l2_re', 'l3_re']
     data = truth.merge(recovered, on='sub_id')
+    for i in tars:
+        qhigh = data[i].quantile(max_q)
+        qlow  = data[i].quantile(min_q)
+        data  = data.query(f'{i}<{qhigh} & {i}>{qlow}')
+    print(data.shape[0])
+
+    ## show significance
+    print('# --------- Parameter Recovery --------- #')
+    for m_type in ['vary_w', 'vary_lr']:
+        print(f'# --------{m_type}\n')
+        t_test(data.query(f'm_type=="{m_type}"'),
+                'group == "HC"', 'group == "PAT"', tar=tars)
     
     groups = ['HC', 'PAT']
-    tars = ['alpha', 'l1', 'l2', 'l3']
+    tars = ['log_alpha', 'l1', 'l2', 'l3']
     colors = [viz.BluePairs]+[viz.PurplePairs]*3
 
     m_type = 'vary_lr'
@@ -490,16 +508,21 @@ def show_param_recovery(model):
         fig, axs = plt.subplots(1, 4, figsize=(13, 4))
         for i, tar in enumerate(tars):
             ax = axs[i]
+            # check correlation 
+            x = data.query(f'm_type=="{m_type}"')[f'{tar}_tr']
+            y = data.query(f'm_type=="{m_type}"')[f'{tar}_re']
+            print(f'{tar}')
+            print(pg.corr(x.values, y.values).round(3))
             for j, g in enumerate(groups):
                 sel_data = data.query(f'm_type=="{m_type}" & group=="{g}"')
-                sns.scatterplot(x=sel_data[f'{tar}-tr'], 
-                                y=sel_data[f'{tar}-re'],
+                sns.scatterplot(x=sel_data[f'{tar}_tr'], 
+                                y=sel_data[f'{tar}_re'],
                                 color=colors[i][j], s=60, ax=ax)
-                sns.lineplot(x=sel_data[f'{tar}-tr'],
-                             y=sel_data[f'{tar}-tr'],
+                sns.lineplot(x=sel_data[f'{tar}_tr'],
+                             y=sel_data[f'{tar}_tr'],
                              color='k', ls='--', lw=.5, ax=ax)
-            ax.set_xlabel('turth')
-            ax.set_ylabel('recovered')
+            ax.set_xlabel('')
+            ax.set_ylabel('')
             ax.set_title(ticks[i])
             ax.set_box_aspect(1)
         plt.tight_layout()
@@ -518,21 +541,21 @@ if __name__ == '__main__':
     quantTable(models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
                ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'])
     
-    # Fig 2: Decision style effect
-    StylexConds(pivot_table, 'group', fig_id='2A')   # Fig 2A
-    StylexSyndrome(pivot_table, fig_id='2B')         # Fig 2B
-    plt.close()
+    # # Fig 2: Decision style effect
+    # StylexConds(pivot_table, 'group', fig_id='2A')   # Fig 2A
+    # StylexSyndrome(pivot_table, fig_id='2B')         # Fig 2B
+    # plt.close()
 
-    # Fig 3: Learning rate effect
-    LRxConds(pivot_table, 'volatility', fig_id='3A') # Fig 3A
-    LRxConds(pivot_table, 'group', fig_id='3B')      # Fig 3B
-    plt.close()
+    # # Fig 3: Learning rate effect
+    # LRxConds(pivot_table, 'volatility', fig_id='3A') # Fig 3A
+    # LRxConds(pivot_table, 'group', fig_id='3B')      # Fig 3B
+    # plt.close()
 
-    # Fig 4: Understand the flexible behaviors
-    HumanAda('loss', fig_id='4A')                    # Fig 4A
-    PolicyAda(fig_id='4B')                           # Fig 4B
-    StrategyAda(fig_id='4C')                         # Fig 4C
-    plt.close()
+    # # Fig 4: Understand the flexible behaviors
+    # HumanAda('loss', fig_id='4A')                    # Fig 4A
+    # PolicyAda(fig_id='4B')                           # Fig 4B
+    # StrategyAda(fig_id='4C')                         # Fig 4C
+    # plt.close()
 
     # # ------ Supplementary materials ------- #
 
@@ -550,5 +573,5 @@ if __name__ == '__main__':
 
     # show_bms()
 
-    show_param_recovery(model='MOS_fix')
-    plt.close()
+    # show_param_recovery(model='MOS_fix')
+    # plt.close()

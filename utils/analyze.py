@@ -97,7 +97,7 @@ def t_test(data, cond1, cond2, tar=['l1', 'l2', 'l3']):
         x = data.query(cond1)[i].values
         y = data.query(cond2)[i].values
         print(f'\n------{i}:')
-        print(tabulate(pg.ttest(x, y), headers='keys', tablefmt='fancy_grid'))
+        print(tabulate(pg.ttest(x, y).round(3), headers='keys', tablefmt='fancy_grid'))
 
     return for_title
 
