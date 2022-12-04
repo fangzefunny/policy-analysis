@@ -12,7 +12,7 @@ from utils.agent import *
 from utils.analyze import *
 from utils.bms import fit_bms
 from utils.viz import viz
-viz.get_style()
+viz.default_img_set()
 
 # set up path 
 path = os.path.dirname(os.path.abspath(__file__))
@@ -69,7 +69,7 @@ def quantTable(models= ['MOS', 'FLR', 'RP'],
         ax = axs[i//2, i%2]
         sns.barplot(x=xx, y=cr, palette=viz.divPalette[:len(models)], ax=ax)
         ax.set_xticks(xx)
-        ax.set_xticklabels(ticks, rotation=0, fontsize=13)
+        ax.set_xticklabels(ticks, rotation=0, fontsize=15)
         ax.set_xlim([0-.8, len(models)-1+.8])
         ax.set_ylabel('\n'+r'$\Delta$'+f'{c}') if i < 3 else ax.set_ylabel(f'\n{c}')
         ax.set_xlabel(' ')
