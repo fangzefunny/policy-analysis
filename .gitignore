@@ -9,6 +9,7 @@ __pycache__/
 /*.DS_Store
 
 # ignore folder 
+figures/
 data/ 
 results/
 tables/
