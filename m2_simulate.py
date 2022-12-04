@@ -38,6 +38,19 @@ if not os.path.exists(f'{path}/simulations/{args.data_set}/{args.agent_name}'):
 # --------- Simulate for Analysis ---------- #
 
 # define functions
+def sim_paral(pool, data, args):
+    
+    ## Simulate data for n_sim times 
+    seed = args.seed 
+    res = [pool.apply_async(simulate, args=(data, args, seed+5*i))
+                            for i in range(args.n_sim)]
+    for i, p in enumerate(res):
+        sim_data = p.get() 
+        fname = f'{path}/simulations/{args.data_set}/{args.agent_name}/'
+        fname += f'sim-{args.data_set}-{args.method}-idx{i}.csv'
+        sim_data.to_csv(fname, index = False, header=True)
+
+# define functions
 def simulate(data, args, seed):
 
     # define the subj
@@ -72,18 +85,7 @@ def simulate(data, args, seed):
 
     return pd.concat(sim_data, axis=0)
 
-# define functions
-def sim_paral(pool, data, args):
-    
-    ## Simulate data for n_sim times 
-    seed = args.seed 
-    res = [pool.apply_async(simulate, args=(data, args, seed+5*i))
-                            for i in range(args.n_sim)]
-    for i, p in enumerate(res):
-        sim_data = p.get() 
-        fname = f'{path}/simulations/{args.data_set}/{args.agent_name}/'
-        fname += f'sim-{args.data_set}-{args.method}-idx{i}.csv'
-        sim_data.to_csv(fname, index = False, header=True)
+
 
 def sim_subj_paral(pool, mode, args, n_sim=500):
 
@@ -175,7 +177,7 @@ def sim_subj(mode, seed, n_samples=3):
 
 # --------- Simulate for recovery ---------- #
 
-def sim_for_recovery(data, n_sub=20, n_block=10):
+def for_param_recovery(data, n_sub=20, n_block=10):
 
     # set seed
     rng = np.random.RandomState(args.seed+1)
@@ -269,33 +271,54 @@ def sim_for_recovery(data, n_sub=20, n_block=10):
         pickle.dump(data_for_recovery, handle)
     
       
-def for_param_recovery(n_sample=30):
+def for_model_recovery_paral(pool, data, n_sub=40):
 
-    # select 
-    rng = np.random.RandomState(args.seed+1)
+    # set seed 
+    seed = args.seed+2
+    rng = np.random.RandomState(seed)
 
-    modes = ['HC-fix_lr', 'PAT-fix_lr', 'HC-vary_lr', 'PAT-vary_lr']
-    d = {}
-    i = 0
-    for m in modes:
-        fname = f'{path}/simulations/exp1data/MOS/simsubj-exp1data-sta_first-{m}.csv'
-        data = pd.read_csv(fname)
-        data['humanAct'] = data['act'].astype(int)
-        data = data.drop(columns=['ps', 'pi', 'alpha', 'acc',
-            'w1', 'w2', 'w3', 'l1', 'l2', 'l3', 
-            'l1_effect', 'l2_effect', 'l3_effect', 
-            'act'])
-        ind = list(rng.choice(data['sim_id'].unique(), size=n_sample))
-        for idx in ind:
-            sub_data = data.query(f'sim_id == "{idx}"')
-            sub_data = sub_data.drop(columns=['sim_id'])
-            sub_data['sim_id'] = f'sub{i}'
-            sub_data['sub_typ'] = m.split('-')[1]
-            d[i] = {0: sub_data}
-            i += 1
-    
-    with open(f'{path}/data/param_recovery-MOS.pkl', 'wb')as handle:
-        pickle.dump(d, handle)
+    ## get parameters 
+    fname = f'{path}/fits/{args.data_set}/fit_sub_info-{args.agent_name}-{args.method}.pkl'      
+    with open(fname, 'rb')as handle: fit_sub_info_orig = pickle.load(handle)
+
+    ## create a sub list of subject list 
+    new_keys = rng.choice(list(fit_sub_info_orig.keys()), size=n_sub)
+    fit_sub_info = {k: fit_sub_info_orig[k] for k in new_keys}
+
+    res = [pool.apply_async(for_model_recovery, args=(sub_idx, data, fit_sub_info, seed+5*i))
+                            for i, sub_idx in enumerate(fit_sub_info.keys())]
+    syn_data = {}
+    for _, p in enumerate(res):
+        sub_idx, sim_data = p.get() 
+        syn_data[sub_idx] = sim_data 
+
+    # save for fit 
+    with open(f'{path}/data/{args.data_set}-{args.agent_name}.pkl', 'wb')as handle:
+        pickle.dump(syn_data, handle)
+    print(f'Synthesize data for {args.agent_name} has been saved!')
+
+
+def for_model_recovery(sub_idx, data, fit_sub_info, seed, n_sample=10):
+
+    # init model 
+    subj = model(args.agent)
+    rng = np.random.RandomState(seed)
+
+    # synthesize the data and save
+    sim_data = {} 
+    task_ind = rng.choice(list(data.keys()), size=n_sample)
+    param = fit_sub_info[sub_idx]['param']
+    for i, task_idx in enumerate(task_ind):
+        task = data[task_idx][list(data[task_idx].keys())[0]]
+        sim_sample = subj.sim({i: task}, param, rng=rng)
+        sim_sample['humanAct'] = sim_sample['act'].astype(int)
+        sim_sample = sim_sample.drop(columns=['ps', 'pi', 'alpha', 'acc',
+                'w1', 'w2', 'w3', 'l1', 'l2', 'l3', 
+                'l1_effect', 'l2_effect', 'l3_effect', 
+                'act'])
+        sim_data[i] = sim_sample
+     
+    return sub_idx, sim_data
 
 if __name__ == '__main__':
     
@@ -308,18 +331,21 @@ if __name__ == '__main__':
     with open(fname, 'rb') as handle: data=pickle.load(handle)
 
     ## STEP 2: SYNTHESIZE DATA
-    #sim_paral(pool, data, args)
+    sim_paral(pool, data, args)
 
-    # # STEP 3: SIM SUBJECT
-    if args.agent_name == 'MOS_fix': 
-        for m in ['HC', 'PAT', 'AVG']: sim_subj_paral(pool, m, args)
+    # STEP 3: SIM FOR RECOVERY
+    if args.recovery: 
+        for_model_recovery_paral(pool, data)
+        pool.close()
+        if (args.agent_name=='MOS_fix') and (args.data_set=='exp1data'): 
+            for_param_recovery(data)
 
-    pool.close()
+    # # STEP 4: SIM SUBJECT
+    # if (args.agent_name=='MOS_fix') and (args.data_set=='exp1data'): 
+    #     for m in ['HC', 'PAT', 'AVG']: sim_subj_paral(pool, m, args)
 
-    # STEP 4: SIM FOR RECOVERY
-    # if args.recovery: 
-    #     sim_for_recovery(data)
-        #if args.agent_name == 'MOS': 
-            #for_param_recovery()
+        
+
+    
 
    
