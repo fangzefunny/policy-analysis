@@ -177,99 +177,92 @@ def sim_subj(mode, seed, n_samples=3):
 
 # --------- Simulate for recovery ---------- #
 
-def for_param_recovery(data, n_sub=20, n_block=10):
+def for_param_recovery_paral(pool, data, n_sub=20):
 
-    # set seed
+    # set seed, conditions
     rng = np.random.RandomState(args.seed+1)
 
     # init model 
     subj = model(args.agent)
+    n_param = subj.agent.n_params
 
-    ## get parameters 
+    ## get mean parameters 
     fname = f'{path}/fits/exp1data/params-exp1data-MOS_fix-bms-ind.csv'
-    p1_mu  = pd.read_csv(fname, index_col=0).iloc[0, 0:2].values
-    p1_sig = pd.read_csv(fname, index_col=0).iloc[1, 0:2].values
-    
-    ## get the mean parameters from the fit results 
-    m_types = ['vary_w', 'vary_lr']
-    groups  = ['HC', 'PAT']
-    pTable = build_pivot_table('bms', agent='MOS_fix')
-    pTable['group'] = pTable['group'].map({'HC': 'HC', 'GAD': 'PAT', 'MDD': 'PAT'})
+    param  = pd.read_csv(fname, index_col=0).iloc[0, 0:n_param].values
 
-    cases = {'vary_w' :{'HC':{}, 'PAT':{}}, 
-            'vary_lr':{'HC':{}, 'PAT':{}}}
-
-    ## get param for vary weights
-    for g_type in groups:
-        lst = pTable.groupby(by=['group']
-                        ).mean(numeric_only=True).reset_index(
-                        ).query(f'group=="{g_type}"').loc[:, 
-                        ['alpha', 'l1', 'l2', 'l3']].values.reshape([-1])
-        cases['vary_w'][g_type]['mu'] = np.hstack([p1_mu, lst])
-        
-        lst = pTable.groupby(by=['group']
-                        ).std(numeric_only=True).reset_index(
-                        ).query(f'group=="{g_type}"').loc[:, 
-                        ['alpha', 'l1', 'l2', 'l3']].values.reshape([-1])
-        cases['vary_w'][g_type]['sig'] = np.hstack([p1_sig, lst])
-
-    ## get param for vary weights
-    for g_type, lr in zip(groups, [.2, .05]):
-        lst = pTable.loc[:, ['l1', 'l2', 'l3']].mean().values.reshape([-1])
-        cases['vary_lr'][g_type]['mu'] = np.hstack([p1_mu, lr, lst])
-        
-        lst = pTable.loc[:, ['l1', 'l2', 'l3']].std().values.reshape([-1])
-        cases['vary_lr'][g_type]['sig'] = np.hstack([p1_sig, .05, lst])
-
+    ## create sythesize params for different conditions
     truth_params = {p: [] for p in subj.agent.p_name}
-    truth_params['m_type'] = []
-    truth_params['group']  = [] 
+    truth_params['data_type'] = []
     truth_params['sub_id'] = []
+    
+    # get params for the vary lr condition 
+    sub_id = 0 
+    lrs = np.linspace(1e-5, .7, n_sub)
+    for lr in lrs:
 
-    sim_id = 0
-    for m_type in m_types:
-        for g_type in groups:
-            HC_var  = [norm(loc=cases[m_type][g_type]['mu'][i],  
-                        scale=cases[m_type][g_type]['sig'][i]) 
-                        for i in range(subj.agent.n_params)]
-            for _ in range(n_sub):
-                # load parameters
-                for i in range(subj.agent.n_params):
-                    param = np.clip(HC_var[i].rvs().round(4), 
-                                    subj.agent.bnds[i][0],
-                                    subj.agent.bnds[i][1])
-                    truth_params[subj.agent.p_name[i]].append(param)
-                truth_params['m_type'].append(m_type)
-                truth_params['group'].append(g_type)
-                truth_params['sub_id'].append(sim_id)
-                sim_id += 1
+        p_temp = param.copy()
+        p_temp[2] = lr
+        for i in range(subj.agent.n_params):
+            truth_params[subj.agent.p_name[i]].append(p_temp[i])
+        truth_params['data_type'].append('vary_lr')
+        truth_params['sub_id'].append(sub_id)
+        sub_id += 1
 
+    # get params for the wary w condition 
+    n_samp = 50 
+    l_range = np.linspace(-6, 6, n_samp)
+    sample_ind = rng.choice(n_samp**3, size=3*n_sub)
+    sample_id = 0 
+    for l1 in l_range:
+        for l2 in l_range:
+            for l3 in l_range:
+                if sample_id in sample_ind:
+                    p_temp = param.copy()
+                    p_temp[3:6] = ([l1, l2, l3])
+                    for i in range(subj.agent.n_params):
+                        truth_params[subj.agent.p_name[i]].append(p_temp[i])
+                    truth_params['data_type'].append('vary_w')
+                    truth_params['sub_id'].append(sub_id)
+                    sub_id += 1
+                sample_id += 1 
+    
     ## save the ground turth parameters             
     truth_params_lst = pd.DataFrame.from_dict(truth_params)
     fname = f'{path}/data/params_truth-{args.data_set}-{args.agent_name}.csv'
     truth_params_lst.to_csv(fname)
     
     ## start simulate with the generated parameters  
+    res = [pool.apply_async(param_recovery, args=[row, data, subj, args.seed+2+2*i])
+                            for i, row in truth_params_lst.iterrows()]
     data_for_recovery = {}
-    for i, row in truth_params_lst.iterrows():
-        # get task 
-        ind = rng.choice(list(data.keys()), size=n_block)
-        param = list(row[subj.agent.p_name].values)
-        data_for_recovery[row['sub_id']] = {}
-        for idx in ind:
-            sim_data = subj.sim({0: data[idx][list(data[idx].keys())[0]]}, param, rng)
-            sim_data['humanAct'] = sim_data['act'].astype(int)
-            sim_data = sim_data.drop(columns=['ps', 'pi', 'alpha', 'acc',
-            'w1', 'w2', 'w3', 'l1', 'l2', 'l3', 
-            'l1_effect', 'l2_effect', 'l3_effect', 
-            'act'])
-            data_for_recovery[row['sub_id']][idx] = sim_data
+    sub_lst = truth_params_lst['sub_id']
+    for i, p in enumerate(res):
+        data_for_recovery[sub_lst[i]] = p.get() 
     
-    ## save for recovery
     fname = f'{path}/data/param_recovery-{args.agent_name}.pkl'
     with open(fname, 'wb')as handle:
         pickle.dump(data_for_recovery, handle)
-    
+    print(f'Synthesize data (param recovery) for {args.agent_name} has been saved!')
+
+def param_recovery(row, data, subj, seed, n_block=10):
+
+    # create random state 
+    rng = np.random.RandomState(seed)
+    ind = rng.choice(list(data.keys()), size=n_block)
+    param = list(row[subj.agent.p_name].values)
+    recovery_data = {}
+    for idx in ind:
+        sim_data = subj.sim({0: data[idx][list(data[idx].keys())[0]]}, param, rng)
+        sim_data['humanAct'] = sim_data['act'].astype(int)
+        sim_data = sim_data.drop(columns=['ps', 'pi', 'alpha', 'acc',
+        'w1', 'w2', 'w3', 'l1', 'l2', 'l3', 
+        'l1_effect', 'l2_effect', 'l3_effect', 
+        'act'])
+        recovery_data[idx] = sim_data
+
+    return recovery_data
+
+# ----------- PARAMETER RECOVERY ---------- #
       
 def for_model_recovery_paral(pool, data, n_sub=40):
 
@@ -296,7 +289,6 @@ def for_model_recovery_paral(pool, data, n_sub=40):
     with open(f'{path}/data/{args.data_set}-{args.agent_name}.pkl', 'wb')as handle:
         pickle.dump(syn_data, handle)
     print(f'Synthesize data for {args.agent_name} has been saved!')
-
 
 def for_model_recovery(sub_idx, data, fit_sub_info, seed, n_sample=10):
 
@@ -331,14 +323,15 @@ if __name__ == '__main__':
     with open(fname, 'rb') as handle: data=pickle.load(handle)
 
     ## STEP 2: SYNTHESIZE DATA
-    sim_paral(pool, data, args)
+    if args.data_set == 'exp1data': sim_paral(pool, data, args)
 
     # STEP 3: SIM FOR RECOVERY
     if args.recovery: 
-        for_model_recovery_paral(pool, data)
-        pool.close()
+        # for_model_recovery_paral(pool, data)
         if (args.agent_name=='MOS_fix') and (args.data_set=='exp1data'): 
-            for_param_recovery(data)
+            for_param_recovery_paral(pool, data)
+        
+    pool.close()
 
     # # STEP 4: SIM SUBJECT
     # if (args.agent_name=='MOS_fix') and (args.data_set=='exp1data'): 
