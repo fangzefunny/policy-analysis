@@ -67,7 +67,7 @@ def ModelComp(data_set, models, ticks, fig_id):
         ax = axs[i//2, i%2]
         sns.barplot(x=xx, y=cr, palette=viz.divPalette[:len(models)], ax=ax)
         ax.set_xticks(xx)
-        ax.set_xticklabels(ticks, rotation=0, fontsize=15)
+        ax.set_xticklabels(ticks, rotation=15, fontsize=13)
         ax.set_xlim([0-.8, len(models)-1+.8])
         ax.set_ylabel('\n'+r'$\Delta$'+f'{c}') if i < 3 else ax.set_ylabel(f'\n{c}')
         ax.set_xlabel(' ')
