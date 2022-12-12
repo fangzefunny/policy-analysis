@@ -25,6 +25,102 @@ policies       = ['EU', 'MO', 'HA']
 dpi = 300
 width = .7
 
+# ------------  WRITE STATISTICS  ------------ #
+
+def write_stats():
+
+    with open(f'{path}/figures/statistics.txt', 'w')as f:
+
+        ## The MOS6 model 
+        data = build_pivot_table('bms', agent='MOS_fix', min_q=.01, max_q=.99)
+        data['group'] = data['group'].map(
+                        {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
+
+        ## Check lambda HC
+        tar = ['l1']
+        sel_data = data.groupby(by=['sub_id', 'group'])[tar].mean().reset_index()
+        f.write('\n'
+               +'################################################################\n'
+               +'#                      MOS6-λ_EU:  HCxPAT                      #\n'
+               +'################################################################\n\n')
+        f.writelines(t_test(sel_data, f'group=="HC"', f'group=="PAT"', tar=tar))
+
+        ## Check lambda MO
+        tar = ['l2']
+        sel_data = data.groupby(by=['sub_id', 'group'])[tar].mean().reset_index()
+        f.write('\n\n\n\n'
+               +'################################################################\n'
+               +'#                      MOS6-λ_MO:  HCxPAT                      #\n'
+               +'################################################################\n\n')
+        f.writelines(t_test(sel_data, f'group=="HC"', f'group=="PAT"', tar=tar))
+
+        ## Check lambda HC
+        tar = ['l3']
+        sel_data = data.groupby(by=['sub_id', 'group'])[tar].mean().reset_index()
+        f.write('\n\n\n\n'
+               +'################################################################\n'
+               +'#                      MOS6-λ_HA:  HCxPAT                      #\n'
+               +'################################################################\n\n')
+        f.writelines(t_test(sel_data, f'group=="HC"', f'group=="PAT"', tar=tar))
+
+        ## Check learning rate 
+        sel_data = data.groupby(by=['sub_id', 'group'])['log_alpha'].mean().reset_index()
+        f.write('\n\n\n\n'
+               +'################################################################\n'
+               +'#                     MOS6-log α:  HCxPAT                      #\n'
+               +'################################################################\n\n')
+        f.writelines(t_test(sel_data, f'group=="HC"', f'group=="PAT"', tar=['log_alpha']))
+
+        ## The MOS18 model 
+        data = build_pivot_table('bms', agent='MOS', min_q=.01, max_q=.99)
+        data['group'] = data['group'].map(
+                        {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
+
+        ## learning rate: 2x2x2 anova
+        tar = 'log_alpha'
+        sel_data = data.groupby(by=['sub_id', 'group', 'b_type', 'feedback_type']
+                )[tar].mean().reset_index()
+        f.write('\n\n\n\n'
+               +'################################################################\n'
+               +'#                     MOS18-log α:  ANOVA                      #\n'
+               +'################################################################\n\n')
+        f.writelines([pg.anova(dv=tar, 
+            between=['group', 'b_type', 'feedback_type'], data=data).round(3).to_string()])
+        
+        ## λ1: 2x2x2 anova
+        tar = 'l1'
+        sel_data = data.groupby(by=['sub_id', 'group', 'b_type', 'feedback_type']
+                )[tar].mean().reset_index()
+        f.write('\n\n\n\n'
+               +'################################################################\n'
+               +'#                      MOS18-λ_HC:  ANOVA                      #\n'
+               +'################################################################\n\n')
+        f.writelines([pg.anova(dv=tar, 
+            between=['group', 'b_type', 'feedback_type'], data=data).round(3).to_string()])
+
+        ## λ2: 2x2x2 anova
+        tar = 'l2'
+        sel_data = data.groupby(by=['sub_id', 'group', 'b_type', 'feedback_type']
+                )[tar].mean().reset_index()
+        f.write('\n\n\n\n'
+               +'################################################################\n'
+               +'#                      MOS18-λ_MO:  ANOVA                      #\n'
+               +'################################################################\n\n')
+        f.writelines([pg.anova(dv=tar, 
+            between=['group', 'b_type', 'feedback_type'], data=data).round(3).to_string()])
+
+        ## λ3: 2x2x2 anova
+        tar = 'l3'
+        sel_data = data.groupby(by=['sub_id', 'group', 'b_type', 'feedback_type']
+                )[tar].mean().reset_index()
+        f.write('\n\n\n\n'
+               +'################################################################\n'
+               +'#                      MOS18-λ_HA:  ANOVA                      #\n'
+               +'################################################################\n\n')
+        f.writelines([pg.anova(dv=tar, 
+            between=['group', 'b_type', 'feedback_type'], data=data).round(3).to_string()])
+
+
 # ------------  MODEL COMPARISON ------------- #
 
 def ModelComp(data_set, models, ticks, fig_id):
@@ -303,6 +399,13 @@ def LRxConds(data, cond, fig_id, mode='fix'):
     Outputs: 
         A bar plot 
     '''
+
+    # prepare for the fit
+    tars = ['log_alpha']
+    data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
+    gby = ['sub_id', varr] if mode=='fix' else [
+        'sub_id', 'group', 'feedback_type', 'b_type']
+        
     # select condition
     if cond == 'group':
         varr, case1, case2 = 'group', 'HC', 'PAT'
@@ -317,13 +420,8 @@ def LRxConds(data, cond, fig_id, mode='fix'):
         ticks = ['Reward', 'Aversive']
         colors = viz.YellowPairs
 
-    # prepare for the fit
-    tars = ['log_alpha']
-    data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
-    gby = ['sub_id', varr] if mode=='fix' else [
-        'sub_id', 'group', 'feedback_type', 'b_type']
+    # check t test 
     data = data.groupby(by=gby)[tars].mean().reset_index()
-
     t_test(data, f'{varr}=="{case1}"', f'{varr}=="{case2}"', tar=tars)
 
     fig, ax = plt.subplots(1, 1, figsize=(3.9, 4))
@@ -347,8 +445,6 @@ def LRxConds(data, cond, fig_id, mode='fix'):
     ax.set_ylabel(' ')
     ax.set_xticks([0, 1])
     ax.set_xticklabels(ticks)
-    ax.spines.right.set_visible(False)
-    ax.spines.top.set_visible(False)
     plt.tight_layout()
     plt.savefig(f'{path}/figures/Fig{fig_id}_LRx{cond}.pdf', dpi=dpi)
 
@@ -591,61 +687,55 @@ def plot_model_recovery(data_set, models, ticks, fig_id):
     plt.savefig(f'{path}/figures/Fig{fig_id}_model_recovery_{data_set}.pdf', dpi=300)
   
 
-        
 if __name__ == '__main__':
 
-    ## parameters analyses
+    # --------- Data stats  --------- #
+
+    write_stats()
+
+    # --------- Main results --------- #
+
     pivot_table = build_pivot_table('bms', agent='MOS_fix', min_q=.01, max_q=.99)
     pivot_table['group'] = pivot_table['group'].map(
                     {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
 
-    # # --------- Main results --------- #
-
-    # # Fig 2: quantitative fit table 
-    # ModelComp('exp1data', models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
-    #            ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='2') 
-    # plt.close()
+    # Fig 2: quantitative fit table 
+    ModelComp('exp1data', models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
+               ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='2') 
+    plt.close('all')
     
     # Fig 3: Decision style effect
     StylexConds(pivot_table, 'group', fig_id='3A')   # Fig 3A
     StylexSyndrome(pivot_table, fig_id='3B')         # Fig 3B
-    plt.close()
+    plt.close('all')
 
-    # # Fig 4: Learning rate effect
-    # LRxConds(pivot_table, 'volatility', fig_id='4A') # Fig 4A
-    # LRxConds(pivot_table, 'group', fig_id='4B')      # Fig 4B
-    # plt.close()
+    # Fig 4: Understand the flexible behaviors
+    HumanAda('loss', fig_id='4A')                    # Fig 4A
+    PolicyAda(fig_id='4B')                           # Fig 4B
+    StrategyAda(fig_id='4C')                         # Fig 4C
+    plt.close('all')
 
-    # # Fig 5: Understand the flexible behaviors
-    # HumanAda('loss', fig_id='5A')                    # Fig 5A
-    # PolicyAda(fig_id='5B')                           # Fig 5B
-    # StrategyAda(fig_id='5C')                         # Fig 5C
-    # plt.close()
-
-    # # Fig 6: param recovery
-    # plot_param_recovery(model='MOS_fix', fig_id='6')
-    # plt.close()
+    # Fig 5: param recovery
+    plot_param_recovery(model='MOS_fix', fig_id='5') 
+    plt.close('all')
     
-    # # Fig 7: model recovery 
-    # plot_model_recovery('exp1data-MOS_fix', 
-    #             models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
-    #             ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='7')
-    # plt.close()
+    # Fig 6: model recovery 
+    plot_model_recovery('exp1data-MOS_fix', 
+                models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
+                ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='6')
+    plt.close('all')
 
     # # ------ Supplementary materials ------- #
 
-    # #Fig S1: Decision style effect 
-    # StylexConds(pivot_table, 'volatility', fig_id='S1A')   # Fig S1A
-    # StylexConds(pivot_table, 'feedback', fig_id='S1B')     # Fig S1b
-    # plt.close()
+    # Fig S1: learning rate effect 
+    pivot_table = build_pivot_table('bms', agent='MOS', min_q=.01, max_q=.99)
+    pivot_table['group'] = pivot_table['group'].map(
+                    {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
+    StylexConds(pivot_table, 'group', fig_id='S1A', mode='vary')   # Fig 3A
+    StylexSyndrome(pivot_table, fig_id='S1B')         # Fig 3B
+    plt.close('all')
 
-    # # Fig S2: Decision style interaction effect
-    # StyleInter(pivot_table, 'group-volatility', fig_id='S2A')     # Fig S2A
-    # StyleInter(pivot_table, 'group-feedback', fig_id='S2B')       # Fig S2B
-    # StyleInter(pivot_table, 'volatility-feedback', fig_id='S2C')  # Fig S2C
-    # plt.close()
-    
-    # # Fig S3: Understand the flexible behaviors
-    # HumanAda('gain', fig_id='S3')   # Fig S3
-    # plt.close()
+    # Fig S3: Understand the flexible behaviors
+    HumanAda('gain', fig_id='S2')   # Fig S3
+    plt.close('all')
 
