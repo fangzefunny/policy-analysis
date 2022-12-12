@@ -23,7 +23,7 @@ patient_groups = ['HC', 'PAT']
 block_types    = ['sta', 'vol']
 policies       = ['EU', 'MO', 'HA']
 dpi = 300
-width = .85
+width = .7
 
 # ------------  MODEL COMPARISON ------------- #
 
@@ -69,7 +69,7 @@ def ModelComp(data_set, models, ticks, fig_id):
     #crs['PXP'] = bms_results['pxp']
     crs = pd.DataFrame.from_dict(crs)
 
-    fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+    fig, axs = plt.subplots(2, 2, figsize=(10, 7))
     xx = list(range(len(models)))
     for i, c in enumerate(['NLL', 'AIC', 'BIC']):
         ax = axs[i//2, i%2]
@@ -80,7 +80,7 @@ def ModelComp(data_set, models, ticks, fig_id):
         sns.barplot(x='model', y=f'delta {c}', data=crs, capsize=.2, errwidth=2,
                     palette=viz.divPalette[:len(models)], ax=ax)
         ax.set_xticks(xx)
-        ax.set_xticklabels(ticks, rotation=0, fontsize=13)
+        ax.set_xticklabels(ticks, rotation=0, fontsize=11)
         ax.set_xlim([0-.8, len(models)-1+.8])
         ax.set_ylabel('\n'+r'$\Delta$'+f'{c}')
         #ax.set_ylabel('\n'+r'$\Delta$'+f'{c}') if i < 3 else ax.set_ylabel(f'\n{c}')
@@ -133,9 +133,10 @@ def StylexConds(data, cond, fig_id, mode='fix'):
     gby = ['sub_id', varr] if mode=='fix' else [
         'sub_id', 'group', 'feedback_type', 'b_type']
     data = data.groupby(by=gby)[tars].mean().reset_index()
+    yticks = [r'$\lambda_{EU}$',r'$\lambda_{MO}$',r'$\lambda_{HA}$']
 
     # show bar plot 
-    fig, axs = plt.subplots(1, 3, figsize=(9.5, 2), sharey=True, sharex=True)
+    fig, axs = plt.subplots(1, 3, figsize=(10, 3), sharey=True, sharex=True)
     t_test(data, f'{varr}=="{case1}"', f'{varr}=="{case2}"', tar=tars)
 
     for i, t in enumerate(tars):
@@ -159,10 +160,9 @@ def StylexConds(data, cond, fig_id, mode='fix'):
         ax.set_ylim([-5, 5])
         ax.set_xticks([0, 1])
         ax.set_xticklabels(ticks)
-        ax.set_xlabel('')
-        ax.set_ylabel('  \n ')
-        ax.spines.right.set_visible(False)
-        ax.spines.top.set_visible(False)
+        ax.set_xlabel('group')
+        ax.set_ylabel(f'{yticks[i]}')
+        ax.set_box_aspect(1)
 
     plt.tight_layout()
     plt.savefig(f'{path}/figures/Fig{fig_id}_Stylex{cond}.pdf', dpi=300)
@@ -260,12 +260,12 @@ def StylexSyndrome(data, fig_id):
 
     tars  = ['g', 'g', 'g']
     preds = ['l1', 'l2', 'l3']
-    predlabels = [r'$log(W_{EU})$',r'$log(W_{MO})$',r'$log(W_{HA})$']
+    predlabels = [r'$\lambda_{EU}$',r'$\lambda_{MO}$',r'$\lambda_{HA}$']
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
     data = data.groupby(by=['sub_id'])[['g', 'l1', 'l2', 'l3']].mean().reset_index()
 
     nr, nc = 1, int(len(tars))
-    fig, axs = plt.subplots(nr, nc, figsize=(9.5, 3.5), sharey=True)
+    fig, axs = plt.subplots(nr, nc, figsize=(10, 3), sharey=True)
     for i, (pred, tar) in enumerate(zip(preds, tars)):
         xmin, xmax = data[pred].values.min()-.4, data[pred].values.max()+.4
         x = data[pred]
@@ -282,11 +282,9 @@ def StylexSyndrome(data, fig_id):
         ax.set_xlim([xmin, xmax]) # for the regression predictor 
         sns.regplot(x=pred, y=tar, data=data, truncate=False,
                         color=viz.Palette2[i], scatter=False, ax=ax)
-        ax.set_ylabel('General factor (a.u.)')
+        ax.set_ylabel(f'General factor (a.u.)')
         ax.set_xlabel(predlabels[i])
         ax.set_box_aspect(1)
-        ax.spines.right.set_visible(False)
-        ax.spines.top.set_visible(False)
  
     plt.tight_layout()
     plt.savefig(f'{path}/figures/Fig{fig_id}_PrefxSyndrome.pdf', dpi=300)
@@ -368,7 +366,7 @@ def StrategyAda(fig_id):
     psi[150:170] = .8
     psi[170:180] = .2
 
-    fig, ax = plt.subplots(1, 1, figsize=(8, 3))
+    fig, ax = plt.subplots(1, 1, figsize=(7.5, 3))
     ax = ax 
     labels = ['EU', 'MO', 'HA']
     for i in range(3):
@@ -392,7 +390,7 @@ def PolicyAda(fig_id):
     psi[150:170] = .8
     psi[170:180] = .2
 
-    fig, ax = plt.subplots(1, 1, figsize=(8, 3))
+    fig, ax = plt.subplots(1, 1, figsize=(7.5, 3))
     ax = ax 
     for i, g in enumerate(['HC', 'PAT']):
         fname = f'{path}/simulations/exp1data/MOS_fix/simsubj-exp1data-sta_first-{g}.csv'
@@ -447,7 +445,7 @@ def HumanAda(mode, fig_id):
     cs = ['group=="HC"', 'group!="HC"']
     sel_data = pd.concat(cases['sta0.7-vol0.2']).reset_index()
 
-    fig, ax = plt.subplots(1, 1, figsize=(8, 3))
+    fig, ax = plt.subplots(1, 1, figsize=(7.5, 3))
     sns.lineplot(x=np.arange(180), y=psi, color='k', ls='--', ax=ax)
     lbs = ['HC', 'PAT']
     for i, c in enumerate(cs):
@@ -507,26 +505,26 @@ def plot_param_recovery(model, fig_id):
     fig_ind = ['A', 'B']
     colors = [viz.BluePairs]+[viz.PurplePairs]*3
    
+    fig, axs = plt.subplots(2, 4, figsize=(15, 7))
+
     for j, data_type in enumerate(data_types):
         
-        fig, axs = plt.subplots(1, 4, figsize=(14, 3.5))
-
         if data_type == 'vary_lr': 
             xvarrs = ['alpha_tr', 'l1_re', 'l2_re', 'l3_re']
-            xticks = ['Ground truth '+r'$\alpha$', 'Recovered '+r'$\lambda_1$', 
-                        'Recovered '+r'$\lambda_2$', 'Recovered '+r'$\lambda_3$']
+            xticks = ['Ground truth '+r'$\alpha$', 'Recovered '+r'$\lambda_{EU}$', 
+                        'Recovered '+r'$\lambda_{MO}$', 'Recovered '+r'$\lambda_{HA}$']
             yvarrs = ['alpha_re']*4
             yticks = ['Recovered '+r'$\alpha$']*4
         elif data_type == 'vary_w': 
-            xvarrs = ['l3_tr', 'l1_tr', 'l2_tr', 'l3_tr']
-            xticks = ['Ground truth '+r'$\lambda_3$', 'Ground truth '+r'$\lambda_1$', 
-                        'Ground truth '+r'$\lambda_2$', 'Ground truth '+r'$\lambda_3$']
+            xvarrs = ['l2_re', 'l1_tr', 'l2_tr', 'l3_tr']
+            xticks = ['Recovered '+r'$\lambda_{MO}$', 'Ground truth '+r'$\lambda_{EU}$', 
+                        'Ground truth '+r'$\lambda_{MO}$', 'Ground truth '+r'$\lambda_{HA}$']
             yvarrs = ['alpha_re', 'l1_re', 'l2_re', 'l3_re']
-            yticks = ['Recovered '+r'$\alpha$', 'Recovered '+r'$\lambda_1$', 
-                        'Recovered '+r'$\lambda_2$', 'Recovered '+r'$\lambda_3$']
+            yticks = ['Recovered '+r'$\alpha$', 'Recovered '+r'$\lambda_{EU}$', 
+                        'Recovered '+r'$\lambda_{MO}$', 'Recovered '+r'$\lambda_{HA}$']
 
         for i in range(len(xvarrs)):
-            ax = axs[i]
+            ax = axs[j, i]
             # check correlation 
             x = data.query(f'data_type=="{data_type}"')[f'{xvarrs[i]}']
             y = data.query(f'data_type=="{data_type}"')[f'{yvarrs[i]}']
@@ -547,8 +545,8 @@ def plot_param_recovery(model, fig_id):
             ax.set_ylabel(f'{yticks[i]}')
             #ax.set_title(xticks[i])
             ax.set_box_aspect(1)
-        plt.tight_layout()
-        plt.savefig(f'{path}/figures/Fig{fig_id}{fig_ind[j]}_param_recovery-{data_type}.pdf', dpi=dpi)
+    plt.tight_layout()
+    plt.savefig(f'{path}/figures/Fig{fig_id}_param_recovery-{data_type}.pdf', dpi=dpi)
 
 # ----------- MODEL RECOVERY ----------- #
 
@@ -573,7 +571,7 @@ def plot_model_recovery(data_set, models, ticks, fig_id):
         crs['sub_id'] += list(subj_lst)
     crs = pd.DataFrame.from_dict(crs)
 
-    fig, axs = plt.subplots(1, 2, figsize=(12, 5))
+    fig, axs = plt.subplots(1, 2, figsize=(8.5, 3.5))
     xx = list(range(len(models)))
     for i, c in enumerate(['AIC', 'BIC']):
         ax = axs[i]
@@ -584,13 +582,14 @@ def plot_model_recovery(data_set, models, ticks, fig_id):
         sns.barplot(x='model', y=f'delta {c}', data=crs, capsize=.2, errwidth=2,
                     palette=viz.divPalette[:len(models)], ax=ax)
         ax.set_xticks(xx)
-        ax.set_xticklabels(ticks, rotation=0, fontsize=13)
+        ax.set_xticklabels(ticks, rotation=0, fontsize=10)
         ax.set_xlim([0-.8, len(models)-1+.8])
         ax.set_ylabel('\n'+r'$\Delta$'+f'{c}')
         #ax.set_ylabel('\n'+r'$\Delta$'+f'{c}') if i < 3 else ax.set_ylabel(f'\n{c}')
         ax.set_xlabel(' ')
     plt.tight_layout()
     plt.savefig(f'{path}/figures/Fig{fig_id}_model_recovery_{data_set}.pdf', dpi=300)
+  
 
         
 if __name__ == '__main__':
@@ -600,53 +599,53 @@ if __name__ == '__main__':
     pivot_table['group'] = pivot_table['group'].map(
                     {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
 
-    # --------- Main results --------- #
+    # # --------- Main results --------- #
 
-    # Fig 2: quantitative fit table 
-    ModelComp('exp1data', models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
-               ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='2') 
-    plt.close()
+    # # Fig 2: quantitative fit table 
+    # ModelComp('exp1data', models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
+    #            ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='2') 
+    # plt.close()
     
     # Fig 3: Decision style effect
     StylexConds(pivot_table, 'group', fig_id='3A')   # Fig 3A
     StylexSyndrome(pivot_table, fig_id='3B')         # Fig 3B
     plt.close()
 
-    # Fig 4: Learning rate effect
-    LRxConds(pivot_table, 'volatility', fig_id='4A') # Fig 4A
-    LRxConds(pivot_table, 'group', fig_id='4B')      # Fig 4B
-    plt.close()
+    # # Fig 4: Learning rate effect
+    # LRxConds(pivot_table, 'volatility', fig_id='4A') # Fig 4A
+    # LRxConds(pivot_table, 'group', fig_id='4B')      # Fig 4B
+    # plt.close()
 
-    # Fig 5: Understand the flexible behaviors
-    HumanAda('loss', fig_id='5A')                    # Fig 5A
-    PolicyAda(fig_id='5B')                           # Fig 5B
-    StrategyAda(fig_id='5C')                         # Fig 5C
-    plt.close()
+    # # Fig 5: Understand the flexible behaviors
+    # HumanAda('loss', fig_id='5A')                    # Fig 5A
+    # PolicyAda(fig_id='5B')                           # Fig 5B
+    # StrategyAda(fig_id='5C')                         # Fig 5C
+    # plt.close()
 
-    # Fig 6: param recovery
-    plot_param_recovery(model='MOS_fix', fig_id='6')
-    plt.close()
+    # # Fig 6: param recovery
+    # plot_param_recovery(model='MOS_fix', fig_id='6')
+    # plt.close()
     
-    # Fig 7: model recovery 
-    plot_model_recovery('exp1data-MOS_fix', 
-                models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
-                ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='7')
-    plt.close()
+    # # Fig 7: model recovery 
+    # plot_model_recovery('exp1data-MOS_fix', 
+    #             models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
+    #             ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='7')
+    # plt.close()
 
-    # ------ Supplementary materials ------- #
+    # # ------ Supplementary materials ------- #
 
-    #Fig S1: Decision style effect 
-    StylexConds(pivot_table, 'volatility', fig_id='S1A')   # Fig S1A
-    StylexConds(pivot_table, 'feedback', fig_id='S1B')     # Fig S1b
-    plt.close()
+    # #Fig S1: Decision style effect 
+    # StylexConds(pivot_table, 'volatility', fig_id='S1A')   # Fig S1A
+    # StylexConds(pivot_table, 'feedback', fig_id='S1B')     # Fig S1b
+    # plt.close()
 
-    # Fig S2: Decision style interaction effect
-    StyleInter(pivot_table, 'group-volatility', fig_id='S2A')     # Fig S2A
-    StyleInter(pivot_table, 'group-feedback', fig_id='S2B')       # Fig S2B
-    StyleInter(pivot_table, 'volatility-feedback', fig_id='S2C')  # Fig S2C
-    plt.close()
+    # # Fig S2: Decision style interaction effect
+    # StyleInter(pivot_table, 'group-volatility', fig_id='S2A')     # Fig S2A
+    # StyleInter(pivot_table, 'group-feedback', fig_id='S2B')       # Fig S2B
+    # StyleInter(pivot_table, 'volatility-feedback', fig_id='S2C')  # Fig S2C
+    # plt.close()
     
-    # Fig S3: Understand the flexible behaviors
-    HumanAda('gain', fig_id='S3')   # Fig S3
-    plt.close()
+    # # Fig S3: Understand the flexible behaviors
+    # HumanAda('gain', fig_id='S3')   # Fig S3
+    # plt.close()
 
