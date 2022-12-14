@@ -193,6 +193,7 @@ def ModelComp(data_set, models, ticks, fig_id):
     plt.tight_layout()
     plt.savefig(f'{path}/figures/Fig{fig_id}_quant_{data_set}.pdf', dpi=300)
 
+
 # ---------- MODEL-BASE ANALYSIS ----------- #
 
 def StylexConds(data, cond, fig_id, mode='fix'):
@@ -566,6 +567,7 @@ def HumanAda(mode, fig_id):
     plt.tight_layout()
     plt.savefig(f'{path}/figures/Fig{fig_id}_HumanSim-{mode}.pdf', dpi=dpi)
 
+
 # ----------- PARAMETER RECOVERY ----------- #
 
 def plot_param_recovery(model, fig_id):
@@ -643,6 +645,7 @@ def plot_param_recovery(model, fig_id):
             ax.set_box_aspect(1)
     plt.tight_layout()
     plt.savefig(f'{path}/figures/Fig{fig_id}_param_recovery-{data_type}.pdf', dpi=dpi)
+
 
 # ----------- MODEL RECOVERY ----------- #
 
