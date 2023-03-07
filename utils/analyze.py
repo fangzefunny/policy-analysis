@@ -64,7 +64,9 @@ def build_pivot_table(method, agent='MOS', min_q=.01, max_q=.99, verbose=True):
     exp1data = pd.read_csv(f'{path}/../simulations/exp1data/{agent}/sim-exp1data-{method}-idx0.csv')
     sub_syndrome = pd.read_csv(f'{path}/../data/bifactor.csv')
     sub_syndrome = sub_syndrome.rename(columns={'Unnamed: 0': 'sub_id', 'F1.': 'f1', 'F2.':'f2'})
-    pivot_table  = exp1data.groupby(by=['sub_id', 'b_type', 'feedback_type', 'group'])[features].mean().reset_index()
+    gby = ['sub_id', 'b_type', 'feedback_type', 'group'] if agent in ['MOS', 'FLR', 'RP'] \
+                                                        else ['sub_id', 'group']
+    pivot_table  = exp1data.groupby(by=gby)[features].mean().reset_index()
     
     #datainfo(pivot_tables)
     if verbose: print('#-------- Clean Outliers ---------- #\n')
@@ -80,6 +82,7 @@ def build_pivot_table(method, agent='MOS', min_q=.01, max_q=.99, verbose=True):
         pivot_table = pivot_table.query(f'{i}<{qhigh} & {i}>{qlow}')
     if verbose:
         print(f'    {pivot_table.shape[0]} rows')
+        print(f'    {oldN - pivot_table.shape[0]} rows have been deleted')
         print(f'    {pivot_table.shape[0] * 100/ oldN:.1f}% data has been retained')
 
     # add syndrome 

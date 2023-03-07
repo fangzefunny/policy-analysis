@@ -25,6 +25,40 @@ policies       = ['EU', 'MO', 'HA']
 dpi = 300
 width = .7
 
+# ----------  EXPERIMENTAL PARADIGM  --------- #
+
+def Paradigm(fig_id):
+    '''Experimental paradigm'''
+
+    psi  = np.zeros([180])
+    psi[:90]     = .7
+    psi[90:110]  = .2
+    psi[110:130] = .8
+    psi[130:150] = .2
+    psi[150:170] = .8
+    psi[170:180] = .2
+
+    fig, ax = plt.subplots(1,1, figsize=(4.3, 3.5))
+    sns.lineplot(x=np.arange(90), y=psi[:90], 
+                    color=viz.BluePairs[0], ls='--',
+                    ax=ax)
+    ax.fill_between(x=np.arange(90), y1=0, y2=90, 
+                    color=[.95, .95, .95])
+    sns.lineplot(x=np.arange(90, 180), y=psi[90:], 
+                    color=viz.BluePairs[1], ls='--',
+                    ax=ax)
+    ax.axvline(x=90, ymin=.2, ymax=.7, color=viz.BluePairs[0], ls='--')
+    # for x in [110, 130, 150, 170]:
+    #     ax.axvline(x=x, ymin=.2, ymax=.8, color=viz.Blue, ls='--')
+    ax.text(25,  .92, 'Stable',   fontsize=15)
+    ax.text(115, .92, 'Volatile', fontsize=15)
+    ax.set_ylabel('The left stimulus\nresults in feedback')
+    ax.set_xlabel('Trials')
+    ax.set_ylim([0, 1])
+    ax.set_xlim([0, 180])
+    fig.tight_layout()
+    plt.savefig(f'{path}/figures/Fig{fig_id}_paradigm.pdf', dpi=300)
+
 # ------------  WRITE STATISTICS  ------------ #
 
 def write_stats():
@@ -234,7 +268,7 @@ def StylexConds(data, cond, fig_id, mode='fix'):
 
     # show bar plot 
     fig, axs = plt.subplots(1, 3, figsize=(10, 3), sharey=True, sharex=True)
-    t_test(data, f'{varr}=="{case1}"', f'{varr}=="{case2}"', tar=tars)
+    #t_test(data, f'{varr}=="{case1}"', f'{varr}=="{case2}"', tar=tars)
 
     for i, t in enumerate(tars):
         ax = axs[i]
@@ -367,10 +401,10 @@ def StylexSyndrome(data, fig_id):
         xmin, xmax = data[pred].values.min()-.4, data[pred].values.max()+.4
         x = data[pred]
         y = data[tar]
-        print(f'\n-----{tar}:')
-        print(pg.corr(x.values, y.values).round(3))
-        lm = pg.linear_regression(x, y)
-        print(tabulate(lm.round(3), headers='keys', tablefmt='fancy_grid'))
+        #print(f'\n-----{tar}:')
+        #print(pg.corr(x.values, y.values).round(3))
+        #lm = pg.linear_regression(x, y)
+        #print(tabulate(lm.round(3), headers='keys', tablefmt='fancy_grid'))
         
         ax  = axs[i]
         x = np.linspace(xmin, xmax, 100)
@@ -423,7 +457,7 @@ def LRxConds(data, cond, fig_id, mode='fix'):
 
     # check t test 
     data = data.groupby(by=gby)[tars].mean().reset_index()
-    t_test(data, f'{varr}=="{case1}"', f'{varr}=="{case2}"', tar=tars)
+    #t_test(data, f'{varr}=="{case1}"', f'{varr}=="{case2}"', tar=tars)
 
     fig, ax = plt.subplots(1, 1, figsize=(3.9, 4))
     sns.boxplot(x=varr, y='log_alpha', data=data, 
@@ -701,44 +735,48 @@ if __name__ == '__main__':
     pivot_table = build_pivot_table('bms', agent='MOS_fix', min_q=.01, max_q=.99)
     pivot_table['group'] = pivot_table['group'].map(
                     {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
-
-    # Fig 2: quantitative fit table 
-    ModelComp('exp1data', models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
-               ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='2') 
-    plt.close('all')
     
-    # Fig 3: Decision style effect
-    StylexConds(pivot_table, 'group', fig_id='3A')   # Fig 3A
-    StylexSyndrome(pivot_table, fig_id='3B')         # Fig 3B
+    # Fig 1: experiment paradigm
+    Paradigm('1B')
     plt.close('all')
 
-    # Fig 4: Understand the flexible behaviors
-    HumanAda('loss', fig_id='4A')                    # Fig 4A
-    PolicyAda(fig_id='4B')                           # Fig 4B
-    StrategyAda(fig_id='4C')                         # Fig 4C
-    plt.close('all')
-
-    # Fig 5: param recovery
-    plot_param_recovery(model='MOS_fix', fig_id='5') 
-    plt.close('all')
+    # # Fig 2: quantitative fit table 
+    # ModelComp('exp1data', models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
+    #            ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='2') 
+    # plt.close('all')
     
-    # Fig 6: model recovery 
-    plot_model_recovery('exp1data-MOS_fix', 
-                models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
-                ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='6')
-    plt.close('all')
+    # # Fig 3: Decision style effect
+    # StylexConds(pivot_table, 'group', fig_id='3A')   # Fig 3A
+    # StylexSyndrome(pivot_table, fig_id='3B')         # Fig 3B
+    # plt.close('all')
 
-    # # ------ Supplementary materials ------- #
+    # # Fig 4: Understand the flexible behaviors
+    # HumanAda('loss', fig_id='4A')                    # Fig 4A
+    # PolicyAda(fig_id='4B')                           # Fig 4B
+    # StrategyAda(fig_id='4C')                         # Fig 4C
+    # plt.close('all')
 
-    # Fig S1: learning rate effect 
-    pivot_table = build_pivot_table('bms', agent='MOS', min_q=.01, max_q=.99)
-    pivot_table['group'] = pivot_table['group'].map(
-                    {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
-    StylexConds(pivot_table, 'group', fig_id='S1A', mode='vary')   # Fig 3A
-    StylexSyndrome(pivot_table, fig_id='S1B')         # Fig 3B
-    plt.close('all')
+    # # Fig 5: param recovery
+    # plot_param_recovery(model='MOS_fix', fig_id='5') 
+    # plt.close('all')
+    
+    # # Fig 6: model recovery 
+    # plot_model_recovery('exp1data-MOS_fix', 
+    #             models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
+    #             ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='6')
+    # plt.close('all')
 
-    # Fig S3: Understand the flexible behaviors
-    HumanAda('gain', fig_id='S2')   # Fig S3
-    plt.close('all')
+    # # # ------ Supplementary materials ------- #
+
+    # # Fig S1: learning rate effect 
+    # pivot_table = build_pivot_table('bms', agent='MOS', min_q=.01, max_q=.99)
+    # pivot_table['group'] = pivot_table['group'].map(
+    #                 {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
+    # StylexConds(pivot_table, 'group', fig_id='S1A', mode='vary')   # Fig 3A
+    # StylexSyndrome(pivot_table, fig_id='S1B')         # Fig 3B
+    # plt.close('all')
+
+    # # Fig S3: Understand the flexible behaviors
+    # HumanAda('gain', fig_id='S2')   # Fig S3
+    # plt.close('all')
 
