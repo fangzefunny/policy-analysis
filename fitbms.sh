@@ -18,7 +18,7 @@ done
 
 ## step 2: parameter recovery
 declare data_sets=("param_recovery-MOS_fix")
-declare models=("MOS_fix") 
+declare models=("MOS_fix") #"MOS_fix"
 
 for data_set in "${data_sets[@]}"; do 
     for model in "${models[@]}"; do 

@@ -17,9 +17,10 @@ fits/
 backup/
 simulations/
 analyses/
+notes/
 
 # ignore some debug files
 debug.py 
 documents/
 screenlog.0
-text.py
+test.py

@@ -574,7 +574,7 @@ def HumanAda(mode, fig_id):
             cases[cond].append(datum) 
              
     cs = ['group=="HC"', 'group!="HC"']
-    sel_data = pd.concat(cases['sta0.7-vol0.2']).reset_index()
+    # sel_data = pd.concat(cases['sta0.7-vol0.2']).reset_index()
 
     fig, ax = plt.subplots(1, 1, figsize=(7.5, 3))
     sns.lineplot(x=np.arange(180), y=psi, color='k', ls='--', ax=ax)
@@ -722,23 +722,119 @@ def plot_model_recovery(data_set, models, ticks, fig_id):
         ax.set_xlabel(' ')
     plt.tight_layout()
     plt.savefig(f'{path}/figures/Fig{fig_id}_model_recovery_{data_set}.pdf', dpi=300)
+
+    # ----------- Calculate flexibility ----------- #
+
+def Flx(mode):
+    
+    with open(f'data/gain_exp1data.pkl', 'rb')as handle:
+        data = pickle.load(handle)
+
+    cases = {'sta0.7-vol0.2':[], 'sta0.3-vol0.8':[]}
+
+    for subj in data.keys():
+        datum = data[subj][0]
+        ind = {}
+        for btype in ['sta', 'vol']:
+            ind[btype] = list(range(90)) if datum.loc[0, 'b_type'] == btype\
+                            else list(range(90, 180)) 
+
+        ## stable 
+        sel_data = datum.query('b_type=="sta"'
+                ).groupby(by='state').count()['trial']
+        datum.loc[ind['sta'], 'p0'] = np.round(sel_data[0] / 90, 2)
+
+        ## volatile 
+        idx1, idx2 = ind['vol'][0], ind['vol'][0]+19
+        n = datum.loc[idx1:idx2].groupby(by='state').count()['trial'][0] / 20
+        datum.loc[ind['vol'], 'p0'] = [.2]*20+[.8]*20+[.2]*20+[.8]*20+[.2]*10 if n==.2 else\
+                                    [.8]*20+[.2]*20+[.8]*20+[.2]*20+[.8]*10 
+        cond = f'{datum.loc[0, "b_type"]}{datum.loc[0, "p0"]}-{datum.loc[90, "b_type"]}{datum.loc[90, "p0"]}'
+        if cond in cases.keys():
+            cases[cond].append(datum) 
+    
+    sel_data = pd.concat(cases['sta0.7-vol0.2']).reset_index()
+    # sel_data['humanAct'] = sel_data['humanAct'].apply(
+    #     lambda x: x if mode=='loss' else 1-x)
+    # sel_data['state']    = sel_data['state'].apply(
+    #     lambda x: x if mode=='loss' else 1-x)
+    sel_data2 = pd.concat(cases['sta0.3-vol0.8']).reset_index()
+    sel_data2['humanAct'] = sel_data2['humanAct'].apply(lambda x: 1-x)
+    sel_data2['state']    = sel_data2['state'].apply(lambda x: 1-x)
+    sdata = pd.concat([sel_data, sel_data2],axis=0, ignore_index=True)
+    sdata['condi_trial'] = sdata['trial'].apply(lambda x: x%90)
+    sdata['nextAct']     = sdata['humanAct'].shift(-1)
+    sdata['group']       = sdata['group'].apply(
+        lambda x: 'HC' if x=='HC' else 'PAT'
+    )
+    sdata = sdata.query('condi_trial < 89')
+
+    sdata1 = sdata.groupby(by=['condi_trial', 'b_type', 'group'])[
+                ['humanAct', 'nextAct', 'state']].mean()
+    
+    sdata1['lr'] = sdata1.apply(lambda x: 
+            (x['nextAct']-x['humanAct']) / (x['state']-x['humanAct']), 
+            axis=1)
+    sdata1.replace([np.inf, - np.inf], np.nan, inplace = True)
+    scale = -1 if mode == 'loss' else 1
+    s_mat = sdata1.dropna().reset_index().groupby(by=['b_type', 'group']
+                    )['lr'].mean().apply(lambda x: scale*x)
+            
+
+
+    data = data.query('condi_trial < 89')
+
+    sel_data = data.groupby(by=['group', 'b_type', 'condi_trial']
+                            )[['humanAct', 'nextAct', 'state']].mean()
+    
+    alpha_neg = ((sel_data.loc[:, :, 0]['nextAct'] 
+            - sel_data.loc[:, :, 0]['humanAct']) /
+                (0 - sel_data.loc[:, :, 0]['humanAct']))
+    
+    alpha_pos = ((sel_data.loc[:, :, 1]['nextAct'] 
+            - sel_data.loc[:, :, 1]['humanAct']) /
+                (1 - sel_data.loc[:, :, 1]['humanAct']))
+
+    alpha = (alpha_pos + alpha_neg) / 2
+
+    # positive
+    # condi = ['sta', 'vol']
+    # alphas = []
+    
+    # for b in condi:
+    #     alpha = 0
+    #     sel_data = data.query(f'b_type=="{b}" & group!="HC"')    
+    #     p_t0 = sel_data.query(f'humanAct==0').shape[0] /\
+    #             sel_data.shape[0]
+
+    #     for f in [0, 1]:
+            
+    #         p_t1 = sel_data.query(f'state=={f} & nextAct==0').shape[0] /\
+    #                sel_data.query(f'state=={f}').shape[0]
+            
+    #         alpha += (p_t1-p_t0) / ((1-f)-p_t0) / 2
+        
+    #     alphas.append(alpha)
+
+    
+    print(1)
   
 
 if __name__ == '__main__':
 
     # --------- Data stats  --------- #
 
-    write_stats()
+    # write_stats()
 
     # --------- Main results --------- #
 
-    pivot_table = build_pivot_table('bms', agent='MOS_fix', min_q=.01, max_q=.99)
-    pivot_table['group'] = pivot_table['group'].map(
-                    {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
+    # pivot_table = build_pivot_table('bms', agent='MOS_fix', min_q=.01, max_q=.99)
+    # pivot_table['group'] = pivot_table['group'].map(
+    #                 {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
     
-    # Fig 1: experiment paradigm
-    Paradigm('1B')
-    plt.close('all')
+    # # Fig 1: experiment paradigm
+    # Paradigm('1B')
+    # plt.close('all')
 
     # # Fig 2: quantitative fit table 
     # ModelComp('exp1data', models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
@@ -780,3 +876,5 @@ if __name__ == '__main__':
     # HumanAda('gain', fig_id='S2')   # Fig S3
     # plt.close('all')
 
+    # Fig
+    Flx()
