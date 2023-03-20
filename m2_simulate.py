@@ -313,7 +313,7 @@ def for_model_recovery(sub_idx, data, fit_sub_info, seed, n_sample=10):
 
 # ------------ For interpretation ----------- #
 
-def for_interpretation(mode, seed=2023, n_sub=5, n_samples=10):
+def for_interpretation(mode, seed=2023, n_sub=25, n_samples=10):
 
      # decide what to collect
     subj   = model(MOS_fix)
@@ -322,7 +322,7 @@ def for_interpretation(mode, seed=2023, n_sub=5, n_samples=10):
     # load parameters 
     pTable = build_pivot_table('bms', agent='MOS_fix', verbose=False)
     pTable['group'] = pTable['group'].map({'HC': 'HC', 'GAD': 'PAT', 'MDD': 'PAT'})
-    g_param  = np.array([8, -8, 1]) if mode == 'HC' else np.array([-8, 8, 1])
+    g_param  = np.array([15, -15, 1]) if mode == 'HC' else np.array([-15, 15, 1])
     n_params = subj.agent.n_params
     fname    = f'{path}/fits/{args.data_set}/params-{args.data_set}-{args.agent_name}-bms-ind.csv'      
     params   = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values

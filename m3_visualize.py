@@ -274,7 +274,7 @@ def StylexConds(data, cond, fig_id, mode='fix'):
         ax = axs[i]
         sns.boxplot(x=varr, y=t, data=data, 
                 width=width, order=[case1, case2],
-                palette=colors, ax=ax)
+                palette=colors[:2], ax=ax)
 
         p =0 
         for box in ax.patches:
@@ -284,15 +284,17 @@ def StylexConds(data, cond, fig_id, mode='fix'):
                 for k in range(6*p, 6*(p+1)):
                     ax.lines[k].set_color(colors[p%2])
                 p += 1
-        sns.stripplot(x=varr, y=t, data=data, 
-                        jitter=True, dodge=True, marker='o', size=7,
-                        palette=colors, alpha=0.5, order=[case1, case2],
+        sns.stripplot(x=varr, y=t, data=data, hue=varr,
+                        jitter=True, marker='o', size=7,
+                        palette=colors[:2], alpha=.9, edgecolor='w',
+                        linewidth=1, order=[case1, case2], legend=False,
                         ax=ax)
         ax.set_ylim([-5, 5])
         ax.set_xticks([0, 1])
         ax.set_xticklabels(ticks)
         ax.set_xlabel('group')
         ax.set_ylabel(f'{yticks[i]}')
+        #ax.get_legend().remove()
         ax.set_box_aspect(1)
 
     plt.tight_layout()
@@ -408,11 +410,11 @@ def StylexSyndrome(data, fig_id):
         
         ax  = axs[i]
         x = np.linspace(xmin, xmax, 100)
-        sns.scatterplot(x=pred, y=tar, data=data, s=100, alpha=.5, 
+        sns.scatterplot(x=pred, y=tar, data=data, s=100, alpha=.9, lw=2,
                             color=viz.Palette2[i], ax=ax)
         ax.set_xlim([xmin, xmax]) # for the regression predictor 
         sns.regplot(x=pred, y=tar, data=data, truncate=False,
-                        color=viz.Palette2[i], scatter=False, ax=ax)
+                        color=[.2, .2, .2], scatter=False, ax=ax)
         ax.set_ylabel(f'General factor (a.u.)')
         ax.set_xlabel(predlabels[i])
         ax.set_box_aspect(1)
@@ -483,35 +485,8 @@ def LRxConds(data, cond, fig_id, mode='fix'):
     plt.tight_layout()
     plt.savefig(f'{path}/figures/Fig{fig_id}_LRx{cond}.pdf', dpi=dpi)
 
-def StrategyAda(fig_id):
 
-    fname = f'{path}/simulations/exp1data/MOS_fix/simsubj-exp1data-sta_first-AVG.csv'
-    data = pd.read_csv(fname)
-
-    data = data.groupby(by=['trials'])[['l1_effect', 'l2_effect', 'l3_effect']].mean()
-    psi  = np.zeros([180])
-    psi[:90]     = .7
-    psi[90:110]  = .2
-    psi[110:130] = .8
-    psi[130:150] = .2
-    psi[150:170] = .8
-    psi[170:180] = .2
-
-    fig, ax = plt.subplots(1, 1, figsize=(7.5, 3))
-    ax = ax 
-    labels = ['EU', 'MO', 'HA']
-    for i in range(3):
-        sns.lineplot(x='trials', y=f'l{int(i)+1}_effect',
-                    data=data, color=viz.Palette2[i], label=labels[i], ax=ax)
-    sns.lineplot(x=np.arange(180), y=psi, color='k', ls='--', ax=ax)
-    ax.set_ylabel('Prob. of choosing \nthe left stimulus')
-    ax.set_xlabel('Trials')
-    ax.set_ylim([-.1, 1.1])
-    ax.legend()
-    plt.tight_layout()
-    plt.savefig(f'{path}/figures/Fig{fig_id}_StrategySim.pdf', dpi=dpi)
-
-def PolicyAda(fig_id):
+def slow_LearningCurve(fig_id):
 
     psi  = np.zeros([180])
     psi[:90]     = .7
@@ -521,37 +496,15 @@ def PolicyAda(fig_id):
     psi[150:170] = .8
     psi[170:180] = .2
 
-    fig, ax = plt.subplots(1, 1, figsize=(7.5, 3))
-    ax = ax 
-    for i, g in enumerate(['HC', 'PAT']):
-        fname = f'{path}/simulations/exp1data/MOS_fix/simsubj-exp1data-sta_first-{g}.csv'
-        data = pd.read_csv(fname)
-        data = data.groupby(by=['trials'])[['pi']].mean()
-        sns.lineplot(x='trials', y=f'pi', data=data, 
-                    color=viz.PurplePairs[i], label=g)
-    sns.lineplot(x=np.arange(180), y=psi, color='k', ls='--')
-    ax.set_ylabel('Prob. of choosing \nthe left stimulus')
-    ax.set_xlabel('Trials')
-    ax.legend()
-    ax.set_ylim([-.1, 1.1])
-    plt.tight_layout()
-    plt.savefig(f'{path}/figures/Fig{fig_id}_PolicySim.pdf', dpi=dpi)
+    # creat a figure
+    fig, axs = plt.subplots(3, 1, figsize=(7.3, 7.3))
 
-def HumanAda(mode, fig_id):
-
-    psi  = np.zeros([180])
-    psi[:90]     = .7
-    psi[90:110]  = .2
-    psi[110:130] = .8
-    psi[130:150] = .2
-    psi[150:170] = .8
-    psi[170:180] = .2
-
+    # get human learning curve for HC and PAT
+    ax = axs[0]
+    mode = 'loss'
     with open(f'data/{mode}_exp1data.pkl', 'rb')as handle:
         data = pickle.load(handle)
-
     cases = {'sta0.7-vol0.2':[], 'sta0.3-vol0.8':[]}
-
     for subj in data.keys():
         datum = data[subj][0]
         ind = {}
@@ -571,13 +524,9 @@ def HumanAda(mode, fig_id):
                                     [.8]*20+[.2]*20+[.8]*20+[.2]*20+[.8]*10 
         cond = f'{datum.loc[0, "b_type"]}{datum.loc[0, "p0"]}-{datum.loc[90, "b_type"]}{datum.loc[90, "p0"]}'
         if cond in cases.keys():
-            cases[cond].append(datum) 
-             
+            cases[cond].append(datum)          
     cs = ['group=="HC"', 'group!="HC"']
-    # sel_data = pd.concat(cases['sta0.7-vol0.2']).reset_index()
-
-    fig, ax = plt.subplots(1, 1, figsize=(7.5, 3))
-    sns.lineplot(x=np.arange(180), y=psi, color='k', ls='--', ax=ax)
+    sns.lineplot(x=np.arange(180), y=psi, lw=1, color='k', ls='--', ax=ax)
     lbs = ['HC', 'PAT']
     for i, c in enumerate(cs):
         sel_data = pd.concat(cases['sta0.7-vol0.2']).query(c).reset_index()
@@ -593,11 +542,173 @@ def HumanAda(mode, fig_id):
         b = gaussian_filter1d(a[:,1], sigma=2)
         c = a[:177, 0]
         sdata = pd.DataFrame(np.vstack([c.reshape([-1]), b]).T, columns=['trial', 'humanAct'])
-        sns.lineplot(x='trial', y='humanAct', data=sdata, color=viz.PurplePairs[i], ci=0, label=lbs[i])
-    ax.legend()
-    ax.set_ylim([-.1, 1.1])
-    ax.set_xlabel('Trials')
+        sns.lineplot(x='trial', y='humanAct', data=sdata, 
+                        color=viz.PurplePairs[i], errorbar=('ci', 0), label=lbs[i], ax=ax)
+    ax.legend(loc='lower left')
     ax.set_ylabel('Prob. of choosing \nthe left stimulus')
+    ax.set_xlabel('')
+    ax.set_ylim([0, 1])
+    ax.set_title('Human learning curve', fontsize=14)
+
+    # get the simulated MOS learning curve
+    ax = axs[1]
+    for i, g in enumerate(['HC', 'PAT']):
+        fname = f'{path}/simulations/exp1data/MOS_fix/simsubj-exp1data-sta_first-{g}.csv'
+        data = pd.read_csv(fname)
+        data = data.groupby(by=['trials'])[['pi']].mean()
+        sns.lineplot(x='trials', y=f'pi', data=data, 
+                    color=viz.PurplePairs[i], label=g, ax=ax)
+    sns.lineplot(x=np.arange(180), y=psi, color='k', lw=1, ls='--', ax=ax)
+    ax.set_ylabel('Prob. of choosing \nthe left stimulus')
+    ax.legend(loc='lower left')
+    ax.set_xlabel('')
+    ax.set_ylim([0, 1])
+    ax.set_title('Simulated MOS learning curve', fontsize=14)
+
+    # simulate the leanring curve of each policy
+    ax = axs[2]
+    labels = ['EU', 'MO', 'HA']
+    fname = f'{path}/simulations/exp1data/MOS_fix/simsubj-exp1data-sta_first-AVG.csv'
+    data = pd.read_csv(fname)
+    data = data.groupby(by=['trials'])[['l1_effect', 'l2_effect', 'l3_effect']].mean()
+    for i in range(3):
+        sns.lineplot(x='trials', y=f'l{int(i)+1}_effect',
+                    data=data, color=viz.Palette2[i], label=labels[i], ax=ax)
+    sns.lineplot(x=np.arange(180), y=psi, color='k', ls='--', lw=1, ax=ax)
+    ax.set_ylabel('Prob. of choosing \nthe left stimulus')
+    ax.legend(loc='lower left')
+    ax.set_xlabel('Trials')
+    ax.set_ylim([0, 1])
+    ax.set_title('Learning curves of the strategies', fontsize=14)
+    
+    fig.tight_layout()
+    plt.savefig(f'{path}/figures/Fig{fig_id}_slow_LR.pdf', dpi=dpi)
+
+def get_inc(mode, model):
+    fname = f'{path}/fits/for_interpret_{mode}/fit_sub_info-{model}-bms.pkl'
+    with open(fname, 'rb')as handle:
+        data = pickle.load(handle)
+    lrs_sta, lrs_vol = [], []
+    for k in data.keys():
+        lr_sta = data[k]['param'][3]
+        lr_vol = data[k]['param'][9]
+        lrs_sta.append(lr_sta)
+        lrs_vol.append(lr_vol)
+    inc = np.array(lrs_vol) - np.array(lrs_sta)
+    return inc.mean()
+
+def LR_increase_FLR(fig_id, model):
+
+    # get lr increase from sta to vol 
+    group = ['HC', 'PAT']
+    lrs = [get_inc(mode, model) for mode in group]
+
+    # visualize the increase
+    fig, ax = plt.subplots(1, 1, figsize=(4, 3))
+    sns.barplot(x=lrs, y=group, palette=viz.PurplePairs, ax=ax)
+    ax.axvline(x=0, ymin=-1, ymax=3, lw=.5, color='k', ls='--')
+    ax.set_xlim([-.001, 0.028])
+    ax.set_xticks([0, .01, .02])
+    ax.set_title('Increased learning rate\nfrom stable to volatile')
+
+    fig.tight_layout()
+    plt.savefig(f'{path}/figures/Fig{fig_id}_LR_increase_MOS.pdf', dpi=dpi)
+
+
+# def StrategyAda(fig_id):
+
+#     fname = f'{path}/simulations/exp1data/MOS_fix/simsubj-exp1data-sta_first-AVG.csv'
+#     data = pd.read_csv(fname)
+
+#     data = data.groupby(by=['trials'])[['l1_effect', 'l2_effect', 'l3_effect']].mean()
+#     psi  = np.zeros([180])
+#     psi[:90]     = .7
+#     psi[90:110]  = .2
+#     psi[110:130] = .8
+#     psi[130:150] = .2
+#     psi[150:170] = .8
+#     psi[170:180] = .2
+
+#     fig, ax = plt.subplots(1, 1, figsize=(7.5, 3))
+    
+#     ax.legend()
+#     plt.tight_layout()
+#     plt.savefig(f'{path}/figures/Fig{fig_id}_StrategySim.pdf', dpi=dpi)
+
+# def PolicyAda(fig_id):
+
+   
+
+#     fig, ax = plt.subplots(1, 1, figsize=(7.5, 3))
+#     ax = ax 
+    
+#     ax.set_ylabel('Prob. of choosing \nthe left stimulus')
+#     ax.set_xlabel('Trials')
+#     ax.legend()
+#     ax.set_ylim([-.1, 1.1])
+#     plt.tight_layout()
+#     plt.savefig(f'{path}/figures/Fig{fig_id}_PolicySim.pdf', dpi=dpi)
+
+def HumanAda(mode, fig_id):
+
+    psi  = np.zeros([180])
+    psi[:90]     = .7
+    psi[90:110]  = .2
+    psi[110:130] = .8
+    psi[130:150] = .2
+    psi[150:170] = .8
+    psi[170:180] = .2
+
+    fig, ax = plt.subplots(1, 1, figsize=(7.5, 3))
+    mode = 'loss'
+    with open(f'data/{mode}_exp1data.pkl', 'rb')as handle:
+        data = pickle.load(handle)
+    cases = {'sta0.7-vol0.2':[], 'sta0.3-vol0.8':[]}
+    for subj in data.keys():
+        datum = data[subj][0]
+        ind = {}
+        for btype in ['sta', 'vol']:
+            ind[btype] = list(range(90)) if datum.loc[0, 'b_type'] == btype\
+                            else list(range(90, 180)) 
+
+        ## stable 
+        sel_data = datum.query('b_type=="sta"'
+                ).groupby(by='state').count()['trial']
+        datum.loc[ind['sta'], 'p0'] = np.round(sel_data[0] / 90, 2)
+
+        ## volatile 
+        idx1, idx2 = ind['vol'][0], ind['vol'][0]+19
+        n = datum.loc[idx1:idx2].groupby(by='state').count()['trial'][0] / 20
+        datum.loc[ind['vol'], 'p0'] = [.2]*20+[.8]*20+[.2]*20+[.8]*20+[.2]*10 if n==.2 else\
+                                    [.8]*20+[.2]*20+[.8]*20+[.2]*20+[.8]*10 
+        cond = f'{datum.loc[0, "b_type"]}{datum.loc[0, "p0"]}-{datum.loc[90, "b_type"]}{datum.loc[90, "p0"]}'
+        if cond in cases.keys():
+            cases[cond].append(datum)          
+    cs = ['group=="HC"', 'group!="HC"']
+    sns.lineplot(x=np.arange(180), y=psi, lw=1, color='k', ls='--', ax=ax)
+    lbs = ['HC', 'PAT']
+    for i, c in enumerate(cs):
+        sel_data = pd.concat(cases['sta0.7-vol0.2']).query(c).reset_index()
+        sel_data['humanAct'] = sel_data['humanAct'].apply(
+            lambda x: x if mode=='loss' else 1-x)
+        sel_data2 = pd.concat(cases['sta0.3-vol0.8']).query(c).reset_index()
+        sel_data2['humanAct'] = sel_data2['humanAct'].apply(
+            lambda x: 1-x if mode=='loss' else x)
+        sdata = pd.concat([sel_data, sel_data2],axis=0, ignore_index=True)
+        print(f'{lbs[i]}: {sdata.shape[0]/180}')
+        a = sdata.groupby(by='trial')[['humanAct']].mean().reset_index().rolling(5
+                        ).mean().values[5-1:]
+        b = gaussian_filter1d(a[:,1], sigma=2)
+        c = a[:177, 0]
+        sdata = pd.DataFrame(np.vstack([c.reshape([-1]), b]).T, columns=['trial', 'humanAct'])
+        sns.lineplot(x='trial', y='humanAct', data=sdata, 
+                        color=viz.PurplePairs[i], errorbar=('ci', 0), label=lbs[i], ax=ax)
+    ax.legend(loc='lower left')
+    ax.set_ylabel('Prob. of choosing \nthe left stimulus')
+    ax.set_xlabel('')
+    ax.set_ylim([0, 1])
+    ax.set_title('Human learning curve', fontsize=14)
+
     plt.tight_layout()
     plt.savefig(f'{path}/figures/Fig{fig_id}_HumanSim-{mode}.pdf', dpi=dpi)
 
@@ -722,159 +833,61 @@ def plot_model_recovery(data_set, models, ticks, fig_id):
         ax.set_xlabel(' ')
     plt.tight_layout()
     plt.savefig(f'{path}/figures/Fig{fig_id}_model_recovery_{data_set}.pdf', dpi=300)
-
-    # ----------- Calculate flexibility ----------- #
-
-def Flx(mode):
-    
-    with open(f'data/gain_exp1data.pkl', 'rb')as handle:
-        data = pickle.load(handle)
-
-    cases = {'sta0.7-vol0.2':[], 'sta0.3-vol0.8':[]}
-
-    for subj in data.keys():
-        datum = data[subj][0]
-        ind = {}
-        for btype in ['sta', 'vol']:
-            ind[btype] = list(range(90)) if datum.loc[0, 'b_type'] == btype\
-                            else list(range(90, 180)) 
-
-        ## stable 
-        sel_data = datum.query('b_type=="sta"'
-                ).groupby(by='state').count()['trial']
-        datum.loc[ind['sta'], 'p0'] = np.round(sel_data[0] / 90, 2)
-
-        ## volatile 
-        idx1, idx2 = ind['vol'][0], ind['vol'][0]+19
-        n = datum.loc[idx1:idx2].groupby(by='state').count()['trial'][0] / 20
-        datum.loc[ind['vol'], 'p0'] = [.2]*20+[.8]*20+[.2]*20+[.8]*20+[.2]*10 if n==.2 else\
-                                    [.8]*20+[.2]*20+[.8]*20+[.2]*20+[.8]*10 
-        cond = f'{datum.loc[0, "b_type"]}{datum.loc[0, "p0"]}-{datum.loc[90, "b_type"]}{datum.loc[90, "p0"]}'
-        if cond in cases.keys():
-            cases[cond].append(datum) 
-    
-    sel_data = pd.concat(cases['sta0.7-vol0.2']).reset_index()
-    # sel_data['humanAct'] = sel_data['humanAct'].apply(
-    #     lambda x: x if mode=='loss' else 1-x)
-    # sel_data['state']    = sel_data['state'].apply(
-    #     lambda x: x if mode=='loss' else 1-x)
-    sel_data2 = pd.concat(cases['sta0.3-vol0.8']).reset_index()
-    sel_data2['humanAct'] = sel_data2['humanAct'].apply(lambda x: 1-x)
-    sel_data2['state']    = sel_data2['state'].apply(lambda x: 1-x)
-    sdata = pd.concat([sel_data, sel_data2],axis=0, ignore_index=True)
-    sdata['condi_trial'] = sdata['trial'].apply(lambda x: x%90)
-    sdata['nextAct']     = sdata['humanAct'].shift(-1)
-    sdata['group']       = sdata['group'].apply(
-        lambda x: 'HC' if x=='HC' else 'PAT'
-    )
-    sdata = sdata.query('condi_trial < 89')
-
-    sdata1 = sdata.groupby(by=['condi_trial', 'b_type', 'group'])[
-                ['humanAct', 'nextAct', 'state']].mean()
-    
-    sdata1['lr'] = sdata1.apply(lambda x: 
-            (x['nextAct']-x['humanAct']) / (x['state']-x['humanAct']), 
-            axis=1)
-    sdata1.replace([np.inf, - np.inf], np.nan, inplace = True)
-    scale = -1 if mode == 'loss' else 1
-    s_mat = sdata1.dropna().reset_index().groupby(by=['b_type', 'group']
-                    )['lr'].mean().apply(lambda x: scale*x)
-            
-
-
-    data = data.query('condi_trial < 89')
-
-    sel_data = data.groupby(by=['group', 'b_type', 'condi_trial']
-                            )[['humanAct', 'nextAct', 'state']].mean()
-    
-    alpha_neg = ((sel_data.loc[:, :, 0]['nextAct'] 
-            - sel_data.loc[:, :, 0]['humanAct']) /
-                (0 - sel_data.loc[:, :, 0]['humanAct']))
-    
-    alpha_pos = ((sel_data.loc[:, :, 1]['nextAct'] 
-            - sel_data.loc[:, :, 1]['humanAct']) /
-                (1 - sel_data.loc[:, :, 1]['humanAct']))
-
-    alpha = (alpha_pos + alpha_neg) / 2
-
-    # positive
-    # condi = ['sta', 'vol']
-    # alphas = []
-    
-    # for b in condi:
-    #     alpha = 0
-    #     sel_data = data.query(f'b_type=="{b}" & group!="HC"')    
-    #     p_t0 = sel_data.query(f'humanAct==0').shape[0] /\
-    #             sel_data.shape[0]
-
-    #     for f in [0, 1]:
-            
-    #         p_t1 = sel_data.query(f'state=={f} & nextAct==0').shape[0] /\
-    #                sel_data.query(f'state=={f}').shape[0]
-            
-    #         alpha += (p_t1-p_t0) / ((1-f)-p_t0) / 2
-        
-    #     alphas.append(alpha)
-
-    
-    print(1)
   
 
 if __name__ == '__main__':
 
     # --------- Data stats  --------- #
 
-    # write_stats()
+    write_stats()
 
     # --------- Main results --------- #
 
-    # pivot_table = build_pivot_table('bms', agent='MOS_fix', min_q=.01, max_q=.99)
-    # pivot_table['group'] = pivot_table['group'].map(
-    #                 {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
+    pivot_table = build_pivot_table('bms', agent='MOS_fix', min_q=.01, max_q=.99)
+    pivot_table['group'] = pivot_table['group'].map(
+                    {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
     
-    # # Fig 1: experiment paradigm
-    # Paradigm('1B')
-    # plt.close('all')
+    # Fig 1: experiment paradigm
+    Paradigm('1B')
+    plt.close('all')
 
-    # # Fig 2: quantitative fit table 
-    # ModelComp('exp1data', models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
-    #            ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='2') 
-    # plt.close('all')
+    # Fig 2: quantitative fit table 
+    ModelComp('exp1data', models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
+               ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='2') 
+    plt.close('all')
     
-    # # Fig 3: Decision style effect
-    # StylexConds(pivot_table, 'group', fig_id='3A')   # Fig 3A
-    # StylexSyndrome(pivot_table, fig_id='3B')         # Fig 3B
-    # plt.close('all')
+    # Fig 3: Decision style effect
+    StylexConds(pivot_table, 'group', fig_id='3A')   # Fig 3A
+    StylexSyndrome(pivot_table, fig_id='3B')         # Fig 3B
+    plt.close('all')
 
-    # # Fig 4: Understand the flexible behaviors
-    # HumanAda('loss', fig_id='4A')                    # Fig 4A
-    # PolicyAda(fig_id='4B')                           # Fig 4B
-    # StrategyAda(fig_id='4C')                         # Fig 4C
-    # plt.close('all')
+    # Fig 4: Understand the flexible behaviors
+    slow_LearningCurve('4A')
+    plt.close('all')
+    LR_increase_FLR(fig_id='4B', model='FLR')
+    plt.close('all')
 
-    # # Fig 5: param recovery
-    # plot_param_recovery(model='MOS_fix', fig_id='5') 
-    # plt.close('all')
+    # Fig 5: param recovery
+    plot_param_recovery(model='MOS_fix', fig_id='5') 
+    plt.close('all')
     
-    # # Fig 6: model recovery 
-    # plot_model_recovery('exp1data-MOS_fix', 
-    #             models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
-    #             ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='6')
-    # plt.close('all')
+    # Fig 6: model recovery 
+    plot_model_recovery('exp1data-MOS_fix', 
+                models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
+                ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='6')
+    plt.close('all')
 
-    # # # ------ Supplementary materials ------- #
+    # # ------ Supplementary materials ------- #
 
-    # # Fig S1: learning rate effect 
-    # pivot_table = build_pivot_table('bms', agent='MOS', min_q=.01, max_q=.99)
-    # pivot_table['group'] = pivot_table['group'].map(
-    #                 {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
-    # StylexConds(pivot_table, 'group', fig_id='S1A', mode='vary')   # Fig 3A
-    # StylexSyndrome(pivot_table, fig_id='S1B')         # Fig 3B
-    # plt.close('all')
+    # Fig S1: learning rate effect 
+    pivot_table = build_pivot_table('bms', agent='MOS', min_q=.01, max_q=.99)
+    pivot_table['group'] = pivot_table['group'].map(
+                    {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
+    StylexConds(pivot_table, 'group', fig_id='S1A', mode='vary')   # Fig 3A
+    StylexSyndrome(pivot_table, fig_id='S1B')         # Fig 3B
+    plt.close('all')
 
-    # # Fig S3: Understand the flexible behaviors
-    # HumanAda('gain', fig_id='S2')   # Fig S3
-    # plt.close('all')
+    # Fig S3: Understand the flexible behaviors
+    HumanAda('gain', fig_id='S2')   # Fig S3
+    plt.close('all')
 
-    # Fig
-    Flx()

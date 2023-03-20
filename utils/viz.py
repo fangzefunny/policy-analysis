@@ -31,7 +31,9 @@ class viz:
     Palette = [Blue, Red, Yellow, ocGreen, Purple, Gray]
 
     # -----------  Palette 2 ------------- 
-
+    Pal2_1  = np.array([ 93, 126, 118]) / 255
+    Pal2_2  = np.array([169, 221, 213]) / 255
+    Pal2_3  = np.array([245, 226, 200]) / 255
     dGreen  = np.array([ 15,  93,  81]) / 255
     llBlue  = np.array([118, 193, 202]) / 255
     Ebony   = np.array([ 86,  98,  70]) / 255
@@ -41,7 +43,7 @@ class viz:
     ubSilk  = np.array([232, 204, 191]) / 255
     ppPant  = np.array([233, 214, 236]) / 255
 
-    Palette2 = [Ebony, fsGreen, Yellow, ubSilk, Ercu, ppPant]
+    Palette2 = [Pal2_1, Pal2_2, Pal2_3, ubSilk, Ercu, ppPant]
 
     # -----------  Palette 2 -------------  
 
@@ -72,7 +74,11 @@ class viz:
 
     p1 = np.array([142,  65,  98]) / 255
     p2 = np.array([237, 162, 192]) / 255
-    PurplePairs = [p1, p2, r1]
+    PurplePairs = [p1, p2]
+
+    p21 = np.array([213, 135, 132]) / 255
+    p22 = np.array([237, 202, 198]) / 255
+    PurplePairs2 = [p21, p22]
 
     YellowPairs = [dYellow, Yellow]
 
@@ -127,7 +133,6 @@ class viz:
         mpl.rcParams['pdf.fonttype'] = 42
         mpl.rcParams['ps.fonttype'] = 42
         mpl.rcParams['svg.fonttype'] = 'none'
-
         # axes
         mpl.rcParams['axes.facecolor'] = 'None'
         mpl.rcParams['axes.labelweight'] = 'bold'
@@ -146,9 +151,11 @@ class viz:
         mpl.rcParams['axes.spines.right'] = False
         mpl.rcParams['axes.spines.top'] = False
         # Character
-        mpl.rcParams['font.family'] = 'sans-serif'
-        mpl.rcParams['font.sans-serif'] = 'Arial'
-        mpl.rcParams['font.weight'] = 'bold'
+        # mpl.rcParams['font.family'] = 'sans-serif'
+        # mpl.rcParams['font.sans-serif'] = 'Arial'
+        mpl.rcParams['font.size'] = 13
+        # mpl.rcParams['font.weight'] = 'bold'
+
         # legend
         mpl.rcParams['legend.frameon'] = False
             

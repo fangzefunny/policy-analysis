@@ -237,7 +237,7 @@ class FLR_fix(FLR):
         self.lamb_vol_loss  = self.lamb_fix
 
 class RP(gagRL):
-    name     = 'risk preference'
+    name     = 'risk sensitive model'
     bnds     = [(0, 30)] + [(0, 1), (0, 20)]*4
     pbnds    = [(0, 10)] + [(0,.5), (0, 20)]*4
     p_name   = ['β'] + get_param_name(['α', 'γ'])
@@ -304,6 +304,38 @@ class RP_fix(RP):
         self.alpha_vol_loss = self.alpha_fix
         self.gamma_vol_loss = self.gamma_fix
    
+class RS_test(RP):
+    name     = 'risk preference, fix gamma'
+    bnds     = [(0, 30)]+[(0, 1)]*4+[(0, 20)]
+    pbnds    = [(0, 10)]+[(0,.5)]*4+[(0, 20)]
+    p_name   = ['β', 'α_sta_gain', 'α_sta_loss', 'α_vol_gain', 'α_vol_loss', 'γ']
+    n_params = len(bnds)
+    p_priors = [gamma(a=3, scale=3)]+[beta(a=2, b=2)]*4+[gamma(a=3, scale=3)]
+    voi      = ['ps', 'pi'] 
+
+    def load_params(self, params):
+
+        # ---- General ----- #
+        self.beta           = params[0]
+        self.gamma_fix      = params[5]
+
+        # ---- Stable & gain ---- #
+        self.alpha_sta_gain = params[1]
+        self.gamma_sta_gain = self.gamma_fix
+
+        # ---- Stable & loss ---- #
+        self.alpha_sta_loss = params[2]
+        self.gamma_sta_loss = self.gamma_fix
+
+        # ---- Volatile & gain ---- #
+        self.alpha_vol_gain = params[3]
+        self.gamma_vol_gain = self.gamma_fix
+
+        # ---- Voatile & gain ---- #
+        self.alpha_vol_loss = params[4]
+        self.gamma_vol_loss = self.gamma_fix
+   
+
 class MOS(gagRL):
     name     = 'mixture of strategy'
     bnds     = [(0, 1), (0,50)] + ([(0, 1)]+[(-40,40)]*3) * 4
