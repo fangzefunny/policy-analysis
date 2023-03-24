@@ -236,6 +236,52 @@ class FLR_fix(FLR):
         self.beta_vol_loss  = self.beta_fix
         self.lamb_vol_loss  = self.lamb_fix
 
+class FLR_test(FLR):
+    name     = 'flexible learning rate, just vary the learning rate'
+    # group lvl
+    group_bnds   = [(0, 1), (0, 50), (0, 1), (0, 50), (0, 1)]
+    group_pbnds  = [(0,.5), (0, 10), (0,.5), (0, 10), (0, 1)]
+    group_p_name = ['α_act', 'β_act', 'r', 'β', 'λ']
+    n_group_params = len(group_bnds)
+    group_p_priors = [beta(a=2, b=2), gamma(a=3, scale=3), gamma(a=3, scale=3),
+                        gamma(a=3, scale=3), beta(a=2, b=2)]
+    # ind lvl 
+    bnds     = [(0, 1)]*4
+    pbnds    = [(0,.5)]*4
+    p_name   = ['α_sta_gain', 'α_sta_loss', 'α_vol_gain', 'α_vol_loss']
+    n_params = len(bnds)
+    p_priors = [beta(a=2, b=2)]*4
+    voi      = ['ps', 'pi', 'alpha'] 
+   
+    def load_params(self, params):
+
+        # ---- General ----- #
+        self.alpha_act      = params[0]
+        self.beta_act       = params[1]
+        self.r              = params[2]
+        self.beta_fix       = params[3]
+        self.lamb_fix       = params[4]
+
+        # ---- Stable & gain ---- #
+        self.alpha_sta_gain = params[5]
+        self.beta_sta_gain  = self.beta_fix
+        self.lamb_sta_gain  = self.lamb_fix
+
+        # ---- Stable & loss ---- #
+        self.alpha_sta_loss = params[6]
+        self.beta_sta_loss  = self.beta_fix
+        self.lamb_sta_loss  = self.lamb_fix
+
+        # ---- Volatile & gain ---- #
+        self.alpha_vol_gain = params[7]
+        self.beta_vol_gain  = self.beta_fix
+        self.lamb_vol_gain  = self.lamb_fix
+
+        # ---- Voatile & gain ---- #
+        self.alpha_vol_loss = params[8]
+        self.beta_vol_loss  = self.beta_fix
+        self.lamb_vol_loss  = self.lamb_fix
+
 class RP(gagRL):
     name     = 'risk sensitive model'
     bnds     = [(0, 30)] + [(0, 1), (0, 20)]*4
@@ -305,36 +351,42 @@ class RP_fix(RP):
         self.gamma_vol_loss = self.gamma_fix
    
 class RS_test(RP):
-    name     = 'risk preference, fix gamma'
-    bnds     = [(0, 30)]+[(0, 1)]*4+[(0, 20)]
-    pbnds    = [(0, 10)]+[(0,.5)]*4+[(0, 20)]
-    p_name   = ['β', 'α_sta_gain', 'α_sta_loss', 'α_vol_gain', 'α_vol_loss', 'γ']
+    name     = 'risk preference, fix beta and gamma to group level'
+    # group lvl
+    group_bnds  = [(0, 30), (0, 20)]
+    group_pbnds = [(0, 10), (0, 20)]
+    group_p_name = ['β', 'γ']
+    n_group_params = len(group_bnds)
+    group_p_priors = [gamma(a=3, scale=3), gamma(a=3, scale=3)]
+    # ind lvl 
+    bnds     = [(0, 1)]*4
+    pbnds    = [(0,.5)]*4
+    p_name   = ['α_sta_gain', 'α_sta_loss', 'α_vol_gain', 'α_vol_loss']
     n_params = len(bnds)
-    p_priors = [gamma(a=3, scale=3)]+[beta(a=2, b=2)]*4+[gamma(a=3, scale=3)]
+    p_priors = [beta(a=2, b=2)]*4
     voi      = ['ps', 'pi'] 
 
     def load_params(self, params):
 
         # ---- General ----- #
         self.beta           = params[0]
-        self.gamma_fix      = params[5]
+        self.gamma_fix      = params[1]
 
         # ---- Stable & gain ---- #
-        self.alpha_sta_gain = params[1]
+        self.alpha_sta_gain = params[2]
         self.gamma_sta_gain = self.gamma_fix
 
         # ---- Stable & loss ---- #
-        self.alpha_sta_loss = params[2]
+        self.alpha_sta_loss = params[3]
         self.gamma_sta_loss = self.gamma_fix
 
         # ---- Volatile & gain ---- #
-        self.alpha_vol_gain = params[3]
+        self.alpha_vol_gain = params[4]
         self.gamma_vol_gain = self.gamma_fix
 
         # ---- Voatile & gain ---- #
         self.alpha_vol_loss = params[4]
         self.gamma_vol_loss = self.gamma_fix
-   
 
 class MOS(gagRL):
     name     = 'mixture of strategy'

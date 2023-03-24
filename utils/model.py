@@ -17,16 +17,25 @@ class model:
 
     def __init__(self, agent):
         self.agent = agent
-        self.param_priors = agent.p_priors
+        self.param_priors = self.agent.p_priors
     
     # ------------ fit ------------ #
 
-    def fit(self, data, method='mle', seed=2021, init=None, verbose=False):
+    def fit(self, data, method='mle', seed=2021, init=False, 
+                    verbose=False, group=False):
         '''Fit the parameter using optimization 
         '''
         # get bounds and possible bounds 
-        bnds  = self.agent.bnds
-        pbnds = self.agent.pbnds
+        if group == 'group':
+            # parameters for each subject
+            n_subj = len(data.keys())
+            bnds   = self.agent.group_bnds + self.agent.bnds*n_subj
+            pbnds  = self.agent.group_pbnds + self.agent.pbnds*n_subj 
+    
+        else:
+            bnds  = self.agent.bnds
+            pbnds = self.agent.pbnds
+            
         if method == 'mle': self.param_priors = None 
         fit_method = 'L-BFGS-B' if method == 'bms' else 'Nelder-Mead'
 
@@ -42,24 +51,54 @@ class model:
                      
         ## Fit the params 
         if verbose: print('init with params: ', param0) 
-        res = minimize(self.loss_fn, param0, args=(data), method=fit_method,
+        res = minimize(self.loss_fn, param0, args=(data, group), method=fit_method,
                         bounds=bnds, options={'disp': verbose})
         if verbose: print(f'''  Fitted params: {res.x}, 
                     MLE loss: {res.fun}''')
         
         return res
 
-    def loss_fn(self, params, data):
+    def loss_fn(self, params, data, group):
         '''Total likelihood
-        log p(D|θ) = -log ∏_i p(D_i|θ)
-                   = ∑_i -log p(D_i|θ )
-        or Maximum a posterior 
-        log p(θ|D) = ∑_i -log p(D_i|θ ) + -log p(θ)
-        '''
-        tot_loss = [self._negloglike(params, data[key])
-                  + self._neglogprior(params) 
-                    for key in data.keys()]        
+        
+        For group:
+            Maximum likelihood (θ: individual, Φ: group level):
+            log p(D|θ, Φ) = log ∏_j p(D_j|θ_j, Φ)
+                          = log ∏_j ∏_i p(D_ij|θ_ij, Φ)
+                          = ∑_j∑i log p(D_ij|θ_ij, Φ)
+            or Maximum a posterior 
+            log p(θ|D) = ∑_j log p(D_j|θ_j, Φ) + ∑_j log p(θ_j) + ∑_jp(Φ)
+                       = ∑_j ∑_i log p(D_ji|θ_ji, Φ) + ∑_ji log p(θ_ji) + ∑_ji p(Φ)
 
+        Fit individual:
+
+            Maximum likelihood:
+            log p(D|θ) = log ∏_i p(D_i|θ)
+                    = ∑_i log p(D_i|θ )
+            or Maximum a posterior 
+            log p(θ|D) = ∑_i log p(D_i|θ ) + ∑_i log p(θ)
+        '''
+        if group == 'group':
+            n_group_params = self.agent.n_group_params
+            n_ind_params   = self.agent.n_params
+            # assign parameter and data for each subject
+            tot_loglike_loss, tot_logprior_loss = 0, 0
+            for i, sub_id in enumerate(data.keys()):
+                sub_param = np.hstack([params[:n_group_params].copy(),
+                        params[n_group_params+n_ind_params*i:
+                               n_group_params+n_ind_params*(i+1)].copy()])
+                sub_data = data[sub_id]
+                tot_loglike_loss -= self.loglike(sub_param, sub_data)
+                sub_p_priors = self.agent.group_p_priors + \
+                            self.agent.p_priors
+                tot_logprior_loss -= self.logprior(sub_param, 
+                            sub_p_priors) * len(sub_data.keys())
+                
+        else:
+            tot_loglike_loss  = -self.loglike(params, data)
+            tot_logprior_loss = -self.logprior(params, 
+                        self.agent.p_priors) * len(data.keys())
+        tot_loss = tot_loglike_loss + tot_logprior_loss
         return np.sum(tot_loss)
 
     def loglike(self, params, data):
@@ -103,13 +142,13 @@ class model:
 
         return nLL
           
-    def _neglogprior(self, params):
+    def logprior(self, params, param_priors):
         '''Add the prior of the parameters
         '''
         tot_pr = 0.
-        if self.param_priors:
-            for prior, param in zip(self.param_priors, params):
-                tot_pr += -np.max([prior.logpdf(param), -max_])
+        if param_priors:
+            for prior, param in zip(param_priors, params):
+                tot_pr += np.max([prior.logpdf(param), -max_])
         return tot_pr
 
     # ------------ simulate ------------ #

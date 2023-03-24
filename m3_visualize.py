@@ -198,6 +198,35 @@ def ModelComp(data_set, models, ticks, fig_id):
         crs['sub_id'] += list(subj_lst)
     #crs['PXP'] = bms_results['pxp']
     crs = pd.DataFrame.from_dict(crs)
+    
+    # cr = 'AIC'
+    # crs1 = crs.pivot(index='sub_id', values=['NLL', 'AIC', 'BIC'], columns='model')
+    # sel_data = crs1[cr].copy()
+    # sel_data[f'min_{cr}'] = sel_data.apply(
+    #     lambda x: np.min([x[m] for m in models]), axis=1)
+    # sort_table = sel_data.sort_values(by=f'min_{cr}').reset_index()
+    # sort_table['sub_seq'] = sort_table.index
+
+    # fig, ax = plt.subplots(1, 1, figsize=(8, 4))
+    
+    # sns.scatterplot(x='sub_seq', y='FLR_fix', 
+    #                 data=sort_table, label='FLR6',
+    #                 marker='s', color=[.7, .7, .7], s=30,
+    #                 edgecolor='none', ax=ax)
+    # sns.scatterplot(x='sub_seq', y='RP_fix', 
+    #                 data=sort_table, label='RS3',
+    #                 marker='o', edgecolor=viz.r2, linewidth=1.1, s=30,
+    #                 facecolor='none', ax=ax)
+    # sns.scatterplot(x='sub_seq', y='MOS_fix', 
+    #                 data=sort_table, label='MOS6',
+    #                 marker='^', color=viz.Red, s=30,
+    #                 edgecolor='none', ax=ax)
+    
+    # ax.legend(loc='lower right')
+    # ax.set_xlabel(f'Pariticipant\n(sorted by the minimum {cr} score over all models)')
+    # ax.set_ylabel(cr)
+    # fig.tight_layout()
+
 
     fig, axs = plt.subplots(2, 2, figsize=(10, 7))
     xx = list(range(len(models)))
@@ -584,35 +613,41 @@ def slow_LearningCurve(fig_id):
     fig.tight_layout()
     plt.savefig(f'{path}/figures/Fig{fig_id}_slow_LR.pdf', dpi=dpi)
 
-def get_inc(mode, model):
-    fname = f'{path}/fits/for_interpret_{mode}/fit_sub_info-{model}-bms.pkl'
+def LR_increase_FLR(fig_id, model, n_sub=5):
+
+    n_group_param = eval(f'{model}_test').n_group_params
+    fname = f'{path}/fits/for_interpret/fit_sub_info-{model}_test-bms.pkl'
     with open(fname, 'rb')as handle:
-        data = pickle.load(handle)
-    lrs_sta, lrs_vol = [], []
-    for k in data.keys():
-        lr_sta = data[k]['param'][3]
-        lr_vol = data[k]['param'][9]
-        lrs_sta.append(lr_sta)
-        lrs_vol.append(lr_vol)
-    inc = np.array(lrs_vol) - np.array(lrs_sta)
-    return inc.mean()
+        fit_info = pickle.load(handle) 
+    lrs = fit_info['param'][n_group_param:].reshape([-1, 4])[:, [0, 2]]
+    lr_HC, lr_PAT = lrs[:n_sub, :], lrs[n_sub:, :] 
 
-def LR_increase_FLR(fig_id, model):
+    # visualize 
+    fig, axs = plt.subplots(1, 2, figsize=(4.5, 2.5))
+    ax = axs[0]
+    colors = [viz.PurplePairs[0], viz.PurplePairs[0], viz.PurplePairs[0], 
+              viz.PurplePairs[1], viz.PurplePairs[1]]
+    group  = [' Stable', ' Volatile', '', 'Stable', 'Volatile']
+    lrs    = [lr_HC[:, 0].mean(), lr_HC[:, 1].mean(), 0, 
+              lr_PAT[:, 0].mean(), lr_PAT[:, 1].mean()]
+    sns.barplot(x=lrs, y=group, palette=colors, 
+                    errorbar=('ci', 0), ax=ax)
+    # ax.set_xlim([-.001, 0.028])
+    # ax.set_xticks([0, .01, .02])
+    # ax.set_title('Increased learning rate\nfrom stable to volatile')
 
-    # get lr increase from sta to vol 
-    group = ['HC', 'PAT']
-    lrs = [get_inc(mode, model) for mode in group]
-
-    # visualize the increase
-    fig, ax = plt.subplots(1, 1, figsize=(4, 3))
-    sns.barplot(x=lrs, y=group, palette=viz.PurplePairs, ax=ax)
+    ax = axs[1]
+    colors = [viz.PurplePairs[0], viz.PurplePairs[1], viz.PurplePairs[1]]
+    group  = ['HC', '', '', 'PAT', '']
+    lrs    = [(lr_HC[:, 1]  - lr_HC[:, 0]).mean(), 0, 0, 
+              (lr_PAT[:, 1] - lr_PAT[:, 0]).mean(), 0]
+    sns.barplot(x=lrs, y=group, palette=colors, 
+                    errorbar=('ci', 0), ax=ax)
     ax.axvline(x=0, ymin=-1, ymax=3, lw=.5, color='k', ls='--')
-    ax.set_xlim([-.001, 0.028])
-    ax.set_xticks([0, .01, .02])
-    ax.set_title('Increased learning rate\nfrom stable to volatile')
+    ax.set_yticklabels('')
 
     fig.tight_layout()
-    plt.savefig(f'{path}/figures/Fig{fig_id}_LR_increase_MOS.pdf', dpi=dpi)
+    plt.savefig(f'{path}/figures/Fig{fig_id}_LR_increase_{model}.pdf', dpi=dpi)
 
 
 # def StrategyAda(fig_id):
@@ -837,57 +872,63 @@ def plot_model_recovery(data_set, models, ticks, fig_id):
 
 if __name__ == '__main__':
 
-    # --------- Data stats  --------- #
+    # # --------- Data stats  --------- #
 
-    write_stats()
+    # write_stats()
 
-    # --------- Main results --------- #
+    # # --------- Main results --------- #
 
-    pivot_table = build_pivot_table('bms', agent='MOS_fix', min_q=.01, max_q=.99)
-    pivot_table['group'] = pivot_table['group'].map(
-                    {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
+    # pivot_table = build_pivot_table('bms', agent='MOS_fix', min_q=.01, max_q=.99)
+    # pivot_table['group'] = pivot_table['group'].map(
+    #                 {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
     
-    # Fig 1: experiment paradigm
-    Paradigm('1B')
-    plt.close('all')
+    # # Fig 1: experiment paradigm
+    # Paradigm('1B')
+    # plt.close('all')
 
-    # Fig 2: quantitative fit table 
-    ModelComp('exp1data', models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
-               ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='2') 
-    plt.close('all')
+    # # Fig 2: quantitative fit table 
+    # ModelComp('exp1data', models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
+    #            ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='2') 
+    # plt.close('all')
     
-    # Fig 3: Decision style effect
-    StylexConds(pivot_table, 'group', fig_id='3A')   # Fig 3A
-    StylexSyndrome(pivot_table, fig_id='3B')         # Fig 3B
-    plt.close('all')
+    # # Fig 3: Decision style effect
+    # StylexConds(pivot_table, 'group', fig_id='3A')   # Fig 3A
+    # StylexSyndrome(pivot_table, fig_id='3B')         # Fig 3B
+    # plt.close('all')
 
-    # Fig 4: Understand the flexible behaviors
-    slow_LearningCurve('4A')
-    plt.close('all')
+    # # Fig 4: Understand the flexible behaviors
+    # slow_LearningCurve('4A')
+    # plt.close('all')
     LR_increase_FLR(fig_id='4B', model='FLR')
     plt.close('all')
-
-    # Fig 5: param recovery
-    plot_param_recovery(model='MOS_fix', fig_id='5') 
+    LR_increase_FLR(fig_id='4C', model='RS')
     plt.close('all')
+
+    # # Fig 5: param recovery
+    # plot_param_recovery(model='MOS_fix', fig_id='5') 
+    # plt.close('all')
     
-    # Fig 6: model recovery 
-    plot_model_recovery('exp1data-MOS_fix', 
-                models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
-                ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='6')
-    plt.close('all')
+    # # Fig 6: model recovery 
+    # plot_model_recovery('exp1data-MOS_fix', 
+    #             models=['MOS_fix', 'FLR_fix', 'RP_fix', 'MOS', 'FLR', 'RP'],
+    #             ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='6')
+    # plt.close('all')
 
-    # # ------ Supplementary materials ------- #
+    # # # ------ Supplementary materials ------- #
 
-    # Fig S1: learning rate effect 
-    pivot_table = build_pivot_table('bms', agent='MOS', min_q=.01, max_q=.99)
-    pivot_table['group'] = pivot_table['group'].map(
-                    {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
-    StylexConds(pivot_table, 'group', fig_id='S1A', mode='vary')   # Fig 3A
-    StylexSyndrome(pivot_table, fig_id='S1B')         # Fig 3B
-    plt.close('all')
+    # # Fig S1: learning rate effect 
+    # pivot_table = build_pivot_table('bms', agent='MOS', min_q=.01, max_q=.99)
+    # pivot_table['group'] = pivot_table['group'].map(
+    #                 {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
+    # StylexConds(pivot_table, 'group', fig_id='S1A', mode='vary')   # Fig 3A
+    # StylexSyndrome(pivot_table, fig_id='S1B')         # Fig 3B
+    # plt.close('all')
 
-    # Fig S3: Understand the flexible behaviors
-    HumanAda('gain', fig_id='S2')   # Fig S3
-    plt.close('all')
+    # # Fig S3: Understand the flexible behaviors
+    # HumanAda('gain', fig_id='S2')   # Fig S3
+    # plt.close('all')
 
+    # # Fig 2: quantitative fit table 
+    # ModelComp('exp1data', models=['MOS_fix', 'FLR_fix', 'RP_fix'],
+    #            ticks=['MOS6', 'FLR6', 'RS6', 'MOS18', 'FLR15', 'RS9'], fig_id='xx') 
+    # plt.close('all')

@@ -1,5 +1,4 @@
 import multiprocessing as mp
-import numpy as np 
 
 # --------- Get pools  --------- #  
 

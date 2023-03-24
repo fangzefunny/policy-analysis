@@ -313,55 +313,57 @@ def for_model_recovery(sub_idx, data, fit_sub_info, seed, n_sample=10):
 
 # ------------ For interpretation ----------- #
 
-def for_interpretation(mode, seed=2023, n_sub=25, n_samples=10):
+def for_interpretation(seed=2023, n_sub=5, n_samples=10):
 
      # decide what to collect
     subj   = model(MOS_fix)
     rng    = np.random.RandomState(seed)
 
     # load parameters 
-    pTable = build_pivot_table('bms', agent='MOS_fix', verbose=False)
-    pTable['group'] = pTable['group'].map({'HC': 'HC', 'GAD': 'PAT', 'MDD': 'PAT'})
-    g_param  = np.array([15, -15, 1]) if mode == 'HC' else np.array([-15, 15, 1])
-    n_params = subj.agent.n_params
-    fname    = f'{path}/fits/{args.data_set}/params-{args.data_set}-{args.agent_name}-bms-ind.csv'      
-    params   = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
-    params   = np.hstack([params[:3], g_param])
-
-    # simulate block n times
-    m1 = np.linspace(0, 1, 180).round(2)
-    rng.shuffle(m1)
-    m2 = np.linspace(0, 1, 180).round(2)
-    rng.shuffle(m2)
-    state, psi, b_type = get_data(rng, sta_first=True)
-    task = {
-        'mag0':   m1,
-        'mag1':   m2,
-        'b_type': b_type,
-        'state':  state.astype(int),
-        'psi':    psi,
-        'trials': list(range(180)),
-        'feedback_type': ['gain']*180,
-    }
-    task = pd.DataFrame.from_dict(task)
-    task['group'] = mode
-    
     for_interpret = {}
-    for i in range(n_sub):
-        sub_id = mode+f'{i}'
-        sim_data = {}
-        for j in range(n_samples):
-            sim_rng = np.random.RandomState(seed+i*2*n_samples+j)
-            sim_sample = subj.sim_block(task, params, rng=sim_rng, is_eval=False)
-            sim_sample = sim_sample.rename(columns={'act': 'humanAct'})
-            sim_sample['humanAct'] = sim_sample['humanAct'].apply(lambda x: int(x))
-            sim_sample['sub_id'] = sub_id 
-            sim_sample['block_id'] = j 
-            sim_data[j] = sim_sample 
-        for_interpret[sub_id] = sim_data
+    for mode in ['HC', 'PAT']:
+
+        pTable = build_pivot_table('bms', agent='MOS_fix', verbose=False)
+        pTable['group'] = pTable['group'].map({'HC': 'HC', 'GAD': 'PAT', 'MDD': 'PAT'})
+        g_param  = np.array([15, -15, 1]) if mode == 'HC' else np.array([-15, 15, 1])
+        n_params = subj.agent.n_params
+        fname    = f'{path}/fits/{args.data_set}/params-{args.data_set}-{args.agent_name}-bms-ind.csv'      
+        params   = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
+        params   = np.hstack([params[:3], g_param])
+
+        # simulate block n times
+        m1 = np.linspace(0, 1, 180).round(2)
+        rng.shuffle(m1)
+        m2 = np.linspace(0, 1, 180).round(2)
+        rng.shuffle(m2)
+        state, psi, b_type = get_data(rng, sta_first=True)
+        task = {
+            'mag0':   m1,
+            'mag1':   m2,
+            'b_type': b_type,
+            'state':  state.astype(int),
+            'psi':    psi,
+            'trials': list(range(180)),
+            'feedback_type': ['gain']*180,
+        }
+        task = pd.DataFrame.from_dict(task)
+        task['group'] = mode
+        
+        for i in range(n_sub):
+            sub_id = mode+f'{i}'
+            sim_data = {}
+            for j in range(n_samples):
+                sim_rng = np.random.RandomState(seed+i*2*n_samples+j)
+                sim_sample = subj.sim_block(task, params, rng=sim_rng, is_eval=False)
+                sim_sample = sim_sample.rename(columns={'act': 'humanAct'})
+                sim_sample['humanAct'] = sim_sample['humanAct'].apply(lambda x: int(x))
+                sim_sample['sub_id'] = sub_id 
+                sim_sample['block_id'] = j 
+                sim_data[j] = sim_sample 
+            for_interpret[sub_id] = sim_data
 
     # save for interpretation
-    with open(f'{path}/data/for_interpret_{mode}.pkl', 'wb')as handle:
+    with open(f'{path}/data/for_interpret.pkl', 'wb')as handle:
         pickle.dump(for_interpret, handle)
 
 if __name__ == '__main__':
@@ -386,8 +388,8 @@ if __name__ == '__main__':
     # STEP 4: SIM SUBJECT
     if (args.agent_name=='MOS_fix') and (args.data_set=='exp1data'): 
         for m in ['HC', 'PAT', 'AVG']: 
-            #sim_subj_paral(pool, m, args)
-            for_interpretation(m)
+            pass #sim_subj_paral(pool, m, args)
+        for_interpretation()
 
     pool.close()
 

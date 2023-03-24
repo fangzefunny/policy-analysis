@@ -16,8 +16,8 @@ parser = argparse.ArgumentParser(description='Test for argparse')
 parser.add_argument('--n_fit',      '-f', help='fit times', type = int, default=1)
 parser.add_argument('--data_set',   '-d', help='which_data', type = str, default='for_interpret_HC')
 parser.add_argument('--method',     '-m', help='methods, mle or map', type = str, default='bms')
-parser.add_argument('--group',      '-g', help='fit to ind or fit to the whole group', type=str, default='ind')
-parser.add_argument('--agent_name', '-n', help='choose agent', default='FLR')
+parser.add_argument('--group',      '-g', help='fit to ind or fit to the whole group', type=str, default='group')
+parser.add_argument('--agent_name', '-n', help='choose agent', default='RS_test')
 parser.add_argument('--n_cores',    '-c', help='number of CPU cores used for parallel computing', 
                                             type=int, default=1)
 parser.add_argument('--seed',       '-s', help='random seed', type=int, default=420)
@@ -35,40 +35,6 @@ if not os.path.exists(f'{path}/fits'):
 if not os.path.exists(f'{path}/fits/{args.data_set}'):
     os.mkdir(f'{path}/fits/{args.data_set}')
 
-def fit_parallel(pool, data, subj, verbose, args):
-    '''A worker in the parallel computing pool 
-    '''
-    ## fix random seed 
-    seed = args.seed
-    n_params = args.agent.n_params
-
-    ## Start fitting
-    # fit cross validate 
-    m_data = np.sum([data[key].shape[0] 
-                        for key in data.keys()])
-    results = [pool.apply_async(subj.fit, 
-                    args=(data, args.method, seed+2*i, verbose)
-                    ) for i in range(args.n_fit)]
-    opt_val   = np.inf 
-    for p in results:
-        res = p.get()
-        if res.fun < opt_val:
-            opt_val = res.fun
-            opt_res = res
-            
-    ## Save the optimize results 
-    fit_res = {}
-    fit_res['log_post']   = -opt_val
-    fit_res['log_like']   = subj.loglike(opt_res.x, data)
-    fit_res['param']      = opt_res.x
-    fit_res['param_name'] = args.agent.p_name
-    fit_res['n_param']    = n_params
-    fit_res['aic']        = n_params*2 - 2*fit_res['log_like']
-    fit_res['bic']        = n_params*np.log(m_data) - 2*fit_res['log_like']
-    if args.method == 'bms':
-        fit_res['H'] = np.linalg.inv(opt_res.hess_inv.todense())
-
-    return fit_res 
 
 def fit(pool, data, args):
     '''Find the optimal free parameter for each model 
@@ -103,15 +69,64 @@ def fit(pool, data, args):
                 done_subj += 1
                 
     ## Fit params to the population level
-    elif args.group == 'avg':
-        fit_res = fit_parallel(data, pool, subj, True, args)
-        pname = f'{save_dir}/params-{args.data_set}-avg.csv'
-        fit_res.to_csv(pname)
+    elif args.group == 'group':
+        fit_sub_info = fit_parallel(pool, data, subj, False, args)
+        with open(fname, 'wb')as handle: 
+            pickle.dump(fit_sub_info, handle)
     
     ## END!!!
     end_time = datetime.datetime.now()
     print('\nparallel computing spend {:.2f} seconds'.format(
             (end_time - start_time).total_seconds()))
+        
+def fit_parallel(pool, data, subj, verbose, args):
+    '''A worker in the parallel computing pool 
+    '''
+    ## fix random seed 
+    seed = args.seed
+    n_params = args.agent.n_params
+
+    ## Start fitting
+    # fit cross validate 
+    if args.group:
+        m_data = 0
+        for k1 in data.keys():
+            for k2 in data[k1].keys():
+                m_data += data[k1][k2].shape[0]
+    else:
+        m_data = np.sum([data[key].shape[0] 
+                        for key in data.keys()])
+    results = [pool.apply_async(subj.fit, 
+                    args=(data, 
+                          args.method, 
+                          seed+2*i, 
+                          False,    
+                          verbose,
+                          args.group)
+                    ) for i in range(args.n_fit)]
+    opt_val   = np.inf 
+    for p in results:
+        res = p.get()
+        if res.fun < opt_val:
+            opt_val = res.fun
+            opt_res = res
+            
+    ## Save the optimize results 
+    fit_res = {}
+    fit_res['log_post']   = -opt_val
+    fit_res['log_like']   = 0 if args.group == 'group' else \
+                            subj.loglike(opt_res.x, data)
+    fit_res['param']      = opt_res.x
+    fit_res['param_name'] = args.agent.group_p_name \
+                            + args.agent.p_name*len(data.keys()
+                            ) if args.group == 'group' else args.agent.p_name
+    fit_res['n_param']    = n_params
+    fit_res['aic']        = n_params*2 - 2*fit_res['log_like']
+    fit_res['bic']        = n_params*np.log(m_data) - 2*fit_res['log_like']
+    if args.method == 'bms':
+        fit_res['H'] = np.linalg.inv(opt_res.hess_inv.todense())
+
+    return fit_res 
 
 def summary(data, args):
 
