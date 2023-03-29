@@ -4,8 +4,8 @@
 python m0_preprocess.py
 
 ## declare all models and all data sets
-declare data_sets=("for_interpret")
-declare models=("FLR_test")  
+declare data_sets=("for_interpret_avg")
+declare models=("FLR_test" "RS_test")  
 
 ## step 1: fit the model
 for data_set in "${data_sets[@]}"; do 

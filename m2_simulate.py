@@ -325,7 +325,7 @@ def for_interpretation(seed=2023, n_sub=5, n_samples=10):
 
         pTable = build_pivot_table('bms', agent='MOS_fix', verbose=False)
         pTable['group'] = pTable['group'].map({'HC': 'HC', 'GAD': 'PAT', 'MDD': 'PAT'})
-        g_param  = np.array([15, -15, 1]) if mode == 'HC' else np.array([-15, 15, 1])
+        g_param  = [10, -10, 0] if 'HC' else [-10, 10, 0] #pTable.groupby(by='group').mean(numeric_only=True)[['l1', 'l2', 'l3']]
         n_params = subj.agent.n_params
         fname    = f'{path}/fits/{args.data_set}/params-{args.data_set}-{args.agent_name}-bms-ind.csv'      
         params   = pd.read_csv(fname, index_col=0).iloc[0, 0:n_params].values
@@ -363,7 +363,7 @@ def for_interpretation(seed=2023, n_sub=5, n_samples=10):
             for_interpret[sub_id] = sim_data
 
     # save for interpretation
-    with open(f'{path}/data/for_interpret.pkl', 'wb')as handle:
+    with open(f'{path}/data/for_interpret_avg.pkl', 'wb')as handle:
         pickle.dump(for_interpret, handle)
 
 if __name__ == '__main__':

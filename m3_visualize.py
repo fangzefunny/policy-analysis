@@ -625,8 +625,8 @@ def LR_increase_FLR(fig_id, model, n_sub=5):
     # visualize 
     fig, axs = plt.subplots(1, 2, figsize=(4.5, 2.5))
     ax = axs[0]
-    colors = [viz.PurplePairs[0], viz.PurplePairs[0], viz.PurplePairs[0], 
-              viz.PurplePairs[1], viz.PurplePairs[1]]
+    colors = [viz.Pal2_1, viz.Pal2_1, viz.Pal2_1, 
+              viz.Pal2_2, viz.Pal2_2]
     group  = [' Stable', ' Volatile', '', 'Stable', 'Volatile']
     lrs    = [lr_HC[:, 0].mean(), lr_HC[:, 1].mean(), 0, 
               lr_PAT[:, 0].mean(), lr_PAT[:, 1].mean()]
@@ -637,7 +637,7 @@ def LR_increase_FLR(fig_id, model, n_sub=5):
     # ax.set_title('Increased learning rate\nfrom stable to volatile')
 
     ax = axs[1]
-    colors = [viz.PurplePairs[0], viz.PurplePairs[1], viz.PurplePairs[1]]
+    colors = [viz.Pal2_1, viz.Pal2_2, viz.Pal2_2]
     group  = ['HC', '', '', 'PAT', '']
     lrs    = [(lr_HC[:, 1]  - lr_HC[:, 0]).mean(), 0, 0, 
               (lr_PAT[:, 1] - lr_PAT[:, 0]).mean(), 0]
