@@ -27,19 +27,19 @@ def remake_cols_idx(data, sub_id, feedback_type, exp_id, seed=42):
     rng = np.random.RandomState(seed)
 
     ## Replace some undesired col name 
-    col_dict = { 'choice':       'humanAct',
+    col_dict = { 'choice':       'a',
                  'Unnamed: 0':   'trial',
-                 'green_mag':    'mag0',
-                 'blue_mag':     'mag1',
-                 'block':        'b_type',
+                 'green_mag':    'm0',
+                 'blue_mag':     'm1',
+                 'block':        'trial_type',
                  'green_outcome':'state'}
     data.rename(columns=col_dict, inplace=True)
 
     ## Change the action index
     # the raw data: left stim--1, right stim--0
     # I prefer:     left stim--0, right stim--1
-    data['humanAct'] = data['humanAct'].fillna(rng.choice(2))
-    data['humanAct'] = data['humanAct'].apply(lambda x: int(1-x))
+    data['a'] = data['a'].fillna(rng.choice(2))
+    data['a'] = data['a'].apply(lambda x: int(1-x))
     
     ## Change the state index
     # the raw data: left stim--1, right stim--0
@@ -47,10 +47,10 @@ def remake_cols_idx(data, sub_id, feedback_type, exp_id, seed=42):
     data['state'] = data['state'].apply(lambda x: int(1-x))
 
     ## Change the block type index 
-    data['b_type'] = data['b_type'].apply(lambda x: x[:3])
+    data['trial_type'] = data['trial_type'].apply(lambda x: x[:3])
 
     ## Check if correct
-    data['match'] = data.apply(lambda x: int(x['humanAct']==x['state']), axis=1) 
+    data['match'] = data.apply(lambda x: int(x['a']==x['state']), axis=1) 
     
     ## Add the sub id col
     data['sub_id'] = sub_id
@@ -60,20 +60,23 @@ def remake_cols_idx(data, sub_id, feedback_type, exp_id, seed=42):
 
     if feedback_type == 'gain': 
         data['rew'] = data.apply(
-            lambda x: x[f'mag{int(x["humanAct"])}']
-                        *(x["humanAct"]==x["state"]), axis=1)
+            lambda x: x[f'm{int(x["a"])}']
+                        *(x["a"]==x["state"]), axis=1)
     elif feedback_type == 'loss': 
         data['rew'] = data.apply(
-            lambda x: x[f'mag{int(x["humanAct"])}']
-                        *(x["humanAct"]==x["state"])
-                     -min(x[f'mag0'], x['mag1']), axis=1)
+            lambda x: x[f'm{int(x["a"])}']
+                        *(x["a"]==x["state"])
+                     -min(x[f'm0'], x['m1']), axis=1)
     
     data['rawRew'] = data.apply(
-            lambda x: x[f'mag{int(x["humanAct"])}']
-                        *(x["humanAct"]==x["state"]), axis=1)
+            lambda x: x[f'm{int(x["a"])}']
+                        *(x["a"]==x["state"]), axis=1)
     
     ## Add which experiment id 
     data['exp_id'] = exp_id
+
+    data['block_type'] = 'cont'
+    data['stage'] = 'train'
 
     return data 
 

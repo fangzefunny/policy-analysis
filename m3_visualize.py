@@ -10,7 +10,7 @@ from scipy.ndimage import gaussian_filter1d
 
 from utils.agent import *
 from utils.analyze import *
-from utils.bms import fit_bms
+from utils.fit import fit_bms
 from utils.viz import viz
 viz.default_img_set()
 
