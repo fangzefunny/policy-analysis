@@ -186,6 +186,9 @@ class wrapper:
         ## loop to simulate the responses in the block
         for t, row in block_data.iterrows():
 
+            # simulate the data 
+            subj_voi = env.sim_fn(row, subj, rng)
+
             # record some insights of the model
             for i, v in enumerate(self.agent.voi):
                 pred_data.loc[t, v] = eval(f'subj.get_{v}()')
@@ -195,9 +198,6 @@ class wrapper:
                 for k in self.insights.keys():
                     self.insights[k].append(eval(f'subj.get_{k}()'))
 
-            # simulate the data 
-            subj_voi = env.sim_fn(row, subj, rng)
-            
             # record the stimulated data
             for i, v in enumerate(env.voi): 
                 pred_data.loc[t, v] = subj_voi[i]
@@ -392,7 +392,7 @@ class FLR18(RL):
                 + (1-lmbda)*abs(m1-m0)**self.r*np.sign(m1-m0)
         va   = eval(f'self.beta_{t}_{f}')*v \
                 + self.beta_act*(self.q1 - (1-self.q1))
-        pi1  = 1 / (1 + np.exp(-va))
+        pi1  = 1 / (1 + clip_exp(-va))
         self.pi = np.array([1-pi1, pi1])
         return self.pi 
     
@@ -425,27 +425,27 @@ class FLR6(FLR18):
         self.r              = params[2]
         self.alpha_fix      = params[3]
         self.beta_fix       = params[4]
-        self.lamb_fix       = params[5]
+        self.lmbda_fix      = params[5]
 
         # ---- Stable & gain ---- #
         self.alpha_sta_gain = self.alpha_fix
         self.beta_sta_gain  = self.beta_fix
-        self.lamb_sta_gain  = self.lamb_fix
+        self.lmbda_sta_gain  = self.lmbda_fix
 
         # ---- Stable & loss ---- #
         self.alpha_sta_loss = self.alpha_fix
         self.beta_sta_loss  = self.beta_fix
-        self.lamb_sta_loss  = self.lamb_fix
+        self.lmbda_sta_loss  = self.lmbda_fix
 
         # ---- Volatile & gain ---- #
         self.alpha_vol_gain = self.alpha_fix
         self.beta_vol_gain  = self.beta_fix
-        self.lamb_vol_gain  = self.lamb_fix
+        self.lmbda_vol_gain  = self.lmbda_fix
 
         # ---- Voatile & gain ---- #
         self.alpha_vol_loss = self.alpha_fix
         self.beta_vol_loss  = self.beta_fix
-        self.lamb_vol_loss  = self.lamb_fix
+        self.lmbda_vol_loss  = self.lmbda_fix
 
 # ------------------------------------------ #
 #            Risk sensitive model            #
@@ -586,6 +586,7 @@ class MOS18(RL):
         self.q1  = .5
         self.q_A = np.array([1-self.q1, self.q1]) 
         self.pi_effect = [1/3, 1/3, 1/3]
+        self.pi  = np.array([.5, .5])
 
     #  ------ learning the probability ------- #
 
@@ -612,7 +613,8 @@ class MOS18(RL):
         w0, w1, w2 = self.get_w(t, f)
         # creat the mixature model 
         self.pi_effect = [pi_SM[1], pi_M[1], self.q_A[1]]
-        return w0*pi_SM + w1*pi_M + w2*self.q_A 
+        self.pi = w0*pi_SM + w1*pi_M + w2*self.q_A 
+        return self.pi 
 
     def get_w(self, b, f):
         l0 = eval(f'self.l0_{b}_{f}')
@@ -669,7 +671,7 @@ class MOS6(MOS18):
                 lambda x: 1/(1+clip_exp(-x))] \
                 + [lambda x: x]*3
     n_params = len(p_name)
-    voi      = ['ps', 'pi', 'alpha', 'w1', 'w2', 'w3', 'l1', 
+    voi      = ['pS1', 'pi1', 'alpha', 'w1', 'w2', 'w3', 'l1', 
                 'l2', 'l3', 'l1_effect', 'l2_effect', 'l3_effect']
 
     def load_params(self, params):

@@ -5,7 +5,7 @@ python m0_preprocess.py
 
 ## declare all models and all data sets
 declare data_sets=("exp1data")
-declare models=("MOS6" "FLR6" "RP3") 
+declare models=("FLR6" "RS3") 
 declare method='hier'
 
 ## step 1: fit the model
