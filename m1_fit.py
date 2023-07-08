@@ -14,7 +14,8 @@ parser = argparse.ArgumentParser(description='Test for argparse')
 parser.add_argument('--n_fit',      '-f', help='fit times', type = int, default=1)
 parser.add_argument('--data_set',   '-d', help='which_data', type = str, default='exp1data')
 parser.add_argument('--env_name',   '-e', help='which environment', type = str, default='rl_reversal')
-parser.add_argument('--method',     '-m', help='methods, mle or map', type = str, default='hier')
+parser.add_argument('--method',     '-m', help='methods, mle or map', type = str, default='map')
+parser.add_argument('--algorithm',  '-a', help='fitting algorithm', type = str, default='BFGS')
 parser.add_argument('--agent_name', '-n', help='choose agent', default='MOS6')
 parser.add_argument('--n_cores',    '-c', help='number of CPU cores used for parallel computing', 
                                             type=int, default=1)
@@ -57,8 +58,8 @@ def fit(pool, data, args):
         for sub_idx in data.keys(): 
             if sub_idx not in fitted_sub_lst:  
                 print(f'Fitting {args.agent_name} subj {sub_idx}, progress: {(done_subj*100)/all_subj:.2f}%')
-                fit_info = model.fit(data[sub_idx], args.method, pool, 
-                                     seed=args.seed, n_fits=args.n_fit,
+                fit_info = model.fit(data[sub_idx], args.method, args.algorithm, 
+                                     pool=pool, seed=args.seed, n_fits=args.n_fit,
                                      verbose=False, init=False)
                 fit_sub_info[sub_idx] = fit_info
                 with open(fname, 'wb')as handle: 

@@ -3,6 +3,7 @@ import numpy as np
 import warnings
 import time 
 
+from functools import partial
 from scipy.special import softmax, psi, gammaln
 from scipy.stats import gamma, norm 
 from scipy.optimize import minimize
@@ -15,7 +16,7 @@ max_ = 1e+13
 # -----------------------------------------------#
 
 def fit_hier(pool, data, model, fname, n_fits=20, 
-             seed=2020, tol=1e-4, max_iter=20, 
+             seed=2020, tol=1e-4, max_iter=10, 
              init=None, verbose=True):
     '''Hierarchical model fitting, searching for prior
 
@@ -34,8 +35,7 @@ def fit_hier(pool, data, model, fname, n_fits=20,
 
      # number of parameter, and possible bound
     n_param = model.agent.n_params
-    m_data  = list(data.items())[0][1][
-            list(list(data.items())[0][1].keys())[0]].shape[0]
+    m_data  = list(data.items())[0][1][0].shape[0]
     sub_lst = list(data.keys())
     n_sub   = len(sub_lst)
     plb = np.array([b[0] for b in model.agent.p_pbnds])
@@ -64,14 +64,14 @@ def fit_hier(pool, data, model, fname, n_fits=20,
         fit_info = {}
         for i, sub_idx in enumerate(sub_lst):
             start_time = time.time()
-            sub_fit = model.fit(data[sub_idx], 'bms', pool, p_priors,
+            sub_fit = model.fit(data[sub_idx], 'map', 'BFGS', pool, p_priors,
                                 seed=seed, n_fits=n_fits,
                                 verbose=False, init=False)
             fit_info[sub_idx] = sub_fit
             end_time = time.time()
             if verbose: 
                 interval = end_time - start_time
-                print(f'SUB:{sub_idx}, progress: {(i*100)/n_sub:.2f}%')
+                print(f'SUB:{sub_idx}, progress: {(i*100/n_sub):2f}%')
                 print(f'\tNLL:{-sub_fit["log_like"]:.4f}, using: {interval:.2f}')
                 
         # transform the parameter to Gaussian space,
@@ -125,8 +125,8 @@ def fit_hier(pool, data, model, fname, n_fits=20,
 #         Maximum likelihoood Estimation         #
 # -----------------------------------------------#
 
-def fit(loss_fn, data, pbnds, p_name, p_priors,
-        method='mle', init=False, seed=2021, 
+def fit(loss_fn, data, bnds, pbnds, p_name, p_priors,
+        method='mle', alg='Nelder-Mead', init=False, seed=2021, 
         verbose=False):
     '''Fit the parameter using optimization 
 
@@ -134,14 +134,17 @@ def fit(loss_fn, data, pbnds, p_name, p_priors,
 
         loss_fn: a function; log likelihood function
         data:  a dictionary, each key map a dataframe
+        bnds: parameter bound
         pbnds: possible bound, used to initialize parameter
         priors: a list of scipy random variable, used to
                 calculate log prior
         p_name: the names of parameters
-        method: 
-            -'mle' (use Nelder-Mead simplex methd) 
-            -'map' (use Nelder-Mead simplex methd)
-            -'bms' (use L-BFGS-B methd, to estimate Hessian inverse)
+        method: decide if we use the prior -'mle', -'map', -'hier'
+        alg: the fiting algorithm, currently we can use 
+            - 'Nelder-Mead': a simplex algorithm,
+            - 'BFGS': a quasi-Newton algorithm, return hessian,
+                        but only works on unconstraint problem
+            - 'bads': bayesian optimization problem
         init:  input the init parameter if needed 
         seed:  random seed; used when doing parallel computing
         verbose: show the optimization details or not. 
@@ -153,8 +156,8 @@ def fit(loss_fn, data, pbnds, p_name, p_priors,
     '''
     # get some value
     n_params = len(p_name)
-    if method=='mle': p_priors = None 
-    fit_method = 'BFGS' if method == 'bms' else 'Nelder-Mead'
+    if method=='mle': p_priors=None 
+    if alg=='BFGS': bnds=None
     # get the number of trial 
     n_rows = np.sum([data[k].shape[0] for k in data.keys()])
 
@@ -171,7 +174,7 @@ def fit(loss_fn, data, pbnds, p_name, p_priors,
     ## Fit the params 
     if verbose: print('init with params: ', param0) 
     result = minimize(loss_fn, param0, args=(data, p_priors), 
-                      method=fit_method,
+                      bounds=bnds, method=alg,
                       options={'disp': verbose})
     if verbose: print(f'''  Fitted params: {result.x}, 
                 Loss: {result.fun}''')
@@ -185,7 +188,7 @@ def fit(loss_fn, data, pbnds, p_name, p_priors,
     fit_res['n_param']    = n_params
     fit_res['aic']        = n_params*2 - 2*fit_res['log_like']
     fit_res['bic']        = n_params*np.log(n_rows) - 2*fit_res['log_like']
-    if method == 'bms':
+    if alg == 'BFGS':
         fit_res['H'] = np.linalg.pinv(result.hess_inv)
         fit_res['H_inv'] = result.hess_inv
     
@@ -195,23 +198,26 @@ def fit(loss_fn, data, pbnds, p_name, p_priors,
 #         Maximum likelihoood Estimation parallel       #
 # ------------------------------------------------------#
 
-def fit_parallel(pool, loss_fn, data, pbnds, p_name,              
-                 p_priors, method='mle', init=False, seed=2021,
-                 verbose=False, n_fits=40):
+def fit_parallel(pool, loss_fn, data, bnds, pbnds, p_name,              
+                 p_priors, method='mle', alg='Nelder-Mead', 
+                 init=False, seed=2021, verbose=False, n_fits=40):
     '''Fit the parameter using optimization, parallel 
 
     Args: 
         pool:  computing pool; mp.pool
         loss_fn: a function; log likelihood function
         data:  a dictionary, each key map a dataframe
+        bnds: parameter bound
         pbnds: possible bound, used to initialize parameter
         priors: a list of scipy random variable, used to
                 calculate log prior
         p_name: the names of parameters
-        method: 
-            -'mle' (use Nelder-Mead simplex methd) 
-            -'map' (use Nelder-Mead simplex methd)
-            -'bms' (use L-BFGS-B methd, to estimate Hessian inverse)
+        method: decide if we use the prior -'mle', -'map', -'hier'
+        alg: the fiting algorithm, currently we can use 
+            - 'Nelder-Mead': a simplex algorithm,
+            - 'BFGS': a quasi-Newton algorithm, return hessian,
+                        but only works on unconstraint problem
+            - 'bads': bayesian optimization problem
         init:  input the init parameter if needed 
         seed:  random seed; used when doing parallel computing
         n_fits: number of fit 
@@ -225,10 +231,12 @@ def fit_parallel(pool, loss_fn, data, pbnds, p_name,
     results = [pool.apply_async(fit, 
                     args=(loss_fn,
                           data, 
+                          bnds,
                           pbnds, 
                           p_name, 
                           p_priors,             
                           method, 
+                          alg, 
                           init, 
                           seed+2*i,    
                           verbose)
@@ -252,7 +260,7 @@ def fit_bms(all_sub_info, use_bic=False, tol=1e-4):
     Args: 
         all_sub_info: [Nm, list] a list of model fitting results
         use_bic: use bic to approximate lme
-        tol: tolerence
+        tol: 
     Outputs:
         BMS result: a dict including 
             -alpha: [1, Nm] posterior of the model probability

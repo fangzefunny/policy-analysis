@@ -70,7 +70,7 @@ class rl_reversal:
     
         # see state 
         stage  = row['stage']
-        s      = row['state']
+        s      = int(row['state'])
         m0     = row['m0']
         m1     = row['m1']
         m      = np.array([m0, m1])
@@ -79,7 +79,7 @@ class rl_reversal:
         pi     = subj.policy(m,
                     t_type=t_type,
                     f_type=f_type)
-        a      = row['a']
+        a      = int(row['a'])
         ll     = np.log(pi[a]+eps_)
 
         # save the info and learn 

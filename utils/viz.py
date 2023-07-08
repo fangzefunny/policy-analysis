@@ -110,8 +110,8 @@ class viz:
         # Larger scale for plots in notebooks
         sns.set_context('talk')
         sns.set_style("ticks", {'axes.grid': False})
-        plt.rcParams['font.family'] = "sans-serif"
-        plt.rcParams['font.sans-serif'] = "Arial"
+        # plt.rcParams['font.family'] = "sans-serif"
+        # plt.rcParams['font.sans-serif'] = "Arial"
 
     @staticmethod
     def default_img_set():

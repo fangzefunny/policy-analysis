@@ -18,6 +18,7 @@ parser.add_argument('--data_set',   '-d', help='which_data', type=str, default='
 parser.add_argument('--env_name',   '-e', help='which enviroment', type=str, default='rl_reversal')
 parser.add_argument('--agent_name', '-n', help='choose agent', default='MOS6')
 parser.add_argument('--method',     '-m', help='fitting methods', type=str, default='hier')
+parser.add_argument('--algorithm',  '-a', help='fitting algorithm', type = str, default='BFGS')
 parser.add_argument('--n_sim',      '-f', help='f simulations', type=int, default=5)
 parser.add_argument('--n_cores',    '-c', help='number of CPU cores used for parallel computing', 
                                             type=int, default=1)

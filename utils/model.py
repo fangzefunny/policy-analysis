@@ -49,7 +49,7 @@ class wrapper:
     
     # ------------ fit ------------ #
 
-    def fit(self, data, method, pool=None, p_priors=None,
+    def fit(self, data, method, alg, pool=None, p_priors=None,
             init=False, seed=2021, verbose=False, n_fits=40):
         '''Fit the parameter using optimization 
         '''
@@ -57,10 +57,12 @@ class wrapper:
         # get functional inputs 
         fn_inputs = [self.loss_fn, 
                      data, 
+                     self.agent.p_bnds,
                      self.agent.p_pbnds, 
                      self.agent.p_name,
                      self.agent.p_priors if p_priors is None else p_priors,
                      method,
+                     alg, 
                      init,
                      seed,
                      verbose]
@@ -240,7 +242,8 @@ class baseAgent:
     '''Base Agent'''
     name     = 'base'
     n_params = 0
-    p_bnds   = []
+    p_bnds   = None
+    p_pbnds  = []
     p_name   = []  
     n_params = 0 
     p_priors = None 
@@ -283,6 +286,7 @@ class baseAgent:
 
 class RL(baseAgent):
     name     = 'RL'
+    p_bnds   = None
     p_pbnds  = [(-2, 2)] + [(-10, -.15)]*4
     p_name   = ['β'] + get_param_name(['α'])
     p_priors = []
@@ -329,17 +333,18 @@ class RL(baseAgent):
 #       Flexible learning rate model         #
 # ------------------------------------------ #
     
-class FLR18(RL):
-    name     = 'FLR18'
+class FLR15(RL):
+    name     = 'FLR15'
+    p_bnds   = None
     p_pbnds  = [(-10,-.15), (-2, 2), (-10,-.15)] + [(-10,-.15), (-2, 2), (-10,-.15)]*4
     p_name   = ['α_act', 'β_act', 'r'] + get_param_name(['α', 'β', 'λ'])
-    p_priors = []
+    p_priors = [norm(0, 50), norm(0, 2), norm(0, 50)] + [norm(0, 50), norm(0, 2), norm(0, 50)]*4
     p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
                 lambda x: clip_exp(x), 
                 lambda x: 1/(1+clip_exp(-x))] + \
                [lambda x: 1/(1+clip_exp(-x)), 
                 lambda x: clip_exp(x), 
-                lambda x: 1/(1+clip_exp(-x))]*3
+                lambda x: 1/(1+clip_exp(-x))]*4
     n_params = len(p_name)
     voi      = ['pS1', 'pi1', 'alpha'] 
    
@@ -400,11 +405,12 @@ class FLR18(RL):
         t, f = self.mem.sample('t_type', 'f_type')
         return eval(f'self.alpha_{t}_{f}') 
     
-class FLR6(FLR18):
+class FLR6(FLR15):
     name     = 'FLR6'
+    p_bnds   = None
     p_pbnds  = [(-10,-.15), (-2, 2), (-10,-.15), (-10,-.15), (-2, 2), (-10,-.15)]
     p_name   = ['α_act', 'β_act', 'r', 'α', 'β', 'λ']
-    p_priors = []
+    p_priors = [norm(0, 50), norm(0, 50), norm(0, 50), norm(0, 50), norm(0, 2), norm(0, 50)]
     p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
                 lambda x: clip_exp(x), 
                 lambda x: 1/(1+clip_exp(-x)),
@@ -412,7 +418,7 @@ class FLR6(FLR18):
                 lambda x: clip_exp(x), 
                 lambda x: 1/(1+clip_exp(-x))]
     n_params = len(p_name)
-    voi      = ['ps', 'pi', 'alpha'] 
+    voi      = ['pS1', 'pi1', 'alpha'] 
    
     def load_params(self, params):
 
@@ -453,9 +459,11 @@ class FLR6(FLR18):
 
 class RS9(RL):
     name     = 'RS9'
+    p_bnds   = None
     p_pbnds  = [(-2, 2)] + [(-10, -.15), (-2, 2)]*4
     p_name   = ['β'] + get_param_name(['α', 'γ'])
     n_params = len(p_name)
+    p_priors = [norm(0, 2), norm(0, 50), norm(0, 2)]*4
     p_trans  = [lambda x: clip_exp(x)] + \
                [lambda x: 1/(1+clip_exp(-x)),
                 lambda x: clip_exp(x)]*4
@@ -493,9 +501,10 @@ class RS9(RL):
 
 class RS3(RS9):
     name     = 'RS3'
+    p_bnds   = None
     p_pbnds  = [(-2, 2), (-10, -.15), (-2, 2)]
     p_name   = ['β', 'α', 'γ']
-    p_priors = []
+    p_priors = [norm(0, 2), norm(0, 50), norm(0, 2)]
     p_trans  = [lambda x: clip_exp(x),
                 lambda x: 1/(1+clip_exp(-x)),
                 lambda x: clip_exp(x)]
@@ -534,9 +543,11 @@ class RS3(RS9):
 
 class MOS18(RL):
     name     = 'MOS18'
-    p_pbnds  = [(-10,-.15), (-2, 2)] + ([(-10,-.5)]+[(-5, 5)]*3) * 4
+    p_bnds   = None
+    p_pbnds  = [(-2,-1), (-2, 2)] + ([(-2,-1)]+[(-6, 6)]*3) * 4
     p_name   = ['α_act', 'β'] + get_param_name(['α', 'λ1', 'λ2', 'λ3'])
-    p_priors = []
+    p_priors = [norm(0, 50), norm(0, 2)]+[norm(0, 50), 
+                    norm(0, 10), norm(0, 10), norm(0, 10)]*4
     p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
                 lambda x: clip_exp(x)] \
                 + ([lambda x: 1/(1+clip_exp(-x))]+
@@ -663,13 +674,16 @@ class MOS18(RL):
 
 class MOS6(MOS18):
     name     = 'MOS6'
-    p_pbnds  = [(-10,-.15), (-2, 2), (-10,-.15)] + [(-5, 5)]*3
+    p_bnds   = None
+    p_pbnds  = [(-2,-1), (-2, 2), (-2, 2)] + [(-6, 6)]*3
     p_name   = ['α_act', 'β', 'α', 'λ1', 'λ2', 'λ3']
-    p_priors = []
+    p_priors = [norm(0, 50), norm(0, 2), norm(0, 50), 
+                norm(0, 10), norm(0, 10), norm(0, 10)]
     p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
                 lambda x: clip_exp(x),
                 lambda x: 1/(1+clip_exp(-x))] \
                 + [lambda x: x]*3
+    p_poi    = ['α', 'λ1', 'λ2', 'λ3']
     n_params = len(p_name)
     voi      = ['pS1', 'pi1', 'alpha', 'w1', 'w2', 'w3', 'l1', 
                 'l2', 'l3', 'l1_effect', 'l2_effect', 'l3_effect']

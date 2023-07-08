@@ -3,6 +3,7 @@
 *.ipynb
 *.ipynb_checkpoints
 *.DS_Store 
+*.log
 utils/__pycache__/
 results.zip
 __pycache__/
