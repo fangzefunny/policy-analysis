@@ -5,7 +5,7 @@ python m0_preprocess.py
 
 ## declare all models and all data sets
 declare data_sets=("exp1data")
-declare models=("MOS6" "MOS18" "FLR6" "FLR15" "RS3" "RS9")
+declare models=("PH13" "PH4") #"MOS6" "MOS18" "FLR6" "FLR15" "RS3" "RS9"
 declare method='map'
 declare alg='BFGS'
 

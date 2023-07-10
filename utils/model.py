@@ -725,3 +725,118 @@ class MOS6(MOS18):
         self.l1_vol_loss    = self.l1_fix
         self.l2_vol_loss    = self.l2_fix
 
+# ------------------------------------------ #
+#            Pearce Hall model               #
+# ------------------------------------------ #
+
+class PH13(RL):
+    name     = 'PH13'
+    p_bnds   = None
+    p_pbnds  = [(-2,-1),] + [(-2,-1), (-2,-1), (-2, 2)]*4
+    p_name   = ['α0'] + get_param_name(['k', 'η', 'β'])
+    n_params = len(p_name)
+    p_priors = [norm(0, 50)]+[norm(0, 50), norm(0, 50), norm(0, 2)]*4
+    p_trans  = [lambda x: 1/(1+clip_exp(-x))] + \
+               [lambda x: 1/(1+clip_exp(-x)),
+                lambda x: 1/(1+clip_exp(-x)),
+                lambda x: clip_exp(x)]*4
+    voi      = ['pS1', 'pi1', 'alpha']
+
+    def load_params(self, params):
+
+        # from gauss space to actual space
+        params = [fn(p) for fn, p in zip(self.p_trans, params)]
+
+        # ---- General ----- #
+        self.alpha          = params[0]
+
+        # ---- Stable & gain ---- #
+        self.k_sta_gain     = params[1]
+        self.eta_sta_gain   = params[2]
+        self.beta_sta_gain  = params[3]
+
+        # ---- Stable & loss ---- #
+        self.k_sta_loss     = params[4]
+        self.eta_sta_loss   = params[5]
+        self.beta_sta_loss  = params[6]
+
+        # ---- Volatile & gain ---- #
+        self.k_vol_gain     = params[7]
+        self.eta_vol_gain   = params[8]
+        self.beta_vol_gain  = params[9]
+
+
+        # ---- Volatile & loss ---- #
+        self.k_vol_loss     = params[10]
+        self.eta_vol_loss   = params[11]
+        self.beta_vol_loss  = params[12]
+
+    def learn(self):
+        self._learn_critic()
+        self._learn_alpha()
+
+    def _learn_critic(self):
+        s, t, f = self.mem.sample('s', 't_type', 'f_type')
+        k = eval(f'self.k_{t}_{f}')
+        self.delta = s - self.p1
+        self.p1 += k*self.alpha*self.delta
+        self.p_S = np.array([1-self.p1, self.p1])
+
+    def _learn_alpha(self,):
+        t, f = self.mem.sample('t_type', 'f_type')
+        eta = eval(f'self.eta_{t}_{f}')
+        self.alpha += eta*(np.abs(self.delta)-self.alpha)
+
+    def policy(self, m, **kwargs):
+        t, f = kwargs['t_type'], kwargs['f_type']
+        beta = eval(f'self.beta_{t}_{f}')
+        self.pi = softmax(beta*self.p_S*m)
+        return self.pi
+    
+    def get_alpha(self):
+        t, f = self.mem.sample('t_type', 'f_type')
+        return eval(f'self.k_{t}_{f}')*self.alpha
+
+class PH4(PH13):
+    name     = 'PH4'
+    p_bnds   = None
+    p_pbnds  = [(-2,-1), (-2,-1), (-2,-1), (-2, 2)]
+    p_name   = ['α0', 'k', 'η', 'β']
+    n_params = len(p_name)
+    p_priors = [norm(0, 50), norm(0, 50), norm(0, 50), norm(0, 2)]
+    p_trans  = [lambda x: 1/(1+clip_exp(-x)),
+                lambda x: 1/(1+clip_exp(-x)),
+                lambda x: 1/(1+clip_exp(-x)),
+                lambda x: clip_exp(x)]
+    voi      = ['pS1', 'pi1', 'alpha']
+
+    def load_params(self, params):
+
+        # from gauss space to actual space
+        params = [fn(p) for fn, p in zip(self.p_trans, params)]
+
+        # ---- General ----- #
+        self.alpha          = params[0]
+        self.k_fix          = params[1]
+        self.eta_fix        = params[2]
+        self.beta_fix       = params[3]
+
+        # ---- Stable & gain ---- #
+        self.k_sta_gain     = self.k_fix
+        self.eta_sta_gain   = self.eta_fix
+        self.beta_sta_gain  = self.beta_fix
+
+        # ---- Stable & loss ---- #
+        self.k_sta_loss     = self.k_fix
+        self.eta_sta_loss   = self.eta_fix
+        self.beta_sta_loss  = self.beta_fix
+
+        # ---- Volatile & gain ---- #
+        self.k_vol_gain     = self.k_fix
+        self.eta_vol_gain   = self.eta_fix
+        self.beta_vol_gain  = self.beta_fix
+
+        # ---- Volatile & loss ---- #
+        self.k_vol_loss     = self.k_fix
+        self.eta_vol_loss   = self.eta_fix
+        self.beta_vol_loss  = self.beta_fix

@@ -184,9 +184,13 @@ def comb_data(exp):
     for subj in sub_Lst:
         comb_data[subj] = {}
         if subj in list(gain_data.keys()):
-            comb_data[subj][0] = gain_data[subj][0]
+            datum = gain_data[subj][0]
+            datum['block_id'] = 0
+            comb_data[subj][0] = datum
         if subj in list(loss_data.keys()):
-            comb_data[subj][1] = loss_data[subj][0]
+            datum = loss_data[subj][0]
+            datum['block_id'] = 1
+            comb_data[subj][1] = datum 
 
     with open(f'{path}/data/{exp}data.pkl', 'wb')as handle:
         pickle.dump(comb_data, handle)

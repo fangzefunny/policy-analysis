@@ -97,6 +97,54 @@ def concat_sim_data(args):
     fname += f'{args.agent_name}/sim-{args.method}.csv'
     sim_data.to_csv(fname)
 
+def for_model_recovery_paral(pool, data, n_sub=40):
+
+    # set seed 
+    seed = args.seed+2
+    rng = np.random.RandomState(seed)
+
+    ## get parameters 
+    fname = f'{path}/fits/{args.data_set}/fit_sub_info-{args.agent_name}-{args.method}.pkl'      
+    with open(fname, 'rb')as handle: fit_sub_info_orig = pickle.load(handle)
+
+    ## create a sub list of subject list 
+    new_keys = rng.choice(list(fit_sub_info_orig.keys()), size=n_sub)
+    fit_sub_info = {k: fit_sub_info_orig[k] for k in new_keys}
+
+    res = [pool.apply_async(for_model_recovery, args=(sub_idx, data, fit_sub_info, seed+5*i))
+                            for i, sub_idx in enumerate(fit_sub_info.keys())]
+    syn_data = {}
+    for _, p in enumerate(res):
+        sub_idx, sim_data = p.get() 
+        syn_data[sub_idx] = sim_data 
+
+    # save for fit 
+    with open(f'{path}/data/{args.data_set}-{args.agent_name}.pkl', 'wb')as handle:
+        pickle.dump(syn_data, handle)
+    print(f'Synthesize data for {args.agent_name} has been saved!')
+
+def for_model_recovery(sub_idx, data, fit_sub_info, seed, n_sample=10):
+
+    # init model 
+    subj = model(args.agent)
+    rng = np.random.RandomState(seed)
+
+    # synthesize the data and save
+    sim_data = {} 
+    task_ind = rng.choice(list(data.keys()), size=n_sample)
+    param = fit_sub_info[sub_idx]['param']
+    for i, task_idx in enumerate(task_ind):
+        task = data[task_idx][list(data[task_idx].keys())[0]]
+        sim_sample = subj.sim({i: task}, param, rng=rng)
+        sim_sample['humanAct'] = sim_sample['act'].astype(int)
+        sim_sample = sim_sample.drop(columns=['ps', 'pi', 'alpha', 'acc',
+                'w1', 'w2', 'w3', 'l1', 'l2', 'l3', 
+                'l1_effect', 'l2_effect', 'l3_effect', 
+                'act'])
+        sim_data[i] = sim_sample
+     
+    return sub_idx, sim_data
+
 if __name__ == '__main__':
     
      ## STEP 0: GET PARALLEL POOL
@@ -110,6 +158,7 @@ if __name__ == '__main__':
     # STEP 2: SYNTHESIZE DATA
     sim_paral(pool, data, args)
     concat_sim_data(args)
+    pool.close()
 
         
 
