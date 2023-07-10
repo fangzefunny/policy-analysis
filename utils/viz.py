@@ -26,7 +26,7 @@ class viz:
     lYellow = np.array([252, 246, 238]) / 255
     Purple  = np.array([108,  92, 231]) / 255
     ocGreen = np.array([ 90, 196, 164]) / 255
-    Gray    = np.array([163, 161, 165]) / 255
+    Gray    = np.array([197, 197, 197]) / 255
 
     Palette = [Blue, Red, Yellow, ocGreen, Purple, Gray]
 
@@ -110,6 +110,8 @@ class viz:
         # Larger scale for plots in notebooks
         sns.set_context('talk')
         sns.set_style("ticks", {'axes.grid': False})
+        mpl.rcParams['axes.spines.right'] = False
+        mpl.rcParams['axes.spines.top'] = False
         # plt.rcParams['font.family'] = "sans-serif"
         # plt.rcParams['font.sans-serif'] = "Arial"
 

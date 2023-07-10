@@ -336,9 +336,9 @@ class RL(baseAgent):
 class FLR15(RL):
     name     = 'FLR15'
     p_bnds   = None
-    p_pbnds  = [(-10,-.15), (-2, 2), (-10,-.15)] + [(-10,-.15), (-2, 2), (-10,-.15)]*4
+    p_pbnds  = [(-2, 2), (1, 2), (-2, 2)] + [(-2, 2), (1, 2), (-2, 2)]*4
     p_name   = ['α_act', 'β_act', 'r'] + get_param_name(['α', 'β', 'λ'])
-    p_priors = [norm(0, 50), norm(0, 2), norm(0, 50)] + [norm(0, 50), norm(0, 2), norm(0, 50)]*4
+    p_priors = [norm(0,1.5), norm(1.5,.3), norm(0,1.5)] + [norm(0,1.5), norm(1.5, 3), norm(0,1.5)]*4
     p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
                 lambda x: clip_exp(x), 
                 lambda x: 1/(1+clip_exp(-x))] + \
@@ -347,6 +347,7 @@ class FLR15(RL):
                 lambda x: 1/(1+clip_exp(-x))]*4
     n_params = len(p_name)
     voi      = ['pS1', 'pi1', 'alpha'] 
+    color    = viz.Gray
    
     def load_params(self, params):
 
@@ -408,9 +409,9 @@ class FLR15(RL):
 class FLR6(FLR15):
     name     = 'FLR6'
     p_bnds   = None
-    p_pbnds  = [(-10,-.15), (-2, 2), (-10,-.15), (-10,-.15), (-2, 2), (-10,-.15)]
+    p_pbnds  = [(-2, 2), (1, 2), (-2, 2), (-2, 2), (-2, 2), (1, 2)]
     p_name   = ['α_act', 'β_act', 'r', 'α', 'β', 'λ']
-    p_priors = [norm(0, 50), norm(0, 50), norm(0, 50), norm(0, 50), norm(0, 2), norm(0, 50)]
+    p_priors = [norm(0,1.5), norm(1.5,.3), norm(0,1.5), norm(0,1.5), norm(1.5,.3), norm(0,1.5)]
     p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
                 lambda x: clip_exp(x), 
                 lambda x: 1/(1+clip_exp(-x)),
@@ -419,6 +420,7 @@ class FLR6(FLR15):
                 lambda x: 1/(1+clip_exp(-x))]
     n_params = len(p_name)
     voi      = ['pS1', 'pi1', 'alpha'] 
+    color    = viz.Gray
    
     def load_params(self, params):
 
@@ -460,14 +462,15 @@ class FLR6(FLR15):
 class RS9(RL):
     name     = 'RS9'
     p_bnds   = None
-    p_pbnds  = [(-2, 2)] + [(-10, -.15), (-2, 2)]*4
+    p_pbnds  = [(1, 2)] + [(-2, 2), (-2, 2)]*4
     p_name   = ['β'] + get_param_name(['α', 'γ'])
     n_params = len(p_name)
-    p_priors = [norm(0, 2), norm(0, 50), norm(0, 2)]*4
+    p_priors = [norm(1.5,.3), norm(0,1.5), norm(0,1.5)]*4
     p_trans  = [lambda x: clip_exp(x)] + \
                [lambda x: 1/(1+clip_exp(-x)),
                 lambda x: clip_exp(x)]*4
-    voi      = ['pS1', 'pi1'] 
+    voi      = ['pS1', 'pi1', 'alpha'] 
+    color    = viz.Gray
 
     def load_params(self, params):
 
@@ -502,14 +505,15 @@ class RS9(RL):
 class RS3(RS9):
     name     = 'RS3'
     p_bnds   = None
-    p_pbnds  = [(-2, 2), (-10, -.15), (-2, 2)]
+    p_pbnds  = [(1, 2), (-2, -2), (-2, 2)]
     p_name   = ['β', 'α', 'γ']
-    p_priors = [norm(0, 2), norm(0, 50), norm(0, 2)]
+    p_priors = [norm(1.5,.3), norm(0,1.5), norm(0,1.5)]
     p_trans  = [lambda x: clip_exp(x),
                 lambda x: 1/(1+clip_exp(-x)),
                 lambda x: clip_exp(x)]
     n_params = len(p_name)
-    voi      = ['pS1', 'pi1'] 
+    voi      = ['pS1', 'pi1', 'alpha'] 
+    color    = viz.Gray
 
     def load_params(self, params):
 
@@ -544,17 +548,17 @@ class RS3(RS9):
 class MOS18(RL):
     name     = 'MOS18'
     p_bnds   = None
-    p_pbnds  = [(-2,-1), (-2, 2)] + ([(-2,-1)]+[(-6, 6)]*3) * 4
+    p_pbnds  = [(-2, 2), (1, 2)] + ([(-2, 2)]+[(-6, 6)]*3) * 4
     p_name   = ['α_act', 'β'] + get_param_name(['α', 'λ1', 'λ2', 'λ3'])
-    p_priors = [norm(0, 50), norm(0, 2)]+[norm(0, 50), 
-                    norm(0, 10), norm(0, 10), norm(0, 10)]*4
+    p_priors = [norm(0,1.5), norm(1.5,.3)]+[norm(0, 1.5), 
+                norm(0, 10), norm(0, 10), norm(0, 10)]*4
     p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
                 lambda x: clip_exp(x)] \
                 + ([lambda x: 1/(1+clip_exp(-x))]+
                    [lambda x: x]*3) * 4 
     n_params = len(p_name)
-    voi      = ['pS1', 'pi1', 'alpha', 'w1', 'w2', 'w3', 'l1', 
-                'l2', 'l3', 'l1_effect', 'l2_effect', 'l3_effect']
+    voi      = ['pS1', 'pi1', 'alpha', 'l1', 'l2', 'l3']
+    color    = viz.r2
 
     def load_params(self, params):
 
@@ -675,9 +679,9 @@ class MOS18(RL):
 class MOS6(MOS18):
     name     = 'MOS6'
     p_bnds   = None
-    p_pbnds  = [(-2,-1), (-2, 2), (-2, 2)] + [(-6, 6)]*3
+    p_pbnds  = [(-2, 2), (1, 2), (-2, 2)] + [(-6, 6)]*3
     p_name   = ['α_act', 'β', 'α', 'λ1', 'λ2', 'λ3']
-    p_priors = [norm(0, 50), norm(0, 2), norm(0, 50), 
+    p_priors = [norm(0,1.5), norm(1.5,.3), norm(0,1.5), 
                 norm(0, 10), norm(0, 10), norm(0, 10)]
     p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
                 lambda x: clip_exp(x),
@@ -685,8 +689,8 @@ class MOS6(MOS18):
                 + [lambda x: x]*3
     p_poi    = ['α', 'λ1', 'λ2', 'λ3']
     n_params = len(p_name)
-    voi      = ['pS1', 'pi1', 'alpha', 'w1', 'w2', 'w3', 'l1', 
-                'l2', 'l3', 'l1_effect', 'l2_effect', 'l3_effect']
+    voi      = ['pS1', 'pi1', 'alpha', 'l1', 'l2', 'l3']
+    color    = viz.r1
 
     def load_params(self, params):
 
@@ -725,6 +729,7 @@ class MOS6(MOS18):
         self.l1_vol_loss    = self.l1_fix
         self.l2_vol_loss    = self.l2_fix
 
+
 # ------------------------------------------ #
 #            Pearce Hall model               #
 # ------------------------------------------ #
@@ -732,15 +737,16 @@ class MOS6(MOS18):
 class PH13(RL):
     name     = 'PH13'
     p_bnds   = None
-    p_pbnds  = [(-2,-1),] + [(-2,-1), (-2,-1), (-2, 2)]*4
+    p_pbnds  = [(-2, 2),] + [(-2, 2), (-2, 2), (1, 2)]*4
     p_name   = ['α0'] + get_param_name(['k', 'η', 'β'])
     n_params = len(p_name)
-    p_priors = [norm(0, 50)]+[norm(0, 50), norm(0, 50), norm(0, 2)]*4
+    p_priors = [norm(0,1.5)]+[norm(0,1.5), norm(0,1.5), norm(1.5, .3)]*4
     p_trans  = [lambda x: 1/(1+clip_exp(-x))] + \
                [lambda x: 1/(1+clip_exp(-x)),
                 lambda x: 1/(1+clip_exp(-x)),
                 lambda x: clip_exp(x)]*4
     voi      = ['pS1', 'pi1', 'alpha']
+    color    = viz.Gray
 
     def load_params(self, params):
 
@@ -800,15 +806,16 @@ class PH13(RL):
 class PH4(PH13):
     name     = 'PH4'
     p_bnds   = None
-    p_pbnds  = [(-2,-1), (-2,-1), (-2,-1), (-2, 2)]
+    p_pbnds  = [(-2, 2), (-2, 2), (-2, 2), (1, 2)]
     p_name   = ['α0', 'k', 'η', 'β']
     n_params = len(p_name)
-    p_priors = [norm(0, 50), norm(0, 50), norm(0, 50), norm(0, 2)]
+    p_priors = [norm(0, 1.5), norm(0, 1.5), norm(0, 1.5), norm(1.5, .3)]
     p_trans  = [lambda x: 1/(1+clip_exp(-x)),
                 lambda x: 1/(1+clip_exp(-x)),
                 lambda x: 1/(1+clip_exp(-x)),
                 lambda x: clip_exp(x)]
     voi      = ['pS1', 'pi1', 'alpha']
+    color    = viz.Gray
 
     def load_params(self, params):
 

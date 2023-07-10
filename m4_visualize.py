@@ -8,7 +8,7 @@ import seaborn as sns
 import pingouin as pg
 from scipy.ndimage import gaussian_filter1d
 
-from utils.agent import *
+from utils.model import *
 from utils.analyze import *
 from utils.fit import fit_bms
 from utils.viz import viz
@@ -66,7 +66,9 @@ def write_stats():
     with open(f'{path}/figures/statistics.txt', 'w')as f:
 
         ## The MOS6 model 
-        data = build_pivot_table('bms', agent='MOS_fix', min_q=.01, max_q=.99)
+        model = 'MOS6'
+        method = 'map'
+        data = build_pivot_table(method, agent=model)
         data['group'] = data['group'].map(
                         {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
 
@@ -106,53 +108,53 @@ def write_stats():
         f.writelines(t_test(sel_data, f'group=="HC"', f'group=="PAT"', tar=['log_alpha']))
 
         ## The MOS18 model 
-        data = build_pivot_table('bms', agent='MOS', min_q=.01, max_q=.99)
+        data = build_pivot_table(method, agent='MOS18')
         data['group'] = data['group'].map(
                         {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'})
 
         ## learning rate: 2x2x2 anova
         tar = 'log_alpha'
-        sel_data = data.groupby(by=['sub_id', 'group', 'b_type', 'feedback_type']
+        sel_data = data.groupby(by=['sub_id', 'group', 'trial_type', 'feedback_type']
                 )[tar].mean().reset_index()
         f.write('\n\n\n\n'
                +'################################################################\n'
                +'#                     MOS18-log α:  ANOVA                      #\n'
                +'################################################################\n\n')
         f.writelines([pg.anova(dv=tar, 
-            between=['group', 'b_type', 'feedback_type'], data=data).round(3).to_string()])
+            between=['group', 'trial_type', 'feedback_type'], data=data).round(3).to_string()])
         
         ## λ1: 2x2x2 anova
         tar = 'l1'
-        sel_data = data.groupby(by=['sub_id', 'group', 'b_type', 'feedback_type']
+        sel_data = data.groupby(by=['sub_id', 'group', 'trial_type', 'feedback_type']
                 )[tar].mean().reset_index()
         f.write('\n\n\n\n'
                +'################################################################\n'
                +'#                      MOS18-λ_HC:  ANOVA                      #\n'
                +'################################################################\n\n')
         f.writelines([pg.anova(dv=tar, 
-            between=['group', 'b_type', 'feedback_type'], data=data).round(3).to_string()])
+            between=['group', 'trial_type', 'feedback_type'], data=data).round(3).to_string()])
 
         ## λ2: 2x2x2 anova
         tar = 'l2'
-        sel_data = data.groupby(by=['sub_id', 'group', 'b_type', 'feedback_type']
+        sel_data = data.groupby(by=['sub_id', 'group', 'trial_type', 'feedback_type']
                 )[tar].mean().reset_index()
         f.write('\n\n\n\n'
                +'################################################################\n'
                +'#                      MOS18-λ_MO:  ANOVA                      #\n'
                +'################################################################\n\n')
         f.writelines([pg.anova(dv=tar, 
-            between=['group', 'b_type', 'feedback_type'], data=data).round(3).to_string()])
+            between=['group', 'trial_type', 'feedback_type'], data=data).round(3).to_string()])
 
         ## λ3: 2x2x2 anova
         tar = 'l3'
-        sel_data = data.groupby(by=['sub_id', 'group', 'b_type', 'feedback_type']
+        sel_data = data.groupby(by=['sub_id', 'group', 'trial_type', 'feedback_type']
                 )[tar].mean().reset_index()
         f.write('\n\n\n\n'
                +'################################################################\n'
                +'#                      MOS18-λ_HA:  ANOVA                      #\n'
                +'################################################################\n\n')
         f.writelines([pg.anova(dv=tar, 
-            between=['group', 'b_type', 'feedback_type'], data=data).round(3).to_string()])
+            between=['group', 'trial_type', 'feedback_type'], data=data).round(3).to_string()])
 
 
 # ------------  MODEL COMPARISON ------------- #
@@ -279,7 +281,7 @@ def StylexConds(data, cond, fig_id, mode='fix'):
         ticks = ['HC', 'PAT']
         colors = viz.PurplePairs
     elif cond == 'volatility':
-        varr, case1, case2 = 'b_type', 'sta', 'vol'
+        varr, case1, case2 = 'trial_type', 'sta', 'vol'
         ticks = ['Stable', 'Volatile']
         colors = viz.BluePairs
     elif cond == 'feedback':
@@ -291,7 +293,7 @@ def StylexConds(data, cond, fig_id, mode='fix'):
     tars = ['l1', 'l2', 'l3']
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
     gby = ['sub_id', varr] if mode=='fix' else [
-        'sub_id', 'group', 'feedback_type', 'b_type']
+        'sub_id', 'group', 'feedback_type', 'trial_type']
     data = data.groupby(by=gby)[tars].mean().reset_index()
     yticks = [r'$\lambda_{EU}$',r'$\lambda_{MO}$',r'$\lambda_{HA}$']
 
@@ -346,13 +348,13 @@ def StyleInter(data, cond, fig_id):
     # prepare the inputs 
     tars = ['l1', 'l2', 'l3']
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
-    data = data.groupby(by=['sub_id', 'group', 'feedback_type', 'b_type']
+    data = data.groupby(by=['sub_id', 'group', 'feedback_type', 'trial_type']
                     )[tars].mean().reset_index()
 
     # select condition
     if cond == 'group-volatility':
         varr1, case11, case12 = 'group', 'HC', 'PAT'
-        varr2, case21, case22 = 'b_type', 'sta', 'vol'
+        varr2, case21, case22 = 'trial_type', 'sta', 'vol'
         ticks = ['HC', 'PAT']
         legs  = ['Stable', 'Volatile']
         colors = viz.BluePairs
@@ -363,7 +365,7 @@ def StyleInter(data, cond, fig_id):
         legs  = ['Reward', 'Aversive']
         colors = viz.YellowPairs
     elif cond == 'volatility-feedback':
-        varr1, case11, case12 = 'b_type', 'sta', 'vol'
+        varr1, case11, case12 = 'trial_type', 'sta', 'vol'
         varr2, case21, case22 = 'feedback_type', 'gain', 'loss'
         ticks = ['Stable', 'Volatile']
         legs  = ['Reward', 'Aversive']
@@ -470,7 +472,7 @@ def LRxConds(data, cond, fig_id, mode='fix'):
     tars = ['log_alpha']
     data['is_PAT'] = data['group'].apply(lambda x: x!='HC')
     gby = ['sub_id', varr] if mode=='fix' else [
-        'sub_id', 'group', 'feedback_type', 'b_type']
+        'sub_id', 'group', 'feedback_type', 'trial_type']
         
     # select condition
     if cond == 'group':
@@ -478,7 +480,7 @@ def LRxConds(data, cond, fig_id, mode='fix'):
         ticks = ['HC', 'PAT']
         colors = viz.PurplePairs
     elif cond == 'volatility':
-        varr, case1, case2 = 'b_type', 'sta', 'vol'
+        varr, case1, case2 = 'trial_type', 'sta', 'vol'
         ticks = ['Stable', 'Volatile']
         colors = viz.BluePairs
     elif cond == 'feedback':
@@ -538,11 +540,11 @@ def slow_LearningCurve(fig_id):
         datum = data[subj][0]
         ind = {}
         for btype in ['sta', 'vol']:
-            ind[btype] = list(range(90)) if datum.loc[0, 'b_type'] == btype\
+            ind[btype] = list(range(90)) if datum.loc[0, 'trial_type'] == btype\
                             else list(range(90, 180)) 
 
         ## stable 
-        sel_data = datum.query('b_type=="sta"'
+        sel_data = datum.query('trial_type=="sta"'
                 ).groupby(by='state').count()['trial']
         datum.loc[ind['sta'], 'p0'] = np.round(sel_data[0] / 90, 2)
 
@@ -551,7 +553,7 @@ def slow_LearningCurve(fig_id):
         n = datum.loc[idx1:idx2].groupby(by='state').count()['trial'][0] / 20
         datum.loc[ind['vol'], 'p0'] = [.2]*20+[.8]*20+[.2]*20+[.8]*20+[.2]*10 if n==.2 else\
                                     [.8]*20+[.2]*20+[.8]*20+[.2]*20+[.8]*10 
-        cond = f'{datum.loc[0, "b_type"]}{datum.loc[0, "p0"]}-{datum.loc[90, "b_type"]}{datum.loc[90, "p0"]}'
+        cond = f'{datum.loc[0, "trial_type"]}{datum.loc[0, "p0"]}-{datum.loc[90, "trial_type"]}{datum.loc[90, "p0"]}'
         if cond in cases.keys():
             cases[cond].append(datum)          
     cs = ['group=="HC"', 'group!="HC"']
@@ -703,11 +705,11 @@ def HumanAda(mode, fig_id):
         datum = data[subj][0]
         ind = {}
         for btype in ['sta', 'vol']:
-            ind[btype] = list(range(90)) if datum.loc[0, 'b_type'] == btype\
+            ind[btype] = list(range(90)) if datum.loc[0, 'trial_type'] == btype\
                             else list(range(90, 180)) 
 
         ## stable 
-        sel_data = datum.query('b_type=="sta"'
+        sel_data = datum.query('trial_type=="sta"'
                 ).groupby(by='state').count()['trial']
         datum.loc[ind['sta'], 'p0'] = np.round(sel_data[0] / 90, 2)
 
@@ -716,7 +718,7 @@ def HumanAda(mode, fig_id):
         n = datum.loc[idx1:idx2].groupby(by='state').count()['trial'][0] / 20
         datum.loc[ind['vol'], 'p0'] = [.2]*20+[.8]*20+[.2]*20+[.8]*20+[.2]*10 if n==.2 else\
                                     [.8]*20+[.2]*20+[.8]*20+[.2]*20+[.8]*10 
-        cond = f'{datum.loc[0, "b_type"]}{datum.loc[0, "p0"]}-{datum.loc[90, "b_type"]}{datum.loc[90, "p0"]}'
+        cond = f'{datum.loc[0, "trial_type"]}{datum.loc[0, "p0"]}-{datum.loc[90, "trial_type"]}{datum.loc[90, "p0"]}'
         if cond in cases.keys():
             cases[cond].append(datum)          
     cs = ['group=="HC"', 'group!="HC"']
@@ -874,7 +876,7 @@ if __name__ == '__main__':
 
     # # --------- Data stats  --------- #
 
-    # write_stats()
+    write_stats()
 
     # # --------- Main results --------- #
 
@@ -899,10 +901,10 @@ if __name__ == '__main__':
     # # Fig 4: Understand the flexible behaviors
     # slow_LearningCurve('4A')
     # plt.close('all')
-    LR_increase_FLR(fig_id='4B', model='FLR')
-    plt.close('all')
-    LR_increase_FLR(fig_id='4C', model='RS')
-    plt.close('all')
+    # LR_increase_FLR(fig_id='4B', model='FLR')
+    # plt.close('all')
+    # LR_increase_FLR(fig_id='4C', model='RS')
+    # plt.close('all')
 
     # # Fig 5: param recovery
     # plot_param_recovery(model='MOS_fix', fig_id='5') 
