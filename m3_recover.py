@@ -14,10 +14,11 @@ from utils.env_fn import *
 parser = argparse.ArgumentParser(description='Test for argparse')
 parser.add_argument('--data_set',    '-d', help='which_data', type = str, default='exp1data')
 parser.add_argument('--env_name',    '-e', help='which environment', type = str, default='rl_reversal')
-parser.add_argument('--method',      '-m', help='methods, mle or map', type = str, default='hier')
+parser.add_argument('--method',      '-m', help='methods, mle or map', type = str, default='map')
 parser.add_argument('--algorithm',   '-a', help='fitting algorithm', type = str, default='BFGS')
 parser.add_argument('--agent_name',  '-n', help='choose agent', default='MOS6')
-parser.add_argument('--other_agent', '-o', help='choose agent', default="['MOS6', 'MOS18', 'FLR6', 'FLR15', 'RS3', 'RS9']")
+parser.add_argument('--other_agent', '-o', help='choose agent', default=
+                                "['MOS6', 'MOS18', 'FLR6', 'FLR15', 'RS3', 'RS9', 'PH4', 'PH13']")
 parser.add_argument('--n_cores',     '-c', help='number of CPU cores used for parallel computing', 
                                             type=int, default=1)
 parser.add_argument('--seed',        '-s', help='random seed', type=int, default=420)
@@ -189,7 +190,7 @@ def model_recover(args):
 
 if __name__ == '__main__':
 
-    #param_recover(args)
+    param_recover(args)
 
     model_recover(args)
 
