@@ -76,6 +76,7 @@ class rl_reversal:
         m      = np.array([m0, m1])
         t_type = row['trial_type']
         f_type = row['feedback_type'] 
+        o_type = row['out_type']
         pi     = subj.policy(m,
                     t_type=t_type,
                     f_type=f_type)
@@ -89,6 +90,7 @@ class rl_reversal:
                 'a': a,
                 't_type': t_type, 
                 'f_type': f_type,
+                'o_type': o_type,
             })
             subj.learn()
 
@@ -105,6 +107,7 @@ class rl_reversal:
         m      = np.array([m0, m1])
         t_type = row['trial_type']
         f_type = row['feedback_type'] 
+        o_type = row['out_type']
         pi     = subj.policy(m,
                     t_type=t_type,
                     f_type=f_type)
@@ -118,6 +121,7 @@ class rl_reversal:
                 'a': a,
                 't_type': t_type, 
                 'f_type': f_type,
+                'o_type': o_type,
             })
             subj.learn()
 

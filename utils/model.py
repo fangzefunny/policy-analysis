@@ -287,12 +287,11 @@ class baseAgent:
 class RL(baseAgent):
     name     = 'RL'
     p_bnds   = None
-    p_pbnds  = [(-2, 2)] + [(-10, -.15)]*4
-    p_name   = ['β'] + get_param_name(['α'])
+    p_pbnds  = [(-2, 2)] + [(-10, -.15), (-10, -.15)]*4
+    p_name   = ['β'] + get_param_name(['α+', 'α_'])
     p_priors = []
     p_trans  = [lambda x: clip_exp(x), 
-                lambda x: 1/(1+clip_exp(-x))] + \
-                [lambda x: x]*3
+                lambda x: 1/(1+clip_exp(-x)), lambda x: 1/(1+clip_exp(-x))]*4
     n_params = len(p_name)
     voi      = ['pS1', 'pi1']
     color    = viz.r2 
@@ -302,10 +301,10 @@ class RL(baseAgent):
         params = [fn(p) for fn, p in zip(self.p_trans, params)]
         # assign the parameter
         self.beta           = params[0]
-        self.alpha_sta_gain = params[1]
-        self.alpha_sta_loss = params[2]
-        self.alpha_vol_gain = params[3]
-        self.alpha_vol_loss = params[4]
+        self.a_pos_sta_gain = params[1]
+        self.a_neg_sta_loss = params[2]
+        self.a_pos_vol_gain = params[3]
+        self.a_neg_vol_loss = params[4]
         
     def _init_critic(self):
         self.p1     = 1/2
@@ -316,7 +315,9 @@ class RL(baseAgent):
 
     def _learn_critic(self):
         s, t, f = self.mem.sample('s', 't_type', 'f_type')
-        self.p1 += eval(f'self.alpha_{t}_{f}') * (s - self.p1)
+        delta = s-self.p1
+        o = 'pos' if delta>0 else 'neg'
+        self.p1 += eval(f'self.a_{o}_{t}_{f}') * delta 
         self.p_S = np.array([1-self.p1, self.p1])
 
     def policy(self, m, **kwargs):
@@ -328,21 +329,29 @@ class RL(baseAgent):
     
     def get_pi1(self):
         return self.pi[1]
+    
+    def get_alpha(self):
+        o, t, f = self.mem.sample('o_type', 't_type', 'f_type')
+        return eval(f'self.a_{o}_{t}_{f}')
 
 # ------------------------------------------ #
 #       Flexible learning rate model         #
 # ------------------------------------------ #
     
-class FLR15(RL):
-    name     = 'FLR15'
+class FLR19(RL):
+    name     = 'FLR19'
     p_bnds   = None
-    p_pbnds  = [(-2, 2), (1, 2), (-2, 2)] + [(-2, 2), (1, 2), (-2, 2)]*4
-    p_name   = ['α_act', 'β_act', 'r'] + get_param_name(['α', 'β', 'λ'])
-    p_priors = [norm(0,1.5), norm(2, 1), norm(0,1.5)] + [norm(0,1.5), norm(2, 1), norm(0,1.5)]*4
+    p_pbnds  = [(-2, 2), (1, 2), (-2, 2)] \
+                + [(-2, 2), (-2, 2), (1, 2), (-2, 2)]*4
+    p_name   = ['α_act', 'β_act', 'r'] \
+                + get_param_name(['α+', 'α_' 'β', 'λ'])
+    p_priors = [norm(0,1.5), norm(2, 1), norm(0,1.5)] + \
+                [norm(0,1.5), norm(0,1.5), norm(2, 1), norm(0,1.5)]*4
     p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
                 lambda x: clip_exp(x), 
                 lambda x: 1/(1+clip_exp(-x))] + \
-               [lambda x: 1/(1+clip_exp(-x)), 
+               [lambda x: 1/(1+clip_exp(-x)),
+                lambda x: 1/(1+clip_exp(-x)), 
                 lambda x: clip_exp(x), 
                 lambda x: 1/(1+clip_exp(-x))]*4
     n_params = len(p_name)
@@ -360,24 +369,28 @@ class FLR15(RL):
         self.r              = params[2]
 
         # ---- Stable & gain ---- #
-        self.alpha_sta_gain = params[3]
-        self.beta_sta_gain  = params[4]
-        self.lmbda_sta_gain = params[5]
+        self.a_pos_sta_gain = params[3]
+        self.a_neg_sta_gain = params[4]
+        self.beta_sta_gain  = params[5]
+        self.lmbda_sta_gain = params[6]
 
         # ---- Stable & loss ---- #
-        self.alpha_sta_loss = params[6]
-        self.beta_sta_loss  = params[7]
-        self.lmbda_sta_loss = params[8]
+        self.a_pos_sta_loss = params[7]
+        self.a_neg_sta_loss = params[8]
+        self.beta_sta_loss  = params[9]
+        self.lmbda_sta_loss = params[10]
 
         # ---- Volatile & gain ---- #
-        self.alpha_vol_gain = params[9]
-        self.beta_vol_gain  = params[10]
-        self.lmbda_vol_gain = params[11]
+        self.a_pos_vol_gain = params[11]
+        self.a_neg_vol_gain = params[12]
+        self.beta_vol_gain  = params[13]
+        self.lmbda_vol_gain = params[14]
 
-        # ---- Voatile & gain ---- #
-        self.alpha_vol_loss = params[12]
-        self.beta_vol_loss  = params[13]
-        self.lmbda_vol_loss = params[14]
+        # ---- Volatile & loss ---- #
+        self.a_pos_vol_loss = params[15]
+        self.a_neg_vol_loss = params[16]
+        self.beta_vol_loss  = params[17]
+        self.lmbda_vol_loss = params[18]
     
     def learn(self):
         self._learn_critic()
@@ -400,13 +413,9 @@ class FLR15(RL):
                 + self.beta_act*(self.q1 - (1-self.q1))
         pi1  = 1 / (1 + clip_exp(-va))
         self.pi = np.array([1-pi1, pi1])
-        return self.pi 
+        return self.pi  
     
-    def get_alpha(self):
-        t, f = self.mem.sample('t_type', 'f_type')
-        return eval(f'self.alpha_{t}_{f}') 
-    
-class FLR6(FLR15):
+class FLR6(FLR19):
     name     = 'FLR6'
     p_bnds   = None
     p_pbnds  = [(-2, 2), (1, 2), (-2, 2), (-2, 2), (-2, 2), (1, 2)]
@@ -436,40 +445,45 @@ class FLR6(FLR15):
         self.lmbda_fix      = params[5]
 
         # ---- Stable & gain ---- #
-        self.alpha_sta_gain = self.alpha_fix
+        self.a_pos_sta_gain = self.alpha_fix
+        self.a_neg_sta_gain = self.alpha_fix
         self.beta_sta_gain  = self.beta_fix
-        self.lmbda_sta_gain  = self.lmbda_fix
+        self.lmbda_sta_gain = self.lmbda_fix
 
         # ---- Stable & loss ---- #
-        self.alpha_sta_loss = self.alpha_fix
+        self.a_pos_sta_loss = self.alpha_fix
+        self.a_neg_sta_loss = self.alpha_fix
         self.beta_sta_loss  = self.beta_fix
-        self.lmbda_sta_loss  = self.lmbda_fix
+        self.lmbda_sta_loss = self.lmbda_fix
 
         # ---- Volatile & gain ---- #
-        self.alpha_vol_gain = self.alpha_fix
+        self.a_pos_vol_gain = self.alpha_fix
+        self.a_neg_vol_gain = self.alpha_fix
         self.beta_vol_gain  = self.beta_fix
-        self.lmbda_vol_gain  = self.lmbda_fix
+        self.lmbda_vol_gain = self.lmbda_fix
 
-        # ---- Voatile & gain ---- #
-        self.alpha_vol_loss = self.alpha_fix
+        # ---- Volatile & loss ---- #
+        self.a_pos_vol_loss = self.alpha_fix
+        self.a_neg_vol_loss = self.alpha_fix
         self.beta_vol_loss  = self.beta_fix
-        self.lmbda_vol_loss  = self.lmbda_fix
+        self.lmbda_vol_loss = self.lmbda_fix
 
 # ------------------------------------------ #
 #            Risk sensitive model            #
 # ------------------------------------------ #
 
-class RS9(RL):
-    name     = 'RS9'
+class RS13(RL):
+    name     = 'RS13'
     p_bnds   = None
-    p_pbnds  = [(1, 2)] + [(-2, 2), (-2, 2)]*4
-    p_name   = ['β'] + get_param_name(['α', 'γ'])
+    p_pbnds  = [(1, 2)] + [(-2, 2), (-2, 2), (-2, 2)]*4
+    p_name   = ['β'] + get_param_name(['α+', 'α-', 'γ'])
     n_params = len(p_name)
-    p_priors = [norm(2, 1), norm(0,1.5), norm(0,1.5)]*4
+    p_priors = [norm(2, 1)] + [norm(0,1.5), norm(0,1.5), norm(2, 1)]*4
     p_trans  = [lambda x: clip_exp(x)] + \
                [lambda x: 1/(1+clip_exp(-x)),
+                lambda x: 1/(1+clip_exp(-x)),
                 lambda x: clip_exp(x)]*4
-    voi      = ['pS1', 'pi1', 'alpha', 'gamma'] 
+    voi      = ['pS1', 'pi1', 'alpha'] 
     color    = viz.Gray
 
     def load_params(self, params):
@@ -481,41 +495,43 @@ class RS9(RL):
         self.beta           = params[0]
 
         # ---- Stable & gain ---- #
-        self.alpha_sta_gain = params[1]
-        self.gamma_sta_gain = params[2]
+        self.a_pos_sta_gain = params[1]
+        self.a_neg_sta_gain = params[2]
+        self.gamma_sta_gain = params[3]
 
         # ---- Stable & loss ---- #
-        self.alpha_sta_loss = params[3]
-        self.gamma_sta_loss = params[4]
+        self.a_pos_sta_loss = params[4]
+        self.a_neg_sta_loss = params[5]
+        self.gamma_sta_loss = params[6]
 
         # ---- Volatile & gain ---- #
-        self.alpha_vol_gain = params[5]
-        self.gamma_vol_gain = params[6]
+        self.a_pos_vol_gain = params[7]
+        self.a_neg_vol_gain = params[8]
+        self.gamma_vol_gain = params[9]
 
         # ---- Voatile & gain ---- #
-        self.alpha_vol_loss = params[7]
-        self.gamma_vol_loss = params[8]
+        self.a_pos_vol_loss = params[10]
+        self.a_neg_vol_loss = params[11]
+        self.gamma_vol_loss = params[12]
 
     def _learn_critic(self):
         t, f, s = self.mem.sample('t_type', 'f_type', 's')
-        self.p1 += eval(f'self.alpha_{t}_{f}') * (s - self.p1)
+        delta = s-self.p1
+        o = 'pos' if delta>0 else 'neg'
+        self.p1 += eval(f'self.a_{o}_{t}_{f}') * delta 
         ps1 = np.clip(eval(f'self.gamma_{t}_{f}')*(self.p1-.5)+.5, 0, 1)
         self.p_S = np.array([1-ps1, ps1])
 
-    def get_alpha(self):
-        t, f = self.mem.sample('t_type', 'f_type')
-        return eval(f'self.alpha_{t}_{f}') 
-    
     def get_gamma(self):
         t, f = self.mem.sample('t_type', 'f_type')
         return eval(f'self.gamma_{t}_{f}') 
 
-class RS3(RS9):
+class RS3(RS13):
     name     = 'RS3'
     p_bnds   = None
     p_pbnds  = [(1, 2), (-2, -2), (-2, 2)]
     p_name   = ['β', 'α', 'γ']
-    p_priors = [norm(2, 1), norm(0,1.5), norm(0,1.5)]
+    p_priors = [norm(2, 1), norm(0,1.5), norm(2, 1)]
     p_trans  = [lambda x: clip_exp(x),
                 lambda x: 1/(1+clip_exp(-x)),
                 lambda x: clip_exp(x)]
@@ -534,35 +550,41 @@ class RS3(RS9):
         self.gamma_fix      = params[2]
 
         # ---- Stable & gain ---- #
-        self.alpha_sta_gain = self.alpha_fix
+        self.a_pos_sta_gain = self.alpha_fix
+        self.a_neg_sta_gain = self.alpha_fix
         self.gamma_sta_gain = self.gamma_fix
 
         # ---- Stable & loss ---- #
-        self.alpha_sta_loss = self.alpha_fix
+        self.a_pos_sta_loss = self.alpha_fix
+        self.a_neg_sta_loss = self.alpha_fix
         self.gamma_sta_loss = self.gamma_fix
 
         # ---- Volatile & gain ---- #
-        self.alpha_vol_gain = self.alpha_fix
+        self.a_pos_vol_gain = self.alpha_fix
+        self.a_neg_vol_gain = self.alpha_fix
         self.gamma_vol_gain = self.gamma_fix
 
         # ---- Voatile & gain ---- #
-        self.alpha_vol_loss = self.alpha_fix
+        self.a_pos_vol_loss = self.alpha_fix
+        self.a_neg_vol_loss = self.alpha_fix
         self.gamma_vol_loss = self.gamma_fix
 
 # ------------------------------------------ #
 #       Mixature of Strategies model         #
 # ------------------------------------------ #
 
-class MOS18(RL):
-    name     = 'MOS18'
+class MOS22(RL):
+    name     = 'MOS22'
     p_bnds   = None
-    p_pbnds  = [(-2, 2), (1, 2)] + ([(-2, 2)]+[(-6, 6)]*3) * 4
-    p_name   = ['α_act', 'β'] + get_param_name(['α', 'λ1', 'λ2', 'λ3'])
-    p_priors = [norm(0,1.5), norm(2, 1)]+[norm(0, 1.5), 
+    p_pbnds  = [(-2, 2), (1, 2)] + ([(-2, 2)]*2+[(-6, 6)]*3) * 4
+    p_name   = ['α_act', 'β'] + get_param_name(['α+', 'α_' 'λ1', 'λ2', 'λ3'])
+    p_priors = [norm(0,1.5), norm(2, 1)]+\
+                [norm(0, 1.5), norm(0, 1.5), 
                 norm(0, 10), norm(0, 10), norm(0, 10)]*4
     p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
                 lambda x: clip_exp(x)] \
-                + ([lambda x: 1/(1+clip_exp(-x))]+
+                + ([lambda x: 1/(1+clip_exp(-x)),
+                    lambda x: 1/(1+clip_exp(-x))]+
                    [lambda x: x]*3) * 4 
     n_params = len(p_name)
     voi      = ['pS1', 'pi1', 'alpha', 'l1', 'l2', 'l3']
@@ -578,32 +600,32 @@ class MOS18(RL):
         self.beta           = params[1]
 
         # ---- Stable & gain ---- #
-        self.alpha_sta_gain = params[2]
-        self.l0_sta_gain    = params[3]
-        self.l1_sta_gain    = params[4]
-        self.l2_sta_gain    = params[5]
+        self.a_pos_sta_gain = params[2]
+        self.a_neg_sta_gain = params[3]
+        self.l0_sta_gain    = params[4]
+        self.l1_sta_gain    = params[5]
+        self.l2_sta_gain    = params[6]
 
         # ---- Stable & loss ---- #
-        self.alpha_sta_loss = params[6]
-        self.l0_sta_loss    = params[7]
-        self.l1_sta_loss    = params[8]
-        self.l2_sta_loss    = params[9]
+        self.a_pos_sta_loss = params[7]
+        self.a_neg_sta_loss = params[8]
+        self.l0_sta_loss    = params[9]
+        self.l1_sta_loss    = params[10]
+        self.l2_sta_loss    = params[11]
 
         # ---- Volatile & gain ---- #
-        self.alpha_vol_gain = params[10]
-        self.l0_vol_gain    = params[11]
-        self.l1_vol_gain    = params[12]
-        self.l2_vol_gain    = params[13]
+        self.a_pos_vol_gain = params[12]
+        self.a_neg_vol_gain = params[13]
+        self.l0_vol_gain    = params[14]
+        self.l1_vol_gain    = params[15]
+        self.l2_vol_gain    = params[16]
 
         # ---- Volatile & loss ---- #
-        self.alpha_vol_loss = params[14]
-        self.l0_vol_loss    = params[15]
-        self.l1_vol_loss    = params[16]
-        self.l2_vol_loss    = params[17]    
-
-    def _init_critic(self):
-        self.p1  = .5
-        self.p_S = np.array([1-self.p1, self.p1]) 
+        self.a_pos_vol_loss = params[17]
+        self.a_neg_vol_loss = params[18]
+        self.l0_vol_loss    = params[19]
+        self.l1_vol_loss    = params[20]
+        self.l2_vol_loss    = params[21]    
     
     def _init_actor(self):
         self.q1  = .5
@@ -616,11 +638,6 @@ class MOS18(RL):
     def learn(self):
         self._learn_critic()
         self._learn_actor()
-
-    def _learn_critic(self):
-        t, f, s = self.mem.sample('t_type', 'f_type', 's')
-        self.p1 += eval(f'self.alpha_{t}_{f}') * (s - self.p1)
-        self.p_S = np.array([1-self.p1, self.p1])
 
     def _learn_actor(self):
         a = self.mem.sample('a')
@@ -646,10 +663,6 @@ class MOS18(RL):
         return softmax([l0, l1, l2])
 
     #  ------ print variable of interests ------- #
-
-    def get_alpha(self):
-        t, f = self.mem.sample('t_type', 'f_type')
-        return eval(f'self.alpha_{t}_{f}') 
 
     def get_w1(self):
         t, f = self.mem.sample('t_type', 'f_type')
@@ -684,7 +697,7 @@ class MOS18(RL):
     def get_l3_effect(self):
         return self.pi_effect[2]
 
-class MOS6(MOS18):
+class MOS6(MOS22):
     name     = 'MOS6'
     p_bnds   = None
     p_pbnds  = [(-2, 2), (1, 2), (-2, 2)] + [(-6, 6)]*3
@@ -714,42 +727,119 @@ class MOS6(MOS18):
         self.l2_fix         = params[5]
 
         # ---- Stable & gain ---- #
-        self.alpha_sta_gain = self.alpha_fix
+        self.a_pos_sta_gain = self.alpha_fix
+        self.a_neg_sta_gain = self.alpha_fix
         self.l0_sta_gain    = self.l0_fix
         self.l1_sta_gain    = self.l1_fix
         self.l2_sta_gain    = self.l2_fix
 
         # ---- Stable & loss ---- #
-        self.alpha_sta_loss = self.alpha_fix
+        self.a_pos_sta_loss = self.alpha_fix
+        self.a_neg_sta_loss = self.alpha_fix
         self.l0_sta_loss    = self.l0_fix
         self.l1_sta_loss    = self.l1_fix
         self.l2_sta_loss    = self.l2_fix
 
         # ---- Volatile & gain ---- #
-        self.alpha_vol_gain = self.alpha_fix
+        self.a_pos_vol_gain = self.alpha_fix
+        self.a_neg_vol_gain = self.alpha_fix
         self.l0_vol_gain    = self.l0_fix
         self.l1_vol_gain    = self.l1_fix
         self.l2_vol_gain    = self.l2_fix
 
         # ---- Volatile & loss ---- #
-        self.alpha_vol_loss = self.alpha_fix
+        self.a_pos_vol_loss = self.alpha_fix
+        self.a_neg_vol_loss = self.alpha_fix
         self.l0_vol_loss    = self.l0_fix
         self.l1_vol_loss    = self.l1_fix
         self.l2_vol_loss    = self.l2_fix
+
+class MOS7(MOS22):
+    name     = 'MOS7'
+    p_bnds   = None
+    p_pbnds  = [(-2, 2), (1, 2), (1, 2), (-2, 2)] + [(-6, 6)]*3
+    p_name   = ['α_act', 'β_EU', 'β_MO', 'α', 'λ1', 'λ2', 'λ3']
+    p_priors = [norm(0,1.5), norm(2, 1), norm(2, 1), 
+                norm(0,1.5), 
+                norm(0, 10), norm(0, 10), norm(0, 10)]
+    p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
+                lambda x: clip_exp(x),
+                lambda x: clip_exp(x),
+                lambda x: 1/(1+clip_exp(-x))] \
+                + [lambda x: x]*3
+    p_poi    = ['α', 'λ1', 'λ2', 'λ3']
+    n_params = len(p_name)
+    voi      = ['pS1', 'pi1', 'alpha', 'l1', 'l2', 'l3']
+    color    = viz.r1
+
+    def load_params(self, params):
+
+        # from gauss space to actual space
+        params = [fn(p) for fn, p in zip(self.p_trans, params)]
+
+        # ---- General ----- #
+        self.alpha_act      = params[0]
+        self.beta_EU        = params[1]
+        self.beta_MO        = params[2]
+        self.alpha_fix      = params[3]
+        self.l0_fix         = params[4]
+        self.l1_fix         = params[5]
+        self.l2_fix         = params[6]
+
+        # ---- Stable & gain ---- #
+        self.a_pos_sta_gain = self.alpha_fix
+        self.a_neg_sta_gain = self.alpha_fix
+        self.l0_sta_gain    = self.l0_fix
+        self.l1_sta_gain    = self.l1_fix
+        self.l2_sta_gain    = self.l2_fix
+
+        # ---- Stable & loss ---- #
+        self.a_pos_sta_loss = self.alpha_fix
+        self.a_neg_sta_loss = self.alpha_fix
+        self.l0_sta_loss    = self.l0_fix
+        self.l1_sta_loss    = self.l1_fix
+        self.l2_sta_loss    = self.l2_fix
+
+        # ---- Volatile & gain ---- #
+        self.a_pos_vol_gain = self.alpha_fix
+        self.a_neg_vol_gain = self.alpha_fix
+        self.l0_vol_gain    = self.l0_fix
+        self.l1_vol_gain    = self.l1_fix
+        self.l2_vol_gain    = self.l2_fix
+
+        # ---- Volatile & loss ---- #
+        self.a_pos_vol_loss = self.alpha_fix
+        self.a_neg_vol_loss = self.alpha_fix
+        self.l0_vol_loss    = self.l0_fix
+        self.l1_vol_loss    = self.l1_fix
+        self.l2_vol_loss    = self.l2_fix
+
+    def policy(self, m, **kwargs):
+        t, f = kwargs['t_type'], kwargs['f_type']
+        pi_SM = softmax(self.beta_EU*self.p_S*m)
+        pi_M  = softmax(self.beta_MO*m)
+        w0, w1, w2 = self.get_w(t, f)
+        # creat the mixature model 
+        self.pi_effect = [pi_SM[1], pi_M[1], self.q_A[1]]
+        self.pi = w0*pi_SM + w1*pi_M + w2*self.q_A 
+        return self.pi 
 
 # ------------------------------------------ #
 #            Pearce Hall model               #
 # ------------------------------------------ #
 
-class PH13(RL):
-    name     = 'PH13'
+class PH17(RL):
+    name     = 'PH17'
     p_bnds   = None
-    p_pbnds  = [(-2, 2),] + [(-2, 2), (-2, 2), (1, 2)]*4
-    p_name   = ['α0'] + get_param_name(['k', 'η', 'β'])
+    p_pbnds  = [(-2, 2),] + [(-2, 2), (-2, 2), (-2, 2), (1, 2)]*4
+    p_name   = ['α0'] + get_param_name(['k+', 'k_' 'η', 'β'])
     n_params = len(p_name)
-    p_priors = [norm(0,1.5)]+[norm(0,1.5), norm(0,1.5), norm(2, 1)]*4
+    p_priors = [norm(0,1.5)]+\
+                [norm(0,1.5), norm(0,1.5), 
+                 norm(0,1.5), norm(2, 1)]*4
     p_trans  = [lambda x: 1/(1+clip_exp(-x))] + \
                [lambda x: 1/(1+clip_exp(-x)),
+                lambda x: 1/(1+clip_exp(-x)),
                 lambda x: 1/(1+clip_exp(-x)),
                 lambda x: clip_exp(x)]*4
     voi      = ['pS1', 'pi1', 'alpha']
@@ -764,25 +854,29 @@ class PH13(RL):
         self.alpha          = params[0]
 
         # ---- Stable & gain ---- #
-        self.k_sta_gain     = params[1]
-        self.eta_sta_gain   = params[2]
-        self.beta_sta_gain  = params[3]
+        self.k_pos_sta_gain = params[1]
+        self.k_neg_sta_gain = params[2]
+        self.eta_sta_gain   = params[3]
+        self.beta_sta_gain  = params[4]
 
         # ---- Stable & loss ---- #
-        self.k_sta_loss     = params[4]
-        self.eta_sta_loss   = params[5]
-        self.beta_sta_loss  = params[6]
+        self.k_pos_sta_loss = params[5]
+        self.k_neg_sta_loss = params[6]
+        self.eta_sta_loss   = params[7]
+        self.beta_sta_loss  = params[8]
 
         # ---- Volatile & gain ---- #
-        self.k_vol_gain     = params[7]
-        self.eta_vol_gain   = params[8]
-        self.beta_vol_gain  = params[9]
+        self.k_pos_vol_gain = params[9]
+        self.k_neg_vol_gain = params[10]
+        self.eta_vol_gain   = params[11]
+        self.beta_vol_gain  = params[12]
 
 
         # ---- Volatile & loss ---- #
-        self.k_vol_loss     = params[10]
-        self.eta_vol_loss   = params[11]
-        self.beta_vol_loss  = params[12]
+        self.k_pos_vol_loss = params[13]
+        self.k_neg_vol_loss = params[14]
+        self.eta_vol_loss   = params[15]
+        self.beta_vol_loss  = params[16]
 
     def learn(self):
         self._learn_critic()
@@ -790,8 +884,9 @@ class PH13(RL):
 
     def _learn_critic(self):
         s, t, f = self.mem.sample('s', 't_type', 'f_type')
-        k = eval(f'self.k_{t}_{f}')
         self.delta = s - self.p1
+        o = 'pos' if self.delta>0 else 'neg'
+        k = eval(f'self.k_{o}_{t}_{f}')
         self.p1 += k*self.alpha*self.delta
         self.p_S = np.array([1-self.p1, self.p1])
 
@@ -807,10 +902,10 @@ class PH13(RL):
         return self.pi
     
     def get_alpha(self):
-        t, f = self.mem.sample('t_type', 'f_type')
-        return eval(f'self.k_{t}_{f}')*self.alpha
+        o, t, f = self.mem.sample('o_type', 't_type', 'f_type')
+        return eval(f'self.k_{o}_{t}_{f}')*self.alpha
 
-class PH4(PH13):
+class PH4(PH17):
     name     = 'PH4'
     p_bnds   = None
     p_pbnds  = [(-2, 2), (-2, 2), (-2, 2), (1, 2)]
@@ -836,21 +931,25 @@ class PH4(PH13):
         self.beta_fix       = params[3]
 
         # ---- Stable & gain ---- #
-        self.k_sta_gain     = self.k_fix
+        self.k_pos_sta_gain = self.k_fix
+        self.k_neg_sta_gain = self.k_fix
         self.eta_sta_gain   = self.eta_fix
         self.beta_sta_gain  = self.beta_fix
 
         # ---- Stable & loss ---- #
-        self.k_sta_loss     = self.k_fix
+        self.k_pos_sta_loss = self.k_fix
+        self.k_neg_sta_loss = self.k_fix
         self.eta_sta_loss   = self.eta_fix
         self.beta_sta_loss  = self.beta_fix
 
         # ---- Volatile & gain ---- #
-        self.k_vol_gain     = self.k_fix
+        self.k_pos_vol_gain = self.k_fix
+        self.k_neg_vol_gain = self.k_fix
         self.eta_vol_gain   = self.eta_fix
         self.beta_vol_gain  = self.beta_fix
 
         # ---- Volatile & loss ---- #
-        self.k_vol_loss     = self.k_fix
+        self.k_pos_vol_loss = self.k_fix
+        self.k_neg_vol_loss = self.k_fix
         self.eta_vol_loss   = self.eta_fix
         self.beta_vol_loss  = self.beta_fix

@@ -72,6 +72,20 @@ def remake_cols_idx(data, sub_id, feedback_type, exp_id, seed=42):
             lambda x: x[f'm{int(x["a"])}']
                         *(x["a"]==x["state"]), axis=1)
     
+    ## Add pos and neg outcome
+    def get_out(x):
+        if (x['feedback_type']=='gain'): 
+            if (x['rew']>0):
+                return 'pos'
+            else:
+                return 'neg'
+        elif (x['feedback_type']=='loss'):
+            if (x['rew']==0):
+                return 'pos'
+            else:
+                return 'neg'
+    data['out_type'] = data.apply(get_out, axis=1)
+    
     ## Add which experiment id 
     data['exp_id'] = exp_id
 
