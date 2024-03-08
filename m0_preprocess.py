@@ -76,19 +76,35 @@ def remake_cols_idx(data, sub_id, feedback_type, exp_id, seed=42):
     def get_out(x):
         if (x['feedback_type']=='gain'): 
             if (x['rew']>0):
-                return 'pos'
+                return 'good outcome'
             else:
-                return 'neg'
+                return 'bad outcome'
         elif (x['feedback_type']=='loss'):
             if (x['rew']==0):
-                return 'pos'
+                return 'good outcome'
             else:
-                return 'neg'
-    data['out_type'] = data.apply(get_out, axis=1)
+                return 'bad outcome'
+    data['valence_type'] = data.apply(get_out, axis=1)
+    ## Get probability of the true state
+    psi_key = np.array([[.2, .8, .2, .8, .2],
+                        [.8, .2, .8, .2, .8],
+                        [.25, .25, .25, .25, .25],
+                        [.75, .75, .75, .75, .75]])
+    psi_track = [[.2]*20+[.8]*20+[.2]*20+[.8]*20+[.2]*10,
+                 [.8]*20+[.2]*20+[.8]*20+[.2]*20+[.8]*10,
+                 [.25]*90,
+                 [.75]*90]
+    lst = [(0, 19), (20, 39), (40, 59), (60, 79), (80, 89)]
+    psi_truth = []
+    for ind in [(0, 90), (90, 180)]:
+        sel_data = data[ind[0]:ind[1]].reset_index()
+        psi = np.array([sel_data.loc[vec[0]:vec[1], 'state'].mean() for vec in lst])
+        idx = np.argmin(np.abs((psi - psi_key).sum(1)))
+        psi_truth += psi_track[idx]
+    data['psi_truth'] = psi_truth
     
     ## Add which experiment id 
     data['exp_id'] = exp_id
-
     data['block_type'] = 'cont'
     data['stage'] = 'train'
 
