@@ -117,7 +117,7 @@ class viz:
 
     @staticmethod
     def default_img_set():
-    
+        mpl.rcParams['pdf.fonttype'] = 42
         mpl.rcParams['interactive'] = True
         # figure
         mpl.rcParams['figure.frameon'] = False
@@ -137,7 +137,7 @@ class viz:
         mpl.rcParams['svg.fonttype'] = 'none'
         # axes
         mpl.rcParams['axes.facecolor'] = 'None'
-        mpl.rcParams['axes.labelweight'] = 'bold'
+        mpl.rcParams['axes.labelweight'] = 'regular'
         mpl.rcParams['axes.labelsize'] = 'x-large'
         mpl.rcParams['axes.titleweight'] = 'regular'
         mpl.rcParams['axes.titlesize'] = 'xx-large'
