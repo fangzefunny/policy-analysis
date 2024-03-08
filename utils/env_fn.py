@@ -24,7 +24,7 @@ class rl_reversal:
         psi     = np.zeros(n_trials)
         state   = np.zeros(n_trials)
         if self.block_type == 'sta_vol':
-            psi[:90]     = .7
+            psi[:90]     = .75
             psi[90:110]  = .2
             psi[110:130] = .8
             psi[130:150] = .2
@@ -37,22 +37,22 @@ class rl_reversal:
             psi[40:60]   = .2
             psi[60:80]   = .8
             psi[80:90]   = .2
-            psi[90:]     = .7
+            psi[90:]     = .75
             trial_type   = ['vol']*90 + ['sta']*90
         
         # get the state of each trial 
         for i in range(n_trials):
-            state[i] = int(rng.rand(1) < psi[i])
+            state[i] = int(rng.random() < psi[i])
 
         # get the input magnitude
-        mag0 = rng.randint(1, 99, size=n_trials)
-        mag1 = rng.randint(1, 99, size=n_trials)
-        fb_type = ['rew']*90
+        mag0 = rng.integers(1, 99, size=n_trials)
+        mag1 = rng.integers(1, 99, size=n_trials)
+        fb_type = ['loss']*180
 
         block = {
             'state':      state,
-            'mag0':       mag0,
-            'mag1':       mag1,
+            'm0':         mag0,
+            'm1':         mag1,
             'trial_type': trial_type, 
             'feedback_type': fb_type, 
             'block_type': [self.block_type]*n_trials,
@@ -76,7 +76,6 @@ class rl_reversal:
         m      = np.array([m0, m1])
         t_type = row['trial_type']
         f_type = row['feedback_type'] 
-        o_type = row['out_type']
         pi     = subj.policy(m,
                     t_type=t_type,
                     f_type=f_type)
@@ -90,7 +89,6 @@ class rl_reversal:
                 'a': a,
                 't_type': t_type, 
                 'f_type': f_type,
-                'o_type': o_type,
             })
             subj.learn()
 
@@ -101,18 +99,17 @@ class rl_reversal:
         
         # see state 
         stage  = row['stage']
-        s      = row['state']
+        s      = int(row['state'])
         m0     = row['m0']
         m1     = row['m1']
         m      = np.array([m0, m1])
         t_type = row['trial_type']
         f_type = row['feedback_type'] 
-        o_type = row['out_type']
         pi     = subj.policy(m,
                     t_type=t_type,
                     f_type=f_type)
         a      = int(rng.choice(rl_reversal.nA, p=pi)) 
-        r      = 1.*(a == s)
+        r      = (a==s)*eval(f'm{int(a)}')
 
         # save the info and learn 
         if stage == 'train':
@@ -121,7 +118,6 @@ class rl_reversal:
                 'a': a,
                 't_type': t_type, 
                 'f_type': f_type,
-                'o_type': o_type,
             })
             subj.learn()
 

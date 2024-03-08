@@ -146,8 +146,8 @@ class wrapper:
         for t, row in block_data.iterrows():
 
             # record some insights of the model
-            for v in self.agent.voi:
-                pred_data.loc[t, v] = eval(f'subj.get_{v}()')
+            # for v in self.agent.voi:
+            #     pred_data.loc[t, v] = eval(f'subj.get_{v}()')
 
             # simulate the data 
             ll = env.eval_fn(row, subj)
@@ -293,7 +293,7 @@ class RL(baseAgent):
     p_trans  = [lambda x: clip_exp(x), 
                 lambda x: 1/(1+clip_exp(-x)), lambda x: 1/(1+clip_exp(-x))]*4
     n_params = len(p_name)
-    voi      = ['pS1', 'pi1']
+    voi      = ['pS1', 'pi1', 'valence']
     color    = viz.r2 
    
     def load_params(self, params):
@@ -317,6 +317,7 @@ class RL(baseAgent):
         s, t, f = self.mem.sample('s', 't_type', 'f_type')
         delta = s-self.p1
         o = 'pos' if delta>0 else 'neg'
+        self.o = o 
         self.p1 += eval(f'self.a_{o}_{t}_{f}') * delta 
         self.p_S = np.array([1-self.p1, self.p1])
 
@@ -331,8 +332,21 @@ class RL(baseAgent):
         return self.pi[1]
     
     def get_alpha(self):
-        o, t, f = self.mem.sample('o_type', 't_type', 'f_type')
-        return eval(f'self.a_{o}_{t}_{f}')
+        t, f = self.mem.sample('t_type', 'f_type')
+        return eval(f'self.a_{self.o}_{t}_{f}')
+
+    def get_valence(self):
+        f_type = self.mem.sample('f_type')
+        if f_type=="gain":
+            if self.o=='pos':
+                return 'good outcome'
+            else:
+                return 'bad outcome'
+        elif f_type=="loss":
+            if self.o=='pos':
+                return 'bad outcome'
+            else:
+                return 'good outcome'
 
 # ------------------------------------------ #
 #       Flexible learning rate model         #
@@ -344,7 +358,7 @@ class FLR19(RL):
     p_pbnds  = [(-2, 2), (1, 2), (-2, 2)] \
                 + [(-2, 2), (-2, 2), (1, 2), (-2, 2)]*4
     p_name   = ['α_act', 'β_act', 'r'] \
-                + get_param_name(['α+', 'α_' 'β', 'λ'])
+                + get_param_name(['α+', 'α_', 'β', 'λ'])
     p_priors = [norm(0,1.5), norm(2, 1), norm(0,1.5)] + \
                 [norm(0,1.5), norm(0,1.5), norm(2, 1), norm(0,1.5)]*4
     p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
@@ -355,7 +369,7 @@ class FLR19(RL):
                 lambda x: clip_exp(x), 
                 lambda x: 1/(1+clip_exp(-x))]*4
     n_params = len(p_name)
-    voi      = ['pS1', 'pi1', 'alpha'] 
+    voi      = ['pS1', 'pi1', 'alpha', 'valence', 'beta', 'lmbda'] 
     color    = viz.Gray
    
     def load_params(self, params):
@@ -415,6 +429,142 @@ class FLR19(RL):
         self.pi = np.array([1-pi1, pi1])
         return self.pi  
     
+    def get_beta(self):
+        t, f = self.mem.sample('t_type', 'f_type')
+        return eval(f'self.beta_{t}_{f}')
+    
+    def get_lmbda(self):
+        t, f = self.mem.sample('t_type', 'f_type')
+        return eval(f'self.lmbda_{t}_{f}')
+
+class FLR22(FLR19):
+    name     = 'FLR22'
+    p_bnds   = None
+    p_pbnds  = [(-2, 2), (-2, 2)] \
+                + [(-2, 2), (-2, 2), (1, 2), (-2, 2), (1, 2)]*4
+    p_name   = ['α_act', 'r'] \
+                + get_param_name(['α+', 'α_', 'β', 'λ', 'β_act'])
+    p_priors = [norm(0,1.5), norm(0,1.5)] + \
+                [norm(0,1.5), norm(0,1.5), norm(2, 1), norm(0,1.5), norm(2, 1)]*4
+    p_trans  = [lambda x: 1/(1+clip_exp(-x)),
+                lambda x: 1/(1+clip_exp(-x))] + \
+               [lambda x: 1/(1+clip_exp(-x)),
+                lambda x: 1/(1+clip_exp(-x)), 
+                lambda x: clip_exp(x), 
+                lambda x: 1/(1+clip_exp(-x)),
+                lambda x: clip_exp(x)]*4
+    n_params = len(p_name)
+    voi      = ['pS1', 'pi1', 'alpha', 'valence', 'beta', 'lmbda'] 
+    color    = viz.Gray
+
+    def load_params(self, params):
+
+        # from gauss space to actual space
+        params = [fn(p) for fn, p in zip(self.p_trans, params)]
+
+        # ---- General ----- #
+        self.alpha_act      = params[0]
+        self.r              = params[1]
+
+        # ---- Stable & gain ---- #
+        self.a_pos_sta_gain = params[2]
+        self.a_neg_sta_gain = params[3]
+        self.beta_sta_gain  = params[4]
+        self.lmbda_sta_gain = params[5]
+        self.beta_act_sta_gain = params[6]
+
+        # ---- Stable & loss ---- #
+        self.a_pos_sta_loss = params[7]
+        self.a_neg_sta_loss = params[8]
+        self.beta_sta_loss  = params[9]
+        self.lmbda_sta_loss = params[10]
+        self.beta_act_sta_loss = params[11]
+
+        # ---- Volatile & gain ---- #
+        self.a_pos_vol_gain = params[12]
+        self.a_neg_vol_gain = params[13]
+        self.beta_vol_gain  = params[14]
+        self.lmbda_vol_gain = params[15]
+        self.beta_act_vol_gain = params[16]
+
+        # ---- Volatile & loss ---- #
+        self.a_pos_vol_loss = params[17]
+        self.a_neg_vol_loss = params[18]
+        self.beta_vol_loss  = params[19]
+        self.lmbda_vol_loss = params[20]
+        self.beta_act_vol_loss = params[21]
+
+    def policy(self, m, **kwargs):
+        t, f = kwargs['t_type'], kwargs['f_type']
+        m0, m1 = m[0], m[1] 
+        lmbda = eval(f'self.lmbda_{t}_{f}')
+        beta_act = eval(f'self.beta_act_{t}_{f}')
+        v     = lmbda*(self.p_S[1] - self.p_S[0]) \
+                 + (1-lmbda)*abs(m1-m0)**self.r*np.sign(m1-m0)
+        va    = eval(f'self.beta_{t}_{f}')*v \
+                 + beta_act*(self.q1 - (1-self.q1))
+        pi1   = 1 / (1 + clip_exp(-va))
+        self.pi = np.array([1-pi1, pi1])
+        return self.pi  
+
+class FLR21(FLR19):
+    name     = 'FLR22'
+    p_bnds   = None
+    p_pbnds  = [(-2, 2), (-2, 2), (-2, 2), (1, 2), (1, 2)] \
+                + [(-2, 2), (-2, 2), (1, 2), (-2, 2)]*4
+    p_name   = ['α_act', 'r_gain', 'r_loss', 'β_act_gain', 'β_act_loss'] \
+                + get_param_name(['α+', 'α_', 'β', 'λ'])
+    p_priors = [norm(0,1.5), norm(2, 1), norm(2, 1), norm(2, 1), norm(2, 1)] + \
+                [norm(0,1.5), norm(0,1.5), norm(2, 1), norm(0,1.5)]*4
+    p_trans  = [lambda x: 1/(1+clip_exp(-x)),
+                lambda x: clip_exp(x),
+                lambda x: clip_exp(x), 
+                lambda x: clip_exp(x), 
+                lambda x: clip_exp(x)] + \
+               [lambda x: 1/(1+clip_exp(-x)),
+                lambda x: 1/(1+clip_exp(-x)), 
+                lambda x: clip_exp(x),
+                lambda x: 1/(1+clip_exp(-x))]*4
+    n_params = len(p_name)
+    voi      = ['pS1', 'pi1', 'alpha', 'valence', 'beta', 'lmbda'] 
+    color    = viz.Gray
+
+    def load_params(self, params):
+
+        # from gauss space to actual space
+        params = [fn(p) for fn, p in zip(self.p_trans, params)]
+
+        # ---- General ----- #
+        self.alpha_act      = params[0]
+
+        # ---- Gain & loss --- #
+        self.r_gain         = params[1]
+        self.r_loss         = params[2]
+        self.beta_act_gain  = params[3]
+        self.beta_act_loss  = params[4]
+
+        # ---- parameters for each contxt ---- #
+        i = 5
+        for f in ['gain', 'loss']:
+            for t in ['sta', 'vol']:
+                for v in ['a_pos', 'a_neg', 'beta', 'lmbda']:
+                    setattr(self, f'{v}_{t}_{f}', params[i])
+                    i +=1
+      
+    def policy(self, m, **kwargs):
+        t, f = kwargs['t_type'], kwargs['f_type']
+        m0, m1 = m[0], m[1] 
+        lmbda = eval(f'self.lmbda_{t}_{f}')
+        r = eval(f'self.r_{f}')
+        beta_act = eval(f'self.beta_act_{f}')
+        v     = lmbda*(self.p_S[1] - self.p_S[0]) \
+                 + (1-lmbda)*abs(m1-m0)**r*np.sign(m1-m0)
+        va    = eval(f'self.beta_{t}_{f}')*v \
+                 + beta_act*(self.q1 - (1-self.q1))
+        pi1   = 1 / (1 + clip_exp(-va))
+        self.pi = np.array([1-pi1, pi1])
+        return self.pi  
+
 class FLR6(FLR19):
     name     = 'FLR6'
     p_bnds   = None
@@ -428,7 +578,7 @@ class FLR6(FLR19):
                 lambda x: clip_exp(x), 
                 lambda x: 1/(1+clip_exp(-x))]
     n_params = len(p_name)
-    voi      = ['pS1', 'pi1', 'alpha'] 
+    voi      = ['pS1', 'pi1', 'alpha', 'valence', 'beta', 'lmbda'] 
     color    = viz.Gray
    
     def load_params(self, params):
@@ -483,7 +633,7 @@ class RS13(RL):
                [lambda x: 1/(1+clip_exp(-x)),
                 lambda x: 1/(1+clip_exp(-x)),
                 lambda x: clip_exp(x)]*4
-    voi      = ['pS1', 'pi1', 'alpha'] 
+    voi      = ['pS1', 'pi1', 'valence', 'alpha'] 
     color    = viz.Gray
 
     def load_params(self, params):
@@ -518,6 +668,7 @@ class RS13(RL):
         t, f, s = self.mem.sample('t_type', 'f_type', 's')
         delta = s-self.p1
         o = 'pos' if delta>0 else 'neg'
+        self.o = o 
         self.p1 += eval(f'self.a_{o}_{t}_{f}') * delta 
         ps1 = np.clip(eval(f'self.gamma_{t}_{f}')*(self.p1-.5)+.5, 0, 1)
         self.p_S = np.array([1-ps1, ps1])
@@ -573,11 +724,47 @@ class RS3(RS13):
 #       Mixature of Strategies model         #
 # ------------------------------------------ #
 
+class EU(RL):
+    name     = 'EU'
+    p_bnds   = None
+    p_pbnds  = [(-2, 2), (-10, -.15)]
+    p_name   = ['β', 'α']
+    p_priors = []
+    p_trans  = [lambda x: clip_exp(x), 
+                lambda x: 1/(1+clip_exp(-x))]
+    n_params = len(p_name)
+    voi      = ['pS1', 'pi1']
+    color    = viz.r2 
+   
+    def load_params(self, params):
+        # assign the parameter
+        self.beta           = params[0]
+        self.alpha          = params[1]
+        self.a_pos_sta_gain = self.alpha
+        self.a_neg_sta_gain = self.alpha
+        self.a_pos_sta_loss = self.alpha
+        self.a_neg_sta_gain = self.alpha
+        self.a_pos_vol_gain = self.alpha
+        self.a_neg_vol_gain = self.alpha
+        self.a_pos_vol_loss = self.alpha
+        self.a_neg_vol_loss = self.alpha
+
+    def policy(self, m, **kwargs):
+        self.pi = softmax(self.beta*self.p_S*m)
+        return self.pi
+    
+class PS(EU):
+    name     = 'PF'
+   
+    def policy(self, m, **kwargs):
+        self.pi = softmax(self.beta*self.p_S)
+        return self.pi
+
 class MOS22(RL):
     name     = 'MOS22'
     p_bnds   = None
     p_pbnds  = [(-2, 2), (1, 2)] + ([(-2, 2)]*2+[(-6, 6)]*3) * 4
-    p_name   = ['α_act', 'β'] + get_param_name(['α+', 'α_' 'λ1', 'λ2', 'λ3'])
+    p_name   = ['α_act', 'β'] + get_param_name(['α+', 'α_', 'λ1', 'λ2', 'λ3'])
     p_priors = [norm(0,1.5), norm(2, 1)]+\
                 [norm(0, 1.5), norm(0, 1.5), 
                 norm(0, 10), norm(0, 10), norm(0, 10)]*4
@@ -587,7 +774,7 @@ class MOS22(RL):
                     lambda x: 1/(1+clip_exp(-x))]+
                    [lambda x: x]*3) * 4 
     n_params = len(p_name)
-    voi      = ['pS1', 'pi1', 'alpha', 'l1', 'l2', 'l3']
+    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'l1', 'l2', 'l3']
     color    = viz.r2
 
     def load_params(self, params):
@@ -697,6 +884,285 @@ class MOS22(RL):
     def get_l3_effect(self):
         return self.pi_effect[2]
 
+class EU_MO18(MOS22):
+    name     = 'EU+MO18'
+    p_bnds   = None
+    p_pbnds  = [(-2, 2), (1, 2)] + ([(-2, 2)]*2+[(-6, 6)]*2) * 4
+    p_name   = ['α_act', 'β'] + get_param_name(['α+', 'α_', 'λ1', 'λ2'])
+    p_priors = [norm(0,1.5), norm(2, 1)]+\
+                [norm(0, 1.5), norm(0, 1.5), norm(0, 10), norm(0, 10)]*4
+    p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
+                lambda x: clip_exp(x)] \
+                + ([lambda x: 1/(1+clip_exp(-x)),
+                    lambda x: 1/(1+clip_exp(-x))]+
+                   [lambda x: x]*2) * 4 
+    n_params = len(p_name)
+    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'l1', 'l2']
+    color    = viz.Pizazz
+
+    def load_params(self, params):
+
+        # from gauss space to actual space
+        params = [fn(p) for fn, p in zip(self.p_trans, params)]
+
+        # ---- General ----- #
+        self.alpha_act      = params[0]
+        self.beta           = params[1]
+
+        # ---- Stable & gain ---- #
+        self.a_pos_sta_gain = params[2]
+        self.a_neg_sta_gain = params[3]
+        self.l0_sta_gain    = params[4]
+        self.l1_sta_gain    = params[5]
+        self.l2_sta_gain    = -max_ #params[6]
+
+        # ---- Stable & loss ---- #
+        self.a_pos_sta_loss = params[6]
+        self.a_neg_sta_loss = params[7]
+        self.l0_sta_loss    = params[8]
+        self.l1_sta_loss    = params[9]
+        self.l2_sta_loss    = -max_ #params[11]
+
+        # ---- Volatile & gain ---- #
+        self.a_pos_vol_gain = params[10]
+        self.a_neg_vol_gain = params[11]
+        self.l0_vol_gain    = params[12]
+        self.l1_vol_gain    = params[13]
+        self.l2_vol_gain    = -max_ #params[16]
+
+        # ---- Volatile & loss ---- #
+        self.a_pos_vol_loss = params[14]
+        self.a_neg_vol_loss = params[15]
+        self.l0_vol_loss    = params[16]
+        self.l1_vol_loss    = params[17]
+        self.l2_vol_loss    = -max_ #params[21]    
+
+class EU_HA18(MOS22):
+    name     = 'EU+HA18'
+    p_bnds   = None
+    p_pbnds  = [(-2, 2), (1, 2)] + ([(-2, 2)]*2+[(-6, 6)]*2) * 4
+    p_name   = ['α_act', 'β'] + get_param_name(['α+', 'α_', 'λ1', 'λ3'])
+    p_priors = [norm(0,1.5), norm(2, 1)]+\
+                [norm(0, 1.5), norm(0, 1.5), 
+                 norm(0, 10), norm(0, 10)]*4
+    p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
+                lambda x: clip_exp(x)] \
+                + ([lambda x: 1/(1+clip_exp(-x)),
+                    lambda x: 1/(1+clip_exp(-x))]+
+                   [lambda x: x]*2) * 4 
+    n_params = len(p_name)
+    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'l1', 'l3']
+    color    = viz.Pizazz
+
+    def load_params(self, params):
+
+        # from gauss space to actual space
+        params = [fn(p) for fn, p in zip(self.p_trans, params)]
+
+        # ---- General ----- #
+        self.alpha_act      = params[0]
+        self.beta           = params[1]
+
+        # ---- Stable & gain ---- #
+        self.a_pos_sta_gain = params[2]
+        self.a_neg_sta_gain = params[3]
+        self.l0_sta_gain    = params[4]
+        self.l1_sta_gain    = -max_ 
+        self.l2_sta_gain    = params[5]
+
+        # ---- Stable & loss ---- #
+        self.a_pos_sta_loss = params[6]
+        self.a_neg_sta_loss = params[7]
+        self.l0_sta_loss    = params[8]
+        self.l1_sta_loss    = -max_ 
+        self.l2_sta_loss    = params[9]
+
+        # ---- Volatile & gain ---- #
+        self.a_pos_vol_gain = params[10]
+        self.a_neg_vol_gain = params[11]
+        self.l0_vol_gain    = params[12]
+        self.l1_vol_gain    = -max_ 
+        self.l2_vol_gain    = params[13]
+
+        # ---- Volatile & loss ---- #
+        self.a_pos_vol_loss = params[14]
+        self.a_neg_vol_loss = params[15]
+        self.l0_vol_loss    = params[16]
+        self.l1_vol_loss    = -max_ 
+        self.l2_vol_loss    = params[17]    
+
+class MO_HA18(MOS22):
+    name     = 'MO+HA18'
+    p_bnds   = None
+    p_pbnds  = [(-2, 2), (1, 2)] + ([(-2, 2)]*2+[(-6, 6)]*2) * 4
+    p_name   = ['α_act', 'β'] + get_param_name(['α+', 'α_', 'λ2', 'λ3'])
+    p_priors = [norm(0,1.5), norm(2, 1)]+\
+                [norm(0, 1.5), norm(0, 1.5), 
+                 norm(0, 10), norm(0, 10)]*4
+    p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
+                lambda x: clip_exp(x)] \
+                + ([lambda x: 1/(1+clip_exp(-x)),
+                    lambda x: 1/(1+clip_exp(-x))]+
+                   [lambda x: x]*2) * 4 
+    n_params = len(p_name)
+    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'l2', 'l3']
+    color    = viz.Pizazz
+
+    def load_params(self, params):
+
+        # from gauss space to actual space
+        params = [fn(p) for fn, p in zip(self.p_trans, params)]
+
+        # ---- General ----- #
+        self.alpha_act      = params[0]
+        self.beta           = params[1]
+
+        # ---- Stable & gain ---- #
+        self.a_pos_sta_gain = params[2]
+        self.a_neg_sta_gain = params[3]
+        self.l0_sta_gain    = -max_
+        self.l1_sta_gain    = params[4] 
+        self.l2_sta_gain    = params[5]
+
+        # ---- Stable & loss ---- #
+        self.a_pos_sta_loss = params[6]
+        self.a_neg_sta_loss = params[7]
+        self.l0_sta_loss    = -max_
+        self.l1_sta_loss    = params[8] 
+        self.l2_sta_loss    = params[9]
+
+        # ---- Volatile & gain ---- #
+        self.a_pos_vol_gain = params[10]
+        self.a_neg_vol_gain = params[11]
+        self.l0_vol_gain    = -max_
+        self.l1_vol_gain    = params[12] 
+        self.l2_vol_gain    = params[13]
+
+        # ---- Volatile & loss ---- #
+        self.a_pos_vol_loss = params[14]
+        self.a_neg_vol_loss = params[15]
+        self.l0_vol_loss    = -max_
+        self.l1_vol_loss    = params[16] 
+        self.l2_vol_loss    = params[17]    
+
+class PS_MO_HA22(MOS22):
+    name     = 'PS+MO+HA22'
+    p_bnds   = None
+    p_pbnds  = [(-2, 2), (1, 2)] + ([(-2, 2)]*2+[(-6, 6)]*3) * 4
+    p_name   = ['α_act', 'β'] + get_param_name(['α+', 'α_', 'λ1', 'λ2', 'λ3'])
+    p_priors = [norm(0,1.5), norm(2, 1)]+\
+                [norm(0, 1.5), norm(0, 1.5), 
+                norm(0, 10), norm(0, 10), norm(0, 10)]*4
+    p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
+                lambda x: clip_exp(x)] \
+                + ([lambda x: 1/(1+clip_exp(-x)),
+                    lambda x: 1/(1+clip_exp(-x))]+
+                   [lambda x: x]*3) * 4 
+    n_params = len(p_name)
+    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'l1', 'l2', 'l3']
+    color    = viz.Green
+
+    def policy(self, m, **kwargs):
+        t, f = kwargs['t_type'], kwargs['f_type']
+        pi_S = softmax(self.beta*self.p_S)
+        pi_M  = softmax(self.beta*m)
+        w0, w1, w2 = self.get_w(t, f)
+        # creat the mixature model 
+        self.pi_effect = [pi_S[1], pi_M[1], self.q_A[1]]
+        self.pi = w0*pi_S + w1*pi_M + w2*self.q_A 
+        return self.pi 
+
+class EU_PS_MO_HA26(MOS22):
+    name     = 'EU+PS+MO+HA26'
+    p_bnds   = None
+    p_pbnds  = [(-2, 2), (1, 2)] + ([(-2, 2)]*2+[(-6, 6)]*4) * 4
+    p_name   = ['α_act', 'β'] + get_param_name(['α+', 'α_', 'λ1', 'λ2', 'λ3', 'λ4'])
+    p_priors = [norm(0,1.5), norm(2, 1)]+\
+                [norm(0, 1.5), norm(0, 1.5), 
+                norm(0, 10), norm(0, 10), norm(0, 10), norm(0, 10)]*4
+    p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
+                lambda x: clip_exp(x)] \
+                + ([lambda x: 1/(1+clip_exp(-x)),
+                    lambda x: 1/(1+clip_exp(-x))]+
+                   [lambda x: x]*4) * 4 
+    n_params = len(p_name)
+    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'l1', 'l2', 'l3', 'l4']
+    color    = viz.SteelBlu
+
+    def load_params(self, params):
+
+        # from gauss space to actual space
+        params = [fn(p) for fn, p in zip(self.p_trans, params)]
+
+        # ---- General ----- #
+        self.alpha_act      = params[0]
+        self.beta           = params[1]
+
+        # ---- Stable & gain ---- #
+        self.a_pos_sta_gain = params[2]
+        self.a_neg_sta_gain = params[3]
+        self.l0_sta_gain    = params[4]
+        self.l1_sta_gain    = params[5]
+        self.l2_sta_gain    = params[6]
+        self.l3_sta_gain    = params[7]
+
+        # ---- Stable & loss ---- #
+        self.a_pos_sta_loss = params[8]
+        self.a_neg_sta_loss = params[9]
+        self.l0_sta_loss    = params[10]
+        self.l1_sta_loss    = params[11]
+        self.l2_sta_loss    = params[12]
+        self.l3_sta_loss    = params[13]
+
+        # ---- Volatile & gain ---- #
+        self.a_pos_vol_gain = params[14]
+        self.a_neg_vol_gain = params[15]
+        self.l0_vol_gain    = params[16]
+        self.l1_vol_gain    = params[17]
+        self.l2_vol_gain    = params[18]
+        self.l3_vol_gain    = params[19]
+
+        # ---- Volatile & loss ---- #
+        self.a_pos_vol_loss = params[20]
+        self.a_neg_vol_loss = params[21]
+        self.l0_vol_loss    = params[22]
+        self.l1_vol_loss    = params[23]
+        self.l2_vol_loss    = params[24]    
+        self.l3_vol_loss    = params[25]
+  
+    #  ------ response strategy ------- #
+
+    def policy(self, m, **kwargs):
+        t, f = kwargs['t_type'], kwargs['f_type']
+        pi_SM = softmax(self.beta*self.p_S*m)
+        pi_S  = softmax(self.beta*self.p_S)
+        pi_M  = softmax(self.beta*m)
+        w0, w1, w2, w3 = self.get_w(t, f)
+        # creat the mixature model 
+        self.pi_effect = [pi_SM[1], pi_S[1], pi_M[1], self.q_A[1]]
+        self.pi = w0*pi_SM + w1*pi_S + w2*pi_M + w3*self.q_A 
+        return self.pi 
+
+    def get_w(self, b, f):
+        l0 = eval(f'self.l0_{b}_{f}')
+        l1 = eval(f'self.l1_{b}_{f}')
+        l2 = eval(f'self.l2_{b}_{f}')
+        l3 = eval(f'self.l3_{b}_{f}')
+        return softmax([l0, l1, l2, l3])
+
+    def get_w4(self):
+        t, f = self.mem.sample('t_type', 'f_type')
+        return self.get_w(t, f)[3]  
+
+    def get_l4(self):
+        t, f = self.mem.sample('t_type', 'f_type')
+        return eval(f'self.l3_{t}_{f}')
+
+    def get_l4_effect(self):
+        return self.pi_effect[3]
+
+# a set of parameters for all contexts
+
 class MOS6(MOS22):
     name     = 'MOS6'
     p_bnds   = None
@@ -710,7 +1176,7 @@ class MOS6(MOS22):
                 + [lambda x: x]*3
     p_poi    = ['α', 'λ1', 'λ2', 'λ3']
     n_params = len(p_name)
-    voi      = ['pS1', 'pi1', 'alpha', 'l1', 'l2', 'l3']
+    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'beta', 'alpha_act', 'l1', 'l2', 'l3']
     color    = viz.r1
 
     def load_params(self, params):
@@ -725,6 +1191,9 @@ class MOS6(MOS22):
         self.l0_fix         = params[3]
         self.l1_fix         = params[4]
         self.l2_fix         = params[5]
+        self.assign_fix_val()
+
+    def assign_fix_val(self):
 
         # ---- Stable & gain ---- #
         self.a_pos_sta_gain = self.alpha_fix
@@ -754,23 +1223,25 @@ class MOS6(MOS22):
         self.l1_vol_loss    = self.l1_fix
         self.l2_vol_loss    = self.l2_fix
 
-class MOS7(MOS22):
-    name     = 'MOS7'
+    def get_beta(self): return self.beta
+    
+    def get_alpha_act(self): return self.alpha_act
+
+class EU_MO(MOS6):
+    name     = 'EU+MO'
     p_bnds   = None
-    p_pbnds  = [(-2, 2), (1, 2), (1, 2), (-2, 2)] + [(-6, 6)]*3
-    p_name   = ['α_act', 'β_EU', 'β_MO', 'α', 'λ1', 'λ2', 'λ3']
-    p_priors = [norm(0,1.5), norm(2, 1), norm(2, 1), 
-                norm(0,1.5), 
-                norm(0, 10), norm(0, 10), norm(0, 10)]
+    p_pbnds  = [(-2, 2), (1, 2), (-2, 2)] + [(-6, 6)]*2
+    p_name   = ['α_act', 'β', 'α', 'λ1', 'λ2']
+    p_priors = [norm(0,1.5), norm(2, 1), norm(0,1.5), 
+                norm(0, 10), norm(0, 10)]
     p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
                 lambda x: clip_exp(x),
-                lambda x: clip_exp(x),
                 lambda x: 1/(1+clip_exp(-x))] \
-                + [lambda x: x]*3
-    p_poi    = ['α', 'λ1', 'λ2', 'λ3']
+                + [lambda x: x]*2
+    p_poi    = ['α', 'λ1', 'λ2']
     n_params = len(p_name)
-    voi      = ['pS1', 'pi1', 'alpha', 'l1', 'l2', 'l3']
-    color    = viz.r1
+    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'l1', 'l2']
+    color    = viz.Pizazz
 
     def load_params(self, params):
 
@@ -779,19 +1250,142 @@ class MOS7(MOS22):
 
         # ---- General ----- #
         self.alpha_act      = params[0]
-        self.beta_EU        = params[1]
-        self.beta_MO        = params[2]
-        self.alpha_fix      = params[3]
-        self.l0_fix         = params[4]
-        self.l1_fix         = params[5]
-        self.l2_fix         = params[6]
+        self.beta           = params[1]
+        self.alpha_fix      = params[2]
+        self.l0_fix         = params[3]
+        self.l1_fix         = params[4]
+        # a large negative number to ensure that the 
+        # Softmax weight is 0. exp(-max_) = 0
+        self.l2_fix         = -max_ 
+        self.assign_fix_val()
+    
+class EU_HA(MOS6):
+    name     = 'EU+HA'
+    p_bnds   = None
+    p_pbnds  = [(-2, 2), (1, 2), (-2, 2)] + [(-6, 6)]*2
+    p_name   = ['α_act', 'β', 'α', 'λ1', 'λ3']
+    p_priors = [norm(0,1.5), norm(2, 1), norm(0,1.5), 
+                norm(0, 10), norm(0, 10)]
+    p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
+                lambda x: clip_exp(x),
+                lambda x: 1/(1+clip_exp(-x))] \
+                + [lambda x: x]*2
+    p_poi    = ['α', 'λ1', 'λ3']
+    n_params = len(p_name)
+    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'l1', 'l3']
+    color    = viz.Pizazz
 
+    def load_params(self, params):
+
+        # from gauss space to actual space
+        params = [fn(p) for fn, p in zip(self.p_trans, params)]
+
+        # ---- General ----- #
+        self.alpha_act      = params[0]
+        self.beta           = params[1]
+        self.alpha_fix      = params[2]
+        # a large negative number to ensure that the 
+        # Softmax weight is 0. exp(-max_) = 0
+        self.l0_fix         = params[3]
+        self.l1_fix         = -max_
+        self.l2_fix         = params[4] 
+        self.assign_fix_val()
+
+class MO_HA(MOS6):
+    name     = 'MO+HA'
+    p_bnds   = None
+    p_pbnds  = [(-2, 2), (1, 2), (-2, 2)] + [(-6, 6)]*2
+    p_name   = ['α_act', 'β', 'α', 'λ2', 'λ3']
+    p_priors = [norm(0,1.5), norm(2, 1), norm(0,1.5), 
+                norm(0, 10), norm(0, 10)]
+    p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
+                lambda x: clip_exp(x),
+                lambda x: 1/(1+clip_exp(-x))] \
+                + [lambda x: x]*2
+    p_poi    = ['α', 'λ2', 'λ3']
+    n_params = len(p_name)
+    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'l2', 'l3']
+    color    = viz.Pizazz
+
+    def load_params(self, params):
+
+        # from gauss space to actual space
+        params = [fn(p) for fn, p in zip(self.p_trans, params)]
+
+        # ---- General ----- #
+        self.alpha_act      = params[0]
+        self.beta           = params[1]
+        self.alpha_fix      = params[2]
+        # a large negative number to ensure that the 
+        # Softmax weight is 0. exp(-max_) = 0
+        self.l0_fix         = -max_
+        self.l1_fix         = params[3]
+        self.l2_fix         = params[4] 
+        self.assign_fix_val()
+
+class PS_MO_HA(MOS6):
+    name     = 'PF+MO+HA'
+    p_bnds   = None
+    p_pbnds  = [(-2, 2), (1, 2), (-2, 2)] + [(-6, 6)]*3
+    p_name   = ['α_act', 'β', 'α', 'λ1', 'λ2', 'λ3']
+    p_priors = [norm(0,1.5), norm(2, 1), norm(0,1.5), 
+                norm(0, 10), norm(0, 10), norm(0, 10)]
+    p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
+                lambda x: clip_exp(x),
+                lambda x: 1/(1+clip_exp(-x))] \
+                + [lambda x: x]*3
+    p_poi    = ['α', 'λ1', 'λ2', 'λ3']
+    n_params = len(p_name)
+    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'l1', 'l2', 'l3']
+    color    = viz.Green
+
+    def policy(self, m, **kwargs):
+        t, f = kwargs['t_type'], kwargs['f_type']
+        pi_S = softmax(self.beta*self.p_S)
+        pi_M  = softmax(self.beta*m)
+        w0, w1, w2 = self.get_w(t, f)
+        # creat the mixature model 
+        self.pi_effect = [pi_S[1], pi_M[1], self.q_A[1]]
+        self.pi = w0*pi_S + w1*pi_M + w2*self.q_A 
+        return self.pi 
+
+class EU_PS_MO_HA(MOS6):
+    name     = 'EU+PF+MO+HA'
+    p_bnds   = None
+    p_pbnds  = [(-2, 2), (1, 2), (-2, 2)] + [(-6, 6)]*4
+    p_name   = ['α_act', 'β', 'α', 'λ1', 'λ2', 'λ3', 'λ4']
+    p_priors = [norm(0,1.5), norm(2, 1), norm(0,1.5), 
+                norm(0, 10), norm(0, 10), norm(0, 10), norm(0, 10)]
+    p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
+                lambda x: clip_exp(x),
+                lambda x: 1/(1+clip_exp(-x))] \
+                + [lambda x: x]*4
+    p_poi    = ['α', 'λ1', 'λ2', 'λ3', 'λ4']
+    n_params = len(p_name)
+    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'l1', 'l2', 'l3', 'l4']
+    color    = viz.SteelBlu
+
+    def load_params(self, params):
+
+        # from gauss space to actual space
+        params = [fn(p) for fn, p in zip(self.p_trans, params)]
+
+        # ---- General ----- #
+        self.alpha_act      = params[0]
+        self.beta           = params[1]
+        self.alpha_fix      = params[2]
+        self.l0_fix         = params[3]
+        self.l1_fix         = params[4]
+        self.l2_fix         = params[5]
+        self.l3_fix         = params[6]
+  
         # ---- Stable & gain ---- #
         self.a_pos_sta_gain = self.alpha_fix
         self.a_neg_sta_gain = self.alpha_fix
         self.l0_sta_gain    = self.l0_fix
         self.l1_sta_gain    = self.l1_fix
         self.l2_sta_gain    = self.l2_fix
+        self.l3_sta_gain    = self.l3_fix
 
         # ---- Stable & loss ---- #
         self.a_pos_sta_loss = self.alpha_fix
@@ -799,6 +1393,7 @@ class MOS7(MOS22):
         self.l0_sta_loss    = self.l0_fix
         self.l1_sta_loss    = self.l1_fix
         self.l2_sta_loss    = self.l2_fix
+        self.l3_sta_loss    = self.l3_fix
 
         # ---- Volatile & gain ---- #
         self.a_pos_vol_gain = self.alpha_fix
@@ -806,6 +1401,7 @@ class MOS7(MOS22):
         self.l0_vol_gain    = self.l0_fix
         self.l1_vol_gain    = self.l1_fix
         self.l2_vol_gain    = self.l2_fix
+        self.l3_vol_gain    = self.l3_fix
 
         # ---- Volatile & loss ---- #
         self.a_pos_vol_loss = self.alpha_fix
@@ -813,16 +1409,104 @@ class MOS7(MOS22):
         self.l0_vol_loss    = self.l0_fix
         self.l1_vol_loss    = self.l1_fix
         self.l2_vol_loss    = self.l2_fix
+        self.l3_vol_loss    = self.l3_fix   
+  
+    #  ------ response strategy ------- #
 
     def policy(self, m, **kwargs):
         t, f = kwargs['t_type'], kwargs['f_type']
-        pi_SM = softmax(self.beta_EU*self.p_S*m)
-        pi_M  = softmax(self.beta_MO*m)
-        w0, w1, w2 = self.get_w(t, f)
+        pi_SM = softmax(self.beta*self.p_S*m)
+        pi_S  = softmax(self.beta*self.p_S)
+        pi_M  = softmax(self.beta*m)
+        w0, w1, w2, w3 = self.get_w(t, f)
         # creat the mixature model 
-        self.pi_effect = [pi_SM[1], pi_M[1], self.q_A[1]]
-        self.pi = w0*pi_SM + w1*pi_M + w2*self.q_A 
+        self.pi_effect = [pi_SM[1], pi_S[1], pi_M[1], self.q_A[1]]
+        self.pi = w0*pi_SM + w1*pi_S + w2*pi_M + w3*self.q_A 
         return self.pi 
+
+    def get_w(self, b, f):
+        l0 = eval(f'self.l0_{b}_{f}')
+        l1 = eval(f'self.l1_{b}_{f}')
+        l2 = eval(f'self.l2_{b}_{f}')
+        l3 = eval(f'self.l3_{b}_{f}')
+        return softmax([l0, l1, l2, l3])
+
+    def get_w4(self):
+        t, f = self.mem.sample('t_type', 'f_type')
+        return self.get_w(t, f)[3]  
+
+    def get_l4(self):
+        t, f = self.mem.sample('t_type', 'f_type')
+        return eval(f'self.l3_{t}_{f}')
+
+    def get_l4_effect(self):
+        return self.pi_effect[3]
+
+class EU_MO_HA_RD(EU_PS_MO_HA):
+    name     = 'EU+MO+HA+RD'
+    p_bnds   = None
+    p_pbnds  = [(-2, 2), (1, 2), (-2, 2)] + [(-6, 6)]*4
+    p_name   = ['α_act', 'β', 'α', 'λ1', 'λ2', 'λ3', 'λ4']
+    p_priors = [norm(0,1.5), norm(2, 1), norm(0,1.5), 
+                norm(0, 10), norm(0, 10), norm(0, 10), norm(0, 10)]
+    p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
+                lambda x: clip_exp(x),
+                lambda x: 1/(1+clip_exp(-x))] \
+                + [lambda x: x]*4
+    p_poi    = ['α', 'λ1', 'λ2', 'λ3', 'λ4']
+    n_params = len(p_name)
+    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'l1', 'l2', 'l3', 'l4']
+    color    = viz.SteelBlu
+
+    #  ------ response strategy ------- #
+
+    def policy(self, m, **kwargs):
+        t, f = kwargs['t_type'], kwargs['f_type']
+        pi_SM = softmax(self.beta*self.p_S*m)
+        pi_M  = softmax(self.beta*m)
+        pi_RD = np.ones([2,]) / 2
+        w0, w1, w2, w3 = self.get_w(t, f)
+        # creat the mixature model 
+        self.pi_effect = [pi_SM[1], pi_M[1], self.q_A[1], pi_RD[1]]
+        self.pi = w0*pi_SM + w1*pi_M + w2*self.q_A + w3*pi_RD
+        return self.pi 
+
+class linear_comb(MOS6):
+    name     = 'linear comb.'
+    p_bnds   = None
+    p_pbnds  = [(-2, 2), (1, 2), (-2, 2)] + [(-6, 6)]*3
+    p_name   = ['α_act', 'β', 'α', 'λ1', 'λ2', 'λ3']
+    p_priors = [norm(0,1.5), norm(2, 1), norm(0,1.5), 
+                norm(0, 10), norm(0, 10), norm(0, 10)]
+    p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
+                lambda x: clip_exp(x),
+                lambda x: 1/(1+clip_exp(-x))] \
+                + [lambda x: x]*3
+    p_poi    = ['α', 'λ1', 'λ2', 'λ3']
+    n_params = len(p_name)
+    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'l1', 'l2', 'l3']
+    color    = viz.Green
+
+    def policy(self, m, **kwargs):
+        t, f = kwargs['t_type'], kwargs['f_type']
+        pi_S = self.p_S
+        pi_M = m
+        l0, l1, l2 = self.get_w(t, f)
+        # creat the mixature model 
+        self.pi_effect = [pi_S[1], pi_M[1], self.q_A[1]]
+        S_diff  = self.p_S[1] - self.p_S[0] 
+        M_diff  = m[1] - m[0]
+        HA_diff = self.q_A[1] - self.q_A[0] 
+        diff = l0*S_diff + l1*M_diff + l2*HA_diff 
+        pi1 = sigmoid(self.beta*diff)
+        self.pi = np.array([1-pi1, pi1])
+        return self.pi
+
+    def get_w(self, b, f):
+        l0 = eval(f'self.l0_{b}_{f}')
+        l1 = eval(f'self.l1_{b}_{f}')
+        l2 = eval(f'self.l2_{b}_{f}')
+        return [l0, l1, l2]
 
 # ------------------------------------------ #
 #            Pearce Hall model               #
@@ -832,7 +1516,7 @@ class PH17(RL):
     name     = 'PH17'
     p_bnds   = None
     p_pbnds  = [(-2, 2),] + [(-2, 2), (-2, 2), (-2, 2), (1, 2)]*4
-    p_name   = ['α0'] + get_param_name(['k+', 'k_' 'η', 'β'])
+    p_name   = ['α0'] + get_param_name(['k+', 'k_', 'η', 'β'])
     n_params = len(p_name)
     p_priors = [norm(0,1.5)]+\
                 [norm(0,1.5), norm(0,1.5), 
@@ -842,7 +1526,7 @@ class PH17(RL):
                 lambda x: 1/(1+clip_exp(-x)),
                 lambda x: 1/(1+clip_exp(-x)),
                 lambda x: clip_exp(x)]*4
-    voi      = ['pS1', 'pi1', 'alpha']
+    voi      = ['pS1', 'pi1', 'alpha', 'valence']
     color    = viz.Gray
 
     def load_params(self, params):
@@ -916,7 +1600,7 @@ class PH4(PH17):
                 lambda x: 1/(1+clip_exp(-x)),
                 lambda x: 1/(1+clip_exp(-x)),
                 lambda x: clip_exp(x)]
-    voi      = ['pS1', 'pi1', 'alpha']
+    voi      = ['pS1', 'pi1', 'alpha', 'valence']
     color    = viz.Gray
 
     def load_params(self, params):

@@ -27,6 +27,8 @@ class viz:
     Purple  = np.array([108,  92, 231]) / 255
     ocGreen = np.array([ 90, 196, 164]) / 255
     Gray    = np.array([197, 197, 197]) / 255
+    Pizazz  = np.array([250, 146,   3]) / 255
+    SteelBlu= np.array([ 79, 122, 187]) / 255
 
     Palette = [Blue, Red, Yellow, ocGreen, Purple, Gray]
 
@@ -72,8 +74,8 @@ class viz:
     b2 = np.array([166, 225, 250]) / 255
     BluePairs = [b1, b2]
 
-    p1 = np.array([142,  65,  98]) / 255
-    p2 = np.array([237, 162, 192]) / 255
+    p1 = np.array([206,  66,  87]) / 255
+    p2 = np.array([255, 165, 171]) / 255
     PurplePairs = [p1, p2]
 
     p21 = np.array([213, 135, 132]) / 255

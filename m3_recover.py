@@ -18,7 +18,7 @@ parser.add_argument('--method',      '-m', help='methods, mle or map', type = st
 parser.add_argument('--algorithm',   '-a', help='fitting algorithm', type = str, default='BFGS')
 parser.add_argument('--agent_name',  '-n', help='choose agent', default='MOS6')
 parser.add_argument('--other_agent', '-o', help='choose agent', default=
-                                "['MOS6', 'MOS18', 'FLR6', 'FLR15', 'RS3', 'RS9', 'PH4', 'PH13']")
+                                "['MOS6', 'MOS22', 'FLR6', 'FLR19', 'RS3', 'RS13', 'PH4', 'PH17']")
 parser.add_argument('--n_cores',     '-c', help='number of CPU cores used for parallel computing', 
                                             type=int, default=1)
 parser.add_argument('--seed',        '-s', help='random seed', type=int, default=420)
@@ -118,7 +118,7 @@ def param_recover(args):
 #          MODEL RECOVERY          #
 # -------------------------------- #
 
-def syn_data_model_recover_paral(pool, data, args, n_samp=40):
+def syn_data_model_recover_paral(pool, data, args, n_samp=20):
 
     # set seed, conditions
     rng = np.random.RandomState(args.seed+2)
@@ -132,9 +132,17 @@ def syn_data_model_recover_paral(pool, data, args, n_samp=40):
     ## create a sub list of subject list 
     sub_lst_orig = list(fit_info_orig.keys())
     if 'group' in sub_lst_orig: sub_lst_orig.pop(sub_lst_orig.index('group'))
-    sub_lst = rng.choice(sub_lst_orig, size=n_samp)
+     # get sub for simulate
+    ref_data = pd.read_csv('data/exp1data.csv')
+    ref_data['group'] = ref_data['group'].map(
+        {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'}
+        )
+    group_sub_lst = {g: ref_data.query(f'group=="{g}"')['sub_id'].unique()
+                  for g in ['HC', 'PAT']}
+    sub_lst = []
+    for g in ['HC', 'PAT']:
+        sub_lst += list(rng.choice(group_sub_lst[g], size=n_samp, replace=False))
     fit_param = {k: fit_info_orig[k]['param'] for k in sub_lst}
-
     # create the synthesize data for the chosen sub
     res = [pool.apply_async(syn_data_model_recover, 
                     args=(data, fit_param[sub_id], sub_id, args.seed+5*i))
@@ -159,6 +167,7 @@ def syn_data_model_recover(data, param, sub_id, seed, n_samp=10):
     # synthesize the data and save
     sim_data = {} 
     task_ind = rng.choice(list(data.keys()), size=n_samp)
+    
     for i, task_id in enumerate(task_ind):
         block_id = rng.choice(list(data[task_id].keys()))
         task = data[task_id][block_id]
@@ -177,7 +186,7 @@ def model_recover(args):
     ## STEP 1: SYTHESIZE FAKE DATA FOR PARAM RECOVER
     fname = f'{pth}/data/{args.data_set}.pkl'
     with open(fname, 'rb') as handle: data=pickle.load(handle)
-    syn_data_model_recover_paral(pool, data, args, n_samp=40)
+    syn_data_model_recover_paral(pool, data, args, n_samp=20)
     pool.close() 
 
     ## STEP 2: REFIT THE OTHER MODEL TO THE SYTHESIZE DATA 
@@ -190,7 +199,7 @@ def model_recover(args):
 
 if __name__ == '__main__':
 
-    param_recover(args)
+    #param_recover(args)
 
     model_recover(args)
 

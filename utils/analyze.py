@@ -58,49 +58,21 @@ def model_cmp(quant_crs):
                 {p[0]}:{np.mean(x):.3f}, {p[1]}:{np.mean(y):.3f}
                 t={res[0]:.3f} p={res[1]:.3f}''')
 
-def build_pivot_table(method, agent='MOS', min_q=0, max_q=1, verbose=True):
-    features = eval(agent).voi
-    exp1data = pd.read_csv(f'{path}/../simulations/exp1data/{agent}/sim-{method}.csv')
-    sub_syndrome = pd.read_csv(f'{path}/../data/bifactor.csv')
-    sub_syndrome = sub_syndrome.rename(columns={'Unnamed: 0': 'sub_id', 'F1.': 'f1', 'F2.':'f2'})
-    gby = ['sub_id', 'trial_type', 'feedback_type', 'group']
-    pivot_table  = exp1data.groupby(by=gby)[features].mean().reset_index()
-    
-    #datainfo(pivot_tables)
-    if verbose: print('#-------- Clean Outliers ---------- #\n')
-    # concate to build a table
-    pivot_table['log_alpha'] = pivot_table['alpha'].apply(lambda x: np.log(1/(1+np.exp(-x))))
-    oldN = pivot_table.shape[0]
+def t_test(x_data, y_data, paired=False, title=''):
+    df = pg.ttest(x_data, y_data, paired=paired)
+    dof = df.loc[:, 'dof'].values[0]
+    t   = df.loc[:, 'T'].values[0]
+    pval = df.loc[:, 'p-val'].values[0]
+    cohen_d = df.loc[:, 'cohen-d'].values[0]
+    pair_str = '-paired' if paired==True else ''
+    print(f'{title} \tt{pair_str}({dof:.3f})={t:.3f}, p={pval:.3f}, cohen-d={cohen_d:.3f}')
 
-    # remove the outliers
-    tar = ['log_alpha'] + features[1:]
-    for i in tar:
-        qhigh = pivot_table[i].quantile(max_q)
-        qlow  = pivot_table[i].quantile(min_q)
-        pivot_table = pivot_table.query(f'{i}<{qhigh} & {i}>{qlow}')
-    if verbose:
-        print(f'    {pivot_table.shape[0]} rows')
-        print(f'    {oldN - pivot_table.shape[0]} rows have been deleted')
-        print(f'    {pivot_table.shape[0] * 100/ oldN:.1f}% data has been retained')
-
-    # add syndrome 
-    pivot_table = pivot_table.join(sub_syndrome.set_index('sub_id'), 
-                        on='sub_id', how='left')
-    for i in ['g', 'f1', 'f2']:
-        pivot_table[i] = pivot_table[i].fillna(pivot_table[i].mean())
-
-    return pivot_table
-
-def t_test(data, cond1, cond2, tar=['l1', 'l2', 'l3']):
-    ## the significant test 
-    for_title = []
-    for i in tar:
-        x = data.query(cond1)[i].values
-        y = data.query(cond2)[i].values
-        
-        for_title.append(tabulate(pg.ttest(x, y).round(3), headers='keys', tablefmt='fancy_grid'))
-
-    return for_title
+def corr(x_data, y_data, title=''):
+    df = pg.corr(x_data, y_data)
+    n = df.loc[:, 'n'].values[0]
+    r   = df.loc[:, 'r'].values[0]
+    pval = df.loc[:, 'p-val'].values[0]
+    print(f'{title} \tr({n})={r:.3f}, p={pval:.3f}')
 
 def main_effect(pivot_table, pred, cond1, cond2,
             tar=['l1', 'l2', 'l3', 'l4'], 
@@ -174,3 +146,37 @@ def pred_syndrome(pivot_table, pred='ratioanl_deg'):
         ax.set_title(f'{syn}')
         ax.set_ylabel('')
     plt.tight_layout()
+
+
+    # def build_pivot_table(method, agent='MOS', min_q=0, max_q=1, verbose=True):
+#     features = eval(agent).voi
+#     exp1data = pd.read_csv(f'{path}/../simulations/exp1data/{agent}/sim-{method}.csv')
+#     sub_syndrome = pd.read_csv(f'{path}/../data/bifactor.csv')
+#     sub_syndrome = sub_syndrome.rename(columns={'Unnamed: 0': 'sub_id', 'F1.': 'f1', 'F2.':'f2'})
+#     gby = ['sub_id', 'trial_type', 'feedback_type', 'group']
+#     pivot_table  = exp1data.groupby(by=gby)[features].mean().reset_index()
+    
+#     #datainfo(pivot_tables)
+#     if verbose: print('#-------- Clean Outliers ---------- #\n')
+#     # concate to build a table
+#     pivot_table['log_alpha'] = pivot_table['alpha'].apply(lambda x: np.log(1/(1+np.exp(-x))))
+#     oldN = pivot_table.shape[0]
+
+#     # remove the outliers
+#     tar = ['log_alpha'] + features[1:]
+#     for i in tar:
+#         qhigh = pivot_table[i].quantile(max_q)
+#         qlow  = pivot_table[i].quantile(min_q)
+#         pivot_table = pivot_table.query(f'{i}<{qhigh} & {i}>{qlow}')
+#     if verbose:
+#         print(f'    {pivot_table.shape[0]} rows')
+#         print(f'    {oldN - pivot_table.shape[0]} rows have been deleted')
+#         print(f'    {pivot_table.shape[0] * 100/ oldN:.1f}% data has been retained')
+
+#     # add syndrome 
+#     pivot_table = pivot_table.join(sub_syndrome.set_index('sub_id'), 
+#                         on='sub_id', how='left')
+#     for i in ['g', 'f1', 'f2']:
+#         pivot_table[i] = pivot_table[i].fillna(pivot_table[i].mean())
+
+#     return pivot_table
