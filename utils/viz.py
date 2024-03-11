@@ -168,37 +168,4 @@ class viz:
 
         # legend
         mpl.rcParams['legend.frameon'] = False
-
-    @staticmethod
-    def violin(ax, data, x, y, order, palette, orient='v',
-           hue_var=None, hue_order=None,
-           mean_marker_size=6):
-        v=sns.violinplot(data=data, 
-                            x=x, y=y, order=order, 
-                            hue=hue_var, hue_order=hue_order,
-                            orient=orient, palette=palette, 
-                            legend=False, alpha=.1, inner=None, scale='width',
-                            ax=ax)
-        plt.setp(v.collections, alpha=.35, edgecolor='none')
-        sns.stripplot(data=data, 
-                            x=x, y=y, order=order, 
-                            hue=y if hue_var is None else hue_var, 
-                            orient=orient, palette=palette,
-                            edgecolor='gray', jitter=True, alpha=.7,
-                            legend=False, zorder=2,
-                            ax=ax)
-        sns.barplot(data=data, 
-                            x=x, y=y, order=order, 
-                            orient=orient, 
-                            hue=hue_var, hue_order=hue_order,
-                            errorbar='sd', linewidth=1, 
-                            edgecolor=(0,0,0,0), facecolor=(0,0,0,0),
-                            capsize=.1, errwidth=2.5, errcolor=[.2]*3,
-                            ax=ax)
-        g_var = y if orient=='h' else x
-        v_var = x if orient=='h' else y
-        sns.stripplot(data=data.groupby(by=[g])[v_var].mean().reset_index(), 
-                            x=x, y=y, order=order,
-                            marker='o', size=mean_marker_size, color=[.2]*3, ax=ax)
-                
             
