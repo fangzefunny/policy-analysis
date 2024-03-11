@@ -1176,7 +1176,7 @@ class MOS6(MOS22):
                 + [lambda x: x]*3
     p_poi    = ['α', 'λ1', 'λ2', 'λ3']
     n_params = len(p_name)
-    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'beta', 'alpha_act', 'l1', 'l2', 'l3']
+    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'beta', 'alpha_act', 'l1', 'l2', 'l3', 'w1', 'w2', 'w3']
     color    = viz.r1
 
     def load_params(self, params):

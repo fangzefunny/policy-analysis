@@ -74,6 +74,23 @@ def corr(x_data, y_data, title=''):
     pval = df.loc[:, 'p-val'].values[0]
     print(f'{title} \tr({n})={r:.3f}, p={pval:.3f}')
 
+def anova(dv, between, data, all_table=False):
+    df = pg.anova(dv=dv, between=between, data=data).rename(columns={'p-unc': 'punc'})
+    if all_table:
+       print(df.round(3).to_string())
+    else:
+        sig_df = df.query('punc<=.05')
+        dof2 = int(df.query('Source=="Residual"')['DF'].values[0])
+        other_min_p = df.query('punc>.05')['punc'].min()
+        for _, row in sig_df.iterrows():
+            title = row['Source']
+            dof   = int(row['DF'])
+            F     = row['F']
+            p     = row['punc']
+            np2   = row['np2']
+            print(f'\t{title}:\tF({dof}, {dof2})={F:.3f}, p={p:.3f}, np2={np2:.3f}')
+        print(f'\tOther: \tp>={other_min_p:.3f}')
+
 def main_effect(pivot_table, pred, cond1, cond2,
             tar=['l1', 'l2', 'l3', 'l4'], 
             notes=['exp utility', 'reward probability', 'magnitude', 'habit']):
