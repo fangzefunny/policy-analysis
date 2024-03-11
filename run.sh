@@ -8,8 +8,8 @@ declare alg='BFGS'
 
 ## declare all models and all data sets
 declare data_sets=("exp1data")
-declare models=("FLR22") 
-# "MOS6" "MOS22" "FLR6" "FLR19" "RS3" "RS13" "PH4" "PH17" 
+#declare models=("MOS6" "MOS22" "FLR6" "FL22" "RS3" "RS13" "PH4" "PH17") 
+# "MOS6" "MOS22" "FLR6" "FLR22" "RS3" "RS13" "PH4" "PH17" 
 # "EU_MO" "EU_HA" "MO_HA" "PS_MO_HA" "EU_PS_MO_HA" EU_MO_HA_RD
 # "EU_MO18" "EU_HA18" "MO_HA18" "PS_MO_HA22" "EU_PS_MO_HA26" "linear_comb"
 declare method='map'

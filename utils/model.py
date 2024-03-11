@@ -687,7 +687,7 @@ class RS3(RS13):
                 lambda x: 1/(1+clip_exp(-x)),
                 lambda x: clip_exp(x)]
     n_params = len(p_name)
-    voi      = ['pS1', 'pi1', 'alpha'] 
+    voi      = ['pS1', 'pi1', 'alpha', 'valence'] 
     color    = viz.Gray
 
     def load_params(self, params):
@@ -1569,8 +1569,8 @@ class PH17(RL):
     def _learn_critic(self):
         s, t, f = self.mem.sample('s', 't_type', 'f_type')
         self.delta = s - self.p1
-        o = 'pos' if self.delta>0 else 'neg'
-        k = eval(f'self.k_{o}_{t}_{f}')
+        self.o = 'pos' if self.delta>0 else 'neg'
+        k = eval(f'self.k_{self.o}_{t}_{f}')
         self.p1 += k*self.alpha*self.delta
         self.p_S = np.array([1-self.p1, self.p1])
 
@@ -1586,8 +1586,8 @@ class PH17(RL):
         return self.pi
     
     def get_alpha(self):
-        o, t, f = self.mem.sample('o_type', 't_type', 'f_type')
-        return eval(f'self.k_{o}_{t}_{f}')*self.alpha
+        t, f = self.mem.sample('t_type', 'f_type')
+        return eval(f'self.k_{self.o}_{t}_{f}')*self.alpha
 
 class PH4(PH17):
     name     = 'PH4'
