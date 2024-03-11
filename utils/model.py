@@ -774,7 +774,7 @@ class MOS22(RL):
                     lambda x: 1/(1+clip_exp(-x))]+
                    [lambda x: x]*3) * 4 
     n_params = len(p_name)
-    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'l1', 'l2', 'l3']
+    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'l1', 'l2', 'l3', 'w1', 'w2', 'w3']
     color    = viz.r2
 
     def load_params(self, params):
