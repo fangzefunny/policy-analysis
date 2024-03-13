@@ -90,17 +90,21 @@ def remake_cols_idx(data, sub_id, feedback_type, exp_id, seed=42):
                         [.8, .2, .8, .2, .8],
                         [.25, .25, .25, .25, .25],
                         [.75, .75, .75, .75, .75]])
+    psi_name = ['vol2', 'vol8', 'sta3', 'sta7']
     psi_track = [[.2]*20+[.8]*20+[.2]*20+[.8]*20+[.2]*10,
                  [.8]*20+[.2]*20+[.8]*20+[.2]*20+[.8]*10,
                  [.25]*90,
                  [.75]*90]
     lst = [(0, 19), (20, 39), (40, 59), (60, 79), (80, 89)]
     psi_truth = []
+    psi_type  = []
     for ind in [(0, 90), (90, 180)]:
         sel_data = data[ind[0]:ind[1]].reset_index()
         psi = np.array([sel_data.loc[vec[0]:vec[1], 'state'].mean() for vec in lst])
         idx = np.argmin(np.abs((psi - psi_key).sum(1)))
+        psi_type.append(psi_name[idx])
         psi_truth += psi_track[idx]
+    data['psi_type']  = '-'.join(psi_type)
     data['psi_truth'] = psi_truth
     
     ## Add which experiment id 
@@ -172,7 +176,7 @@ def preprocess(exp=['exp1', 'exp2']):
 
     # save for analyze
     idx = 'all' if (len(exp) == 2) else exp[0]
-    fname = f'{path}/data/{idx}_data.csv'
+    fname = f'{path}/data/{idx}data.csv'
     for_analyze.to_csv(fname, index = False, header=True)
 
     return for_analyze

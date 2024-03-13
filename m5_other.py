@@ -21,7 +21,7 @@ parser.add_argument('--agent_name', '-n', help='choose agent', default='MOS6')
 parser.add_argument('--method',     '-m', help='fitting methods', type=str, default='map')
 parser.add_argument('--algorithm',  '-a', help='fitting algorithm', type = str, default='BFGS')
 parser.add_argument('--n_cores',    '-c', help='number of CPU cores used for parallel computing', 
-                                            type=int, default=1)
+                                            type=int, default=20)
 parser.add_argument('--seed',       '-s', help='random seed', type=int, default=42)
 parser.add_argument('--params',     '-p', help='params', type=str, default='')
 parser.add_argument('--recovery',   '-r', help='recovery', type=int, default=1)
@@ -36,32 +36,35 @@ dirs = [f'{pth}/simulations', f'{pth}/simulations/{args.data_set}',
 for d in dirs:
     if not os.path.exists(d): os.mkdir(d)
 
-def sim_paral(pool, args, n_samples=40):
-    alphas = np.linspace(.3, .7, 5)
-    betas  = np.linspace( 0,  8, 5)
+def sim_paral(pool, args, n_samples=100):
+    alphas = np.linspace(.1, .8, 10)
+    betas  = np.linspace(.5,  6, 10)
+    rng = np.random.RandomState(1234)
     param_lst = []
-    for i in n_samples:
+    for _ in range(n_samples):
+        alpha = rng.choice(alphas)
+        beta  = rng.choice(betas)
         params = np.array([beta, alpha])
         param_lst.append(params.copy())
-    get_sim_sample(param_lst[0], args.seed)
     res = [pool.apply_async(get_sim_sample, 
-                            args=(params, args.seed, i))
+                            args=(params, args.seed+2*i, i))
                             for i, params in enumerate(param_lst)]
     sim_data_all = pd.concat([p.get() for p in res], axis=0, ignore_index=True)
     fname = f'{pth}/simulations/'
-    fname += f'{args.data_set}/{args.agent_name}/sim-{args.method}.csv'
+    fname += f'{args.data_set}/EU/sim-{args.method}.csv'
     sim_data_all.to_csv(fname)
 
-def get_sim_sample(params, seed, sim_sample=20):
-    model = wrapper(args.agent, env_fn=env)
+def get_sim_sample(params, seed, sub_id, sim_sample=3):
+    model = wrapper(EU, env_fn=env)
     sim_data = [] 
     rng = np.random.RandomState(seed)
     for i in range(sim_sample): 
         task = env().instan(seed+i)
         sim_sample = model.sim_block(task, params, rng=rng)
-        sim_sample['beta'] = params[0]
-        sim_sample['alpha'] = params[1]
-        sim_sample['sub_id'] = f'sim{i}'
+        sim_sample['beta']     = params[0]
+        sim_sample['alpha']    = params[1]
+        sim_sample['block_id'] = f'block_{i}'
+        sim_sample['sub_id']   = f'sub_{sub_id}'
         sim_data.append(sim_sample)
     return pd.concat(sim_data, axis=0, ignore_index=True)
 
@@ -151,8 +154,8 @@ def syn_mos_data(param, sub_id, group, data, seed, n_block=10):
 if __name__ == '__main__':
 
     print(f'Simulating {args.agent_name}')
-    # pool = get_pool(args)
-    # sim_paral(pool, args)
-    fit_flr_to_mos(args, n_block=2, n_sub=21)
+    pool = get_pool(args)
+    sim_paral(pool, args)
+    # fit_flr_to_mos(args, n_block=2, n_sub=21)
     # eval_model(args)
-    #pool.close()
+    pool.close()

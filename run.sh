@@ -24,11 +24,11 @@ declare alg='BFGS'
 # done
 
 # recover the model of interest
-declare models=("MOS6" "MOS22" "FLR6" "FLR22" "RS3" "RS13" "PH4" "PH17") # "FLR6" "FLR19" "RS3" "RS13" "PH4" "PH17"
+declare models=("FLR22") # "MOS6" "MOS22" "FLR6" "FLR22" "RS3" "RS13" "PH4" "PH17"
 for data_set in "${data_sets[@]}"; do 
     for model in "${models[@]}"; do 
         echo Data set=$data_set  Model=$model Method=$method
-        python m3_recover.py -d=$data_set -n=$model -s=420 -c=40 -m=$method -a=$alg -o='["FLR22"]'
+        python m3_recover.py -d=$data_set -n=$model -s=420 -c=40 -m=$method -a=$alg
     done  
 done
 
