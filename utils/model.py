@@ -300,11 +300,16 @@ class RL(baseAgent):
         # from gauss space to actual space
         params = [fn(p) for fn, p in zip(self.p_trans, params)]
         # assign the parameter
-        self.beta           = params[0]
-        self.a_pos_sta_gain = params[1]
-        self.a_neg_sta_loss = params[2]
-        self.a_pos_vol_gain = params[3]
-        self.a_neg_vol_loss = params[4]
+        self.a_pos_sta_gain = params[0]
+        self.a_neg_sta_gain = params[1]
+        self.a_pos_sta_loss = params[2]
+        self.a_neg_sta_gain = params[3]
+        self.a_pos_vol_gain = params[4]
+        self.a_neg_vol_gain = params[5]
+        self.a_pos_vol_loss = params[6]
+        self.a_neg_vol_loss = params[7]
+        self.beta           = params[8]
+
         
     def _init_critic(self):
         self.p1     = 1/2
@@ -742,10 +747,10 @@ class EU(RL):
         self.alpha          = params[1]
         self.a_pos_sta_gain = self.alpha
         self.a_neg_sta_gain = self.alpha
-        self.a_pos_sta_loss = self.alpha
-        self.a_neg_sta_gain = self.alpha
         self.a_pos_vol_gain = self.alpha
         self.a_neg_vol_gain = self.alpha
+        self.a_pos_sta_loss = self.alpha
+        self.a_neg_sta_loss = self.alpha
         self.a_pos_vol_loss = self.alpha
         self.a_neg_vol_loss = self.alpha
 
