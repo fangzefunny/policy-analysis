@@ -19,6 +19,7 @@ backup/
 simulations/
 analyses/
 notes/
+adv/
 
 # ignore some debug files
 debug.py 

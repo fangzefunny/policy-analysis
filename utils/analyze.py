@@ -91,6 +91,84 @@ def anova(dv, between, data, all_table=False):
             print(f'\t{title}:\tF({dof}, {dof2})={F:.3f}, p={p:.3f}, np2={np2:.3f}')
         print(f'\tOther: \tp>={other_min_p:.3f}')
 
+def linear_regression(x, y, add_intercept=False, title='', x_var='x', y_var='y'):
+    df = pg.linear_regression(X=x, y=y, add_intercept=add_intercept)
+    beta0 = df['coef'][0]
+    beta1 = df['coef'][1]
+    pval  = df['pval'][1]
+    print(f'{title}\t{y_var}={beta1:.3f}{x_var}+{beta0:.3f},\n\tp={pval:.3f}')
+
+def get_advantage(agent):
+    if agent=='human':
+        fname = '../data/exp1_data.csv'
+    else:
+        fname = f'../simulations/exp1data/{agent}/sim-map.csv'
+    data = pd.read_csv(fname)
+    data['group'] = data['group'].map(
+        {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'}
+    )
+    data['m0'] = data['m0']*100
+    data['m1'] = data['m1']*100
+    # get correct action 
+    data['pS0'] = data['psi_truth'].apply(lambda x: 1-x)
+    data['pS1'] = data['psi_truth'].apply(lambda x: x)
+    # get correct action 
+    data['cor_a'] = data.apply(
+        lambda x: x['state'] if x['feedback_type']=='gain' else int(1-x['state']) 
+    , axis=1)
+    # get action based on EU strategy
+    data['a_eu'] = data.apply(
+        lambda x: np.argmax([x['pS0']*x['m0'], x['pS1']*x['m1']])    
+    , axis=1)
+    data['r0'] = data.apply(
+        lambda x: (x['state']==0)*x['m0']
+    , axis=1) 
+    data['r1'] = data.apply(
+        lambda x: (x['state']==1)*x['m1']
+    , axis=1) 
+    data['b'] = data.apply(
+        lambda x: (x['r0']+x['r1']) / 2
+    , axis=1) 
+    # get action based on MO strategy
+    data['a_mo'] = data.apply(
+        lambda x: np.argmax([x['m0'], x['m1']])
+    , axis=1)
+    data['a_ha'] = data.shift(1)['a']
+    data['adv0']  = data.apply(
+        lambda x: x['r0'] - x['b'] 
+    , axis=1)
+    data['adv1']  = data.apply(
+        lambda x: x['r1'] - x['b'] 
+    , axis=1)
+    data['adv']  = data.apply(
+        lambda x: x[f"adv{int(x['a'])}"]
+    , axis=1)
+    data['hit']  = data.apply(
+        lambda x: x['a']==x['cor_a']
+    , axis=1)
+    data['hit_eu'] = data.apply(
+        lambda x:  x['a_eu']==x['cor_a']    
+    , axis=1)
+    data['r_eu'] = data.apply(
+        lambda x: x[f'adv{x["a_eu"]}']
+    , axis=1)
+    data['hit_mo'] = data.apply(
+        lambda x:  x['a_mo']==x['cor_a']    
+    , axis=1)
+    data['r_mo'] = data.apply(
+        lambda x: x[f'adv{x["a_mo"]}']
+    , axis=1)
+    data['adv-mo'] = data.apply(
+        lambda x: x['adv'] - x['r_mo']
+    , axis=1)
+    data['hit_ha'] = data.apply(
+        lambda x:  x['a_ha']==x['cor_a'] if x['trial']>0 else False  
+    , axis=1)
+    data['r_ha'] = data.apply(
+        lambda x: x[f'adv{int(x["a_ha"])}'] if x['trial']>0 else 0
+    , axis=1)
+    return data
+
 def main_effect(pivot_table, pred, cond1, cond2,
             tar=['l1', 'l2', 'l3', 'l4'], 
             notes=['exp utility', 'reward probability', 'magnitude', 'habit']):

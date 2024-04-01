@@ -172,7 +172,7 @@ class viz:
     @staticmethod
     def violin(ax, data, x, y, order, palette, orient='v',
         hue=None, hue_order=None,
-        mean_marker_size=6, err_capsize=.11):
+        mean_marker_size=6, err_capsize=.11, scatter_size=7):
         g_var = y if orient=='h' else x
         v_var = x if orient=='h' else y
         v=sns.violinplot(data=data, 
@@ -185,7 +185,9 @@ class viz:
         sns.stripplot(data=data, 
                             x=x, y=y, order=order, 
                             hue=g_var if hue is None else hue, 
-                            orient=orient, palette=palette,
+                            hue_order=order if hue is None else hue_order, 
+                            orient=orient, palette=palette, 
+                            size=scatter_size,
                             edgecolor='gray', jitter=True, alpha=.7,
                             dodge=False if hue is None else True,
                             legend=False, zorder=2,
