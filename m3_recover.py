@@ -201,7 +201,7 @@ if __name__ == '__main__':
 
     param_recover(args)
 
-    #model_recover(args)
+    model_recover(args)
 
 
 
