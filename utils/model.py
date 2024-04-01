@@ -758,11 +758,72 @@ class EU(RL):
         self.pi = softmax(self.beta*self.p_S*m)
         return self.pi
     
-class PS(EU):
+class PF(EU):
     name     = 'PF'
+    p_pbnds  = [(-2, 2), (-10, -.15), (-10, -.15)]
+    p_name   = ['β', 'α+', 'α_']
+    p_priors = []
+    p_trans  = [lambda x: clip_exp(x), 
+                lambda x: 1/(1+clip_exp(-x)), 
+                lambda x: 1/(1+clip_exp(-x))]
+    n_params = len(p_name)
+    voi      = ['pS1', 'pi1']
+    color    = viz.r2 
+
+    def load_params(self, params):
+        params = [fn(p) for fn, p in zip(self.p_trans, params)]
+        # assign the parameter
+        self.beta           = params[0]
+        self.alpha_pos      = params[1]
+        self.alpha_neg      = params[2]
+        self.a_pos_sta_gain = self.alpha_pos
+        self.a_neg_sta_gain = self.alpha_neg
+        self.a_pos_vol_gain = self.alpha_pos
+        self.a_neg_vol_gain = self.alpha_neg
+        self.a_pos_sta_loss = self.alpha_pos
+        self.a_neg_sta_loss = self.alpha_neg
+        self.a_pos_vol_loss = self.alpha_pos
+        self.a_neg_vol_loss = self.alpha_neg
    
     def policy(self, m, **kwargs):
         self.pi = softmax(self.beta*self.p_S)
+        return self.pi
+
+class PF_HA(EU):
+    name     = 'PF_HA'
+
+    def load_params(self, params):
+        # from gauss space to actual space
+        #params = [fn(p) for fn, p in zip(self.p_trans, params)]
+        # assign the parameter
+        self.beta           = params[0]
+        self.alpha          = params[1]
+        self.alpha_act      = .4
+        self.a_pos_sta_gain = self.alpha
+        self.a_neg_sta_gain = self.alpha
+        self.a_pos_vol_gain = self.alpha
+        self.a_neg_vol_gain = self.alpha
+        self.a_pos_sta_loss = self.alpha
+        self.a_neg_sta_loss = self.alpha
+        self.a_pos_vol_loss = self.alpha
+        self.a_neg_vol_loss = self.alpha
+
+    def _init_actor(self):
+        self.q1   = 1/2
+        self.q_A  = np.array([1-self.q1, self.q1]) 
+
+    def learn(self):
+        self._learn_critic()
+        self._learn_ha()
+
+    def _learn_ha(self):
+        a = self.mem.sample('a')
+        self.q1 += self.alpha_act * (a - self.q1)
+        self.q_A = np.array([1-self.q1, self.q1])
+
+    def policy(self, m, **kwargs):
+        q = .8*self.p_S + .2*self.q_A
+        self.pi = softmax(self.beta*q)
         return self.pi
 
 class MOS22(RL):
@@ -1179,9 +1240,16 @@ class MOS6(MOS22):
                 lambda x: clip_exp(x),
                 lambda x: 1/(1+clip_exp(-x))] \
                 + [lambda x: x]*3
+    p_links  = [lambda x: np.log(x)-np.log(1-x), 
+                lambda x: np.log(x),
+                lambda x: np.log(x)-np.log(1-x)] \
+                + [lambda x: x]*3
     p_poi    = ['α', 'λ1', 'λ2', 'λ3']
     n_params = len(p_name)
-    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'beta', 'alpha_act', 'l1', 'l2', 'l3', 'w1', 'w2', 'w3']
+    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'beta', 
+                'l1', 'l2', 'l3', 
+                'w1', 'w2', 'w3',
+                'l1_effect', 'l2_effect', 'l3_effect']
     color    = viz.r1
 
     def load_params(self, params):
@@ -1446,6 +1514,34 @@ class EU_PS_MO_HA(MOS6):
 
     def get_l4_effect(self):
         return self.pi_effect[3]
+
+class EU_RD_HA(MOS6):
+    name     = 'EU+HA+RD'
+    p_bnds   = None
+    p_pbnds  = [(-2, 2), (1, 2), (-2, 2)] + [(-6, 6)]*3
+    p_name   = ['α_act', 'β', 'α', 'λ1', 'λ2', 'λ3']
+    p_priors = [norm(0,1.5), norm(2, 1), norm(0,1.5), 
+                norm(0, 10), norm(0, 10), norm(0, 10)]
+    p_trans  = [lambda x: 1/(1+clip_exp(-x)), 
+                lambda x: clip_exp(x),
+                lambda x: 1/(1+clip_exp(-x))] \
+                + [lambda x: x]*3
+    p_poi    = ['α', 'λ1', 'λ2', 'λ3']
+    n_params = len(p_name)
+    voi      = ['pS1', 'pi1', 'valence', 'alpha', 'l1', 'l2', 'l3']
+    color    = viz.Green
+
+    #  ------ response strategy ------- #
+
+    def policy(self, m, **kwargs):
+        t, f = kwargs['t_type'], kwargs['f_type']
+        pi_SM = softmax(self.beta*self.p_S*m)
+        pi_RD = np.ones([2,]) / 2
+        w0, w1, w2 = self.get_w(t, f)
+        # creat the mixature model 
+        self.pi_effect = [pi_SM[1], self.q_A[1], pi_RD[1]]
+        self.pi = w0*pi_SM + w1*self.q_A + w2*pi_RD
+        return self.pi 
 
 class EU_MO_HA_RD(EU_PS_MO_HA):
     name     = 'EU+MO+HA+RD'

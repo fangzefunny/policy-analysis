@@ -47,7 +47,7 @@ class rl_reversal:
         # get the input magnitude
         mag0 = rng.integers(1, 99, size=n_trials)
         mag1 = rng.integers(1, 99, size=n_trials)
-        fb_type = ['loss']*180
+        fb_type = ['gain']*180
 
         block = {
             'state':      state,
