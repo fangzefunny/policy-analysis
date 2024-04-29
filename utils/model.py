@@ -512,64 +512,6 @@ class FLR22(FLR19):
         self.pi = np.array([1-pi1, pi1])
         return self.pi  
 
-class FLR21(FLR19):
-    name     = 'FLR22'
-    p_bnds   = None
-    p_pbnds  = [(-2, 2), (-2, 2), (-2, 2), (1, 2), (1, 2)] \
-                + [(-2, 2), (-2, 2), (1, 2), (-2, 2)]*4
-    p_name   = ['α_act', 'r_gain', 'r_loss', 'β_act_gain', 'β_act_loss'] \
-                + get_param_name(['α+', 'α_', 'β', 'λ'])
-    p_priors = [norm(0,1.5), norm(2, 1), norm(2, 1), norm(2, 1), norm(2, 1)] + \
-                [norm(0,1.5), norm(0,1.5), norm(2, 1), norm(0,1.5)]*4
-    p_trans  = [lambda x: 1/(1+clip_exp(-x)),
-                lambda x: clip_exp(x),
-                lambda x: clip_exp(x), 
-                lambda x: clip_exp(x), 
-                lambda x: clip_exp(x)] + \
-               [lambda x: 1/(1+clip_exp(-x)),
-                lambda x: 1/(1+clip_exp(-x)), 
-                lambda x: clip_exp(x),
-                lambda x: 1/(1+clip_exp(-x))]*4
-    n_params = len(p_name)
-    voi      = ['pS1', 'pi1', 'alpha', 'valence', 'beta', 'lmbda'] 
-    color    = viz.Gray
-
-    def load_params(self, params):
-
-        # from gauss space to actual space
-        params = [fn(p) for fn, p in zip(self.p_trans, params)]
-
-        # ---- General ----- #
-        self.alpha_act      = params[0]
-
-        # ---- Gain & loss --- #
-        self.r_gain         = params[1]
-        self.r_loss         = params[2]
-        self.beta_act_gain  = params[3]
-        self.beta_act_loss  = params[4]
-
-        # ---- parameters for each contxt ---- #
-        i = 5
-        for f in ['gain', 'loss']:
-            for t in ['sta', 'vol']:
-                for v in ['a_pos', 'a_neg', 'beta', 'lmbda']:
-                    setattr(self, f'{v}_{t}_{f}', params[i])
-                    i +=1
-      
-    def policy(self, m, **kwargs):
-        t, f = kwargs['t_type'], kwargs['f_type']
-        m0, m1 = m[0], m[1] 
-        lmbda = eval(f'self.lmbda_{t}_{f}')
-        r = eval(f'self.r_{f}')
-        beta_act = eval(f'self.beta_act_{f}')
-        v     = lmbda*(self.p_S[1] - self.p_S[0]) \
-                 + (1-lmbda)*abs(m1-m0)**r*np.sign(m1-m0)
-        va    = eval(f'self.beta_{t}_{f}')*v \
-                 + beta_act*(self.q1 - (1-self.q1))
-        pi1   = 1 / (1 + clip_exp(-va))
-        self.pi = np.array([1-pi1, pi1])
-        return self.pi  
-
 class FLR6(FLR19):
     name     = 'FLR6'
     p_bnds   = None

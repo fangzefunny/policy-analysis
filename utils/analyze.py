@@ -242,36 +242,3 @@ def pred_syndrome(pivot_table, pred='ratioanl_deg'):
         ax.set_ylabel('')
     plt.tight_layout()
 
-
-    # def build_pivot_table(method, agent='MOS', min_q=0, max_q=1, verbose=True):
-#     features = eval(agent).voi
-#     exp1data = pd.read_csv(f'{path}/../simulations/exp1data/{agent}/sim-{method}.csv')
-#     sub_syndrome = pd.read_csv(f'{path}/../data/bifactor.csv')
-#     sub_syndrome = sub_syndrome.rename(columns={'Unnamed: 0': 'sub_id', 'F1.': 'f1', 'F2.':'f2'})
-#     gby = ['sub_id', 'trial_type', 'feedback_type', 'group']
-#     pivot_table  = exp1data.groupby(by=gby)[features].mean().reset_index()
-    
-#     #datainfo(pivot_tables)
-#     if verbose: print('#-------- Clean Outliers ---------- #\n')
-#     # concate to build a table
-#     pivot_table['log_alpha'] = pivot_table['alpha'].apply(lambda x: np.log(1/(1+np.exp(-x))))
-#     oldN = pivot_table.shape[0]
-
-#     # remove the outliers
-#     tar = ['log_alpha'] + features[1:]
-#     for i in tar:
-#         qhigh = pivot_table[i].quantile(max_q)
-#         qlow  = pivot_table[i].quantile(min_q)
-#         pivot_table = pivot_table.query(f'{i}<{qhigh} & {i}>{qlow}')
-#     if verbose:
-#         print(f'    {pivot_table.shape[0]} rows')
-#         print(f'    {oldN - pivot_table.shape[0]} rows have been deleted')
-#         print(f'    {pivot_table.shape[0] * 100/ oldN:.1f}% data has been retained')
-
-#     # add syndrome 
-#     pivot_table = pivot_table.join(sub_syndrome.set_index('sub_id'), 
-#                         on='sub_id', how='left')
-#     for i in ['g', 'f1', 'f2']:
-#         pivot_table[i] = pivot_table[i].fillna(pivot_table[i].mean())
-
-#     return pivot_table

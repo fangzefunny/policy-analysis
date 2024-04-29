@@ -42,7 +42,7 @@ def sim_paral(pool, data, args):
     
     ## Simulate data for n_sim times 
     seed = args.seed 
-    res = [pool.apply_async(simulate, args=(data, args, seed+5*i))
+    res = [pool.apply_async(simulate, args=(data, args, i, seed+5*i))
                             for i in range(args.n_sim)]
     for i, p in enumerate(res):
         sim_data = p.get() 
@@ -51,7 +51,7 @@ def sim_paral(pool, data, args):
         sim_data.to_csv(fname, index=False)
 
 # define functions
-def simulate(data, args, seed):
+def simulate(data, args, sim_id, seed):
 
     # define the subj
     model = wrapper(args.agent, env_fn=env)
@@ -79,6 +79,7 @@ def simulate(data, args, seed):
         rng = np.random.RandomState(seed)
         sim_sample = model.sim(data[sub_idx], params, rng=rng)
         sim_sample['sub_id'] = sub_idx
+        sim_sample['sim_id'] = f'sim_{sim_id}'
         sim_data.append(sim_sample)
         seed += 1
 

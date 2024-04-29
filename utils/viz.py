@@ -160,51 +160,49 @@ class viz:
         mpl.rcParams['lines.linewidth'] = 2
         mpl.rcParams['axes.spines.right'] = False
         mpl.rcParams['axes.spines.top'] = False
-        # Character
-        # mpl.rcParams['font.family'] = 'sans-serif'
-        # mpl.rcParams['font.sans-serif'] = 'Arial'
         mpl.rcParams['font.size'] = 13
-        # mpl.rcParams['font.weight'] = 'bold'
-
-        # legend
         mpl.rcParams['legend.frameon'] = False
 
     @staticmethod
     def violin(ax, data, x, y, order, palette, orient='v',
         hue=None, hue_order=None,
-        mean_marker_size=6, err_capsize=.11, scatter_size=7):
+        scatter_size=7, scatter_alpha=1,
+        mean_marker_size=6, err_capsize=.11, 
+        add_errs=True, errorbar='se', errorcolor=[.3]*3):
         g_var = y if orient=='h' else x
         v_var = x if orient=='h' else y
         v=sns.violinplot(data=data, 
                             x=x, y=y, order=order, 
-                            hue=hue, hue_order=hue_order,
+                            hue=g_var if hue is None else hue, 
+                            hue_order=order if hue is None else hue_order,
                             orient=orient, palette=palette, 
-                            legend=False, alpha=.1, inner=None, scale='width',
+                            legend=False, alpha=.1, inner=None, density_norm='width',
                             ax=ax)
-        plt.setp(v.collections, alpha=.35, edgecolor='none')
+        plt.setp(v.collections, alpha=.5, edgecolor='none')
         sns.stripplot(data=data, 
                             x=x, y=y, order=order, 
                             hue=g_var if hue is None else hue, 
                             hue_order=order if hue is None else hue_order, 
                             orient=orient, palette=palette, 
                             size=scatter_size,
-                            edgecolor='gray', jitter=True, alpha=.7,
+                            edgecolor='auto', jitter=True, alpha=scatter_alpha,
                             dodge=False if hue is None else True,
                             legend=False, zorder=2,
                             ax=ax)
-        sns.barplot(data=data, 
+        if add_errs:
+            sns.barplot(data=data, 
+                                x=x, y=y, order=order, 
+                                orient=orient, 
+                                hue=hue, hue_order=hue_order,
+                                errorbar=errorbar, linewidth=1, 
+                                edgecolor=(0,0,0,0), facecolor=(0,0,0,0),
+                                capsize=err_capsize, err_kws={'color': errorcolor, 'linewidth': 2.5},
+                                ax=ax)
+            groupby = [g_var, hue] if hue is not None else [g_var]
+            sns.stripplot(data=data.groupby(by=groupby)[v_var].mean().reset_index(), 
                             x=x, y=y, order=order, 
-                            orient=orient, 
-                            hue=hue, hue_order=hue_order,
-                            errorbar='sd', linewidth=1, 
-                            edgecolor=(0,0,0,0), facecolor=(0,0,0,0),
-                            capsize=err_capsize, errwidth=2.5, errcolor=[.2]*3,
-                            ax=ax)
-        groupby = [g_var, hue] if hue is not None else [g_var]
-        sns.stripplot(data=data.groupby(by=groupby)[v_var].mean().reset_index(), 
-                        x=x, y=y, order=order, 
-                        hue=hue, hue_order=hue_order, 
-                        palette=[[.2]*3]*len(hue_order) if hue is not None else None,
-                        dodge=False if hue is None else True,
-                        marker='o', size=mean_marker_size, color=[.2]*3, ax=ax)
+                            hue=hue, hue_order=hue_order, 
+                            palette=[errorcolor]*len(hue_order) if hue is not None else None,
+                            dodge=False if hue is None else True,
+                            marker='o', size=mean_marker_size, color=errorcolor, ax=ax)
                 

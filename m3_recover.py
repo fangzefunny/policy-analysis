@@ -120,11 +120,7 @@ def param_recover(args):
 #          MODEL RECOVERY          #
 # -------------------------------- #
 
-def syn_data_model_recover_paral(pool, data, args, n_samp=20):
-
-    # set seed, conditions
-    rng = np.random.RandomState(args.seed+2)
-    n_param = args.agent.n_params
+def syn_data_model_recover_paral(pool, data, args):
 
     # get parameters 
     fname  = f'{pth}/fits/{args.data_set}/fit_sub_info'
@@ -134,7 +130,7 @@ def syn_data_model_recover_paral(pool, data, args, n_samp=20):
     ## create a sub list of subject list 
     sub_lst_orig = list(fit_info_orig.keys())
     if 'group' in sub_lst_orig: sub_lst_orig.pop(sub_lst_orig.index('group'))
-    # get sub for simulate
+    # select subject for recovery: 20 heahlth controls, 20 patients. 
     sub_lst = ['n33', 'n24', 'cb1', 'cb45', 'cb79', 'cb17', 'cb80', 'cb63', 'cb7',
                 'n31', 'n19', 'n8', 'cb17', 'n33', 'n36', 'cb45', 'cb68', 'n19',
                 'cb7', 'cb79', 'cb13', 'cb46', 'cb49', 'cb20', 'cb84', 'cb74', 'cb14', 'cb200',
@@ -199,8 +195,10 @@ def model_recover(args):
 
 if __name__ == '__main__':
 
+    # STEP 1: PARAMETER RECOVERY
     param_recover(args)
 
+    # STEP 2: MODEL RECOVERY
     model_recover(args)
 
 

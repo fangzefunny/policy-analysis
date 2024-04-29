@@ -119,6 +119,5 @@ if __name__ == '__main__':
   
     ## STEP 2: FIT
     fit(pool, data, args)
-    # summary the mean and std for parameters 
     summary(data, args)
     pool.close()
