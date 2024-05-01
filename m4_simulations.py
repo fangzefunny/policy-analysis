@@ -98,7 +98,7 @@ def get_sim_sample(params, group, seed, sub_id, sim_sample=2):
 #      Explain learning rate using the MOS model      #
 # --------------------------------------------------- #
 
-def fit_flr_to_mos(n_block=1, n_sub=5, seed=42):
+def fit_flr_to_mos(n_block=2, n_sub=5, seed=42):
     '''
         Get 2 runs (4 task sequnece) for each participant
     '''
@@ -109,11 +109,11 @@ def fit_flr_to_mos(n_block=1, n_sub=5, seed=42):
     param_mat = [item['param'] for _, item in fit_info.items()]
     params = np.median(param_mat, 0)
     HC_params = params.copy()
-    HC_params[3] =  1.5
-    HC_params[4] = -1.5
+    HC_params[3] =  1
+    HC_params[4] = -.5
     PAT_params = params.copy()
-    PAT_params[3] = -1.5
-    PAT_params[4] =  1.5
+    PAT_params[3] = -.5
+    PAT_params[4] = 1
     mos_data = {}
     mos6_param = {}
     params = { 'HC': HC_params.tolist(), 
@@ -135,12 +135,12 @@ def fit_flr_to_mos(n_block=1, n_sub=5, seed=42):
     ## STEP 2: REFIT THE MODEL TO THE SYTHESIZE DATA 
     cmand = ['python', 'm1_fit.py', f'-d=syn_mos6_{n_sub}-sub',
               f'-n=FLR22', '-s=420', '-f=40',
-              '-c=40', f'-m="map"', f'-a="BFGS"']
+              '-c=40', f'-m=map', f'-a=BFGS']
     subprocess.run(cmand)
 
     cmand = ['python', 'm2_rollout.py', f'-d=syn_mos6_{n_sub}-sub',
               f'-n=FLR22', '-f=10',
-              '-c=10', f'-m="map"', f'-a="BFGS"']
+              '-c=10', f'-m=map']
     subprocess.run(cmand)
 
 def syn_mos_data(param, sub_id, group, data, seed, n_block=10):
@@ -164,11 +164,11 @@ def syn_mos_data(param, sub_id, group, data, seed, n_block=10):
 
 if __name__ == '__main__':
 
-    # STEP1: simulate to understand the three strategies
-    pool = get_pool(args)
-    sim_three_strategies_paral(pool, args)
-    pool.close()
+    # # STEP1: simulate to understand the three strategies
+    # pool = get_pool(args)
+    # sim_three_strategies_paral(pool, args)
+    # pool.close()
 
     # STEP 2: explain the FLR using the MOS
-    fit_flr_to_mos(args, n_block=2, n_sub=20)
+    fit_flr_to_mos(n_block=2, n_sub=20)
 
