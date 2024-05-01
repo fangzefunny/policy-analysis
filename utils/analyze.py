@@ -222,23 +222,76 @@ def intersect_effect(pivot_table, fac1, fac2,
     plt.tight_layout()
     plt.show()
 
-def pred_syndrome(pivot_table, pred='ratioanl_deg'):
-    nr, nc = 1, 3
-    syns = ['g', 'f1', 'f2']
-    fix, axs = plt.subplots(nr, nc, figsize=(nc*3.4, nr*4), sharey=True)
-    for i, syn in enumerate(syns):
-        ax = axs[i]
-        sns.scatterplot(x=pred, y=syn, data=pivot_table, ax=ax)
-        res = pearsonr(pivot_table[pred], pivot_table[syn])
-        if res[1] < .05:
-            x = sm.add_constant(pivot_table[pred])
-            params = sm.OLS(x, pivot_table[syn]).fit().params
-            x = pivot_table[pred].values
-            y = params.iloc[0, 0] + x*params.iloc[0, 1] 
-            print(f'{syn} ~ {params.iloc[0, 1]:.4f}*{pred} + {params.iloc[0, 0]:.4f}')
-            sns.lineplot(x=x, y=y, color='k', ax=ax)
-        print(f'{syn}: r={res[0]:.4f}, pval={res[1]:.4f}')
-        ax.set_title(f'{syn}')
-        ax.set_ylabel('')
-    plt.tight_layout()
+def get_advantage(agent):
+    if agent=='human':
+        fname = '../data/exp1_data.csv'
+    else:
+        fname = f'../simulations/exp1data/{agent}/sim-map.csv'
+    data = pd.read_csv(fname)
+    data['group'] = data['group'].map(
+        {'HC': 'HC', 'MDD': 'PAT', 'GAD': 'PAT'}
+    )
+    data['m0'] = data['m0']*100
+    data['m1'] = data['m1']*100
+    # get correct action 
+    data['pS0'] = data['psi_truth'].apply(lambda x: 1-x)
+    data['pS1'] = data['psi_truth'].apply(lambda x: x)
+    # get correct action 
+    data['cor_a'] = data.apply(
+        lambda x: x['state'] if x['feedback_type']=='gain' else int(1-x['state']) 
+    , axis=1)
+    # get action based on EU strategy
+    data['a_eu'] = data.apply(
+        lambda x: np.argmax([x['pS0']*x['m0'], x['pS1']*x['m1']])    
+    , axis=1)
+    data['r0'] = data.apply(
+        lambda x: (x['state']==0)*x['m0']
+    , axis=1) 
+    data['r1'] = data.apply(
+        lambda x: (x['state']==1)*x['m1']
+    , axis=1) 
+    data['r'] = data['rawRew']*100
+    data['b'] = data.apply(
+        lambda x: (x['r0']+x['r1']) / 2
+    , axis=1) 
+    # get action based on MO strategy
+    data['a_mo'] = data.apply(
+        lambda x: np.argmax([x['m0'], x['m1']])
+    , axis=1)
+    data['a_ha'] = data.shift(1)['a']
+    data['adv0']  = data.apply(
+        lambda x: x['r0'] - x['b'] 
+    , axis=1)
+    data['adv1']  = data.apply(
+        lambda x: x['r1'] - x['b'] 
+    , axis=1)
+    data['adv']  = data.apply(
+        lambda x: x[f"adv{int(x['a'])}"]
+    , axis=1)
+    data['hit']  = data.apply(
+        lambda x: x['a']==x['cor_a']
+    , axis=1)
+    data['hit_eu'] = data.apply(
+        lambda x:  x['a_eu']==x['cor_a']    
+    , axis=1)
+    data['r_eu'] = data.apply(
+        lambda x: x[f'adv{x["a_eu"]}']
+    , axis=1)
+    data['hit_mo'] = data.apply(
+        lambda x:  x['a_mo']==x['cor_a']    
+    , axis=1)
+    data['r_mo'] = data.apply(
+        lambda x: x[f'adv{x["a_mo"]}']
+    , axis=1)
+    data['adv-mo'] = data.apply(
+        lambda x: x['adv'] - x['r_mo']
+    , axis=1)
+    data['hit_ha'] = data.apply(
+        lambda x:  x['a_ha']==x['cor_a'] if x['trial']>0 else False  
+    , axis=1)
+    data['r_ha'] = data.apply(
+        lambda x: x[f'adv{int(x["a_ha"])}'] if x['trial']>0 else 0
+    , axis=1)
+    return data
+
 

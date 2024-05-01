@@ -171,14 +171,14 @@ class viz:
         add_errs=True, errorbar='se', errorcolor=[.3]*3):
         g_var = y if orient=='h' else x
         v_var = x if orient=='h' else y
-        v=sns.violinplot(data=data, 
+        sns.violinplot(data=data, 
                             x=x, y=y, order=order, 
                             hue=g_var if hue is None else hue, 
                             hue_order=order if hue is None else hue_order,
                             orient=orient, palette=palette, 
-                            legend=False, alpha=.1, inner=None, density_norm='width',
+                            edgecolor='none', alpha=.35,
+                            legend=False, inner=None, density_norm='width',
                             ax=ax)
-        plt.setp(v.collections, alpha=.5, edgecolor='none')
         sns.stripplot(data=data, 
                             x=x, y=y, order=order, 
                             hue=g_var if hue is None else hue, 
@@ -191,13 +191,14 @@ class viz:
                             ax=ax)
         if add_errs:
             sns.barplot(data=data, 
-                                x=x, y=y, order=order, 
-                                orient=orient, 
-                                hue=hue, hue_order=hue_order,
-                                errorbar=errorbar, linewidth=1, 
-                                edgecolor=(0,0,0,0), facecolor=(0,0,0,0),
-                                capsize=err_capsize, err_kws={'color': errorcolor, 'linewidth': 2.5},
-                                ax=ax)
+                        x=x, y=y, order=order, 
+                        orient=orient, 
+                        hue=g_var if hue is None else hue, 
+                        hue_order=order if hue is None else hue_order,
+                        errorbar=errorbar, linewidth=1, 
+                        edgecolor=(0,0,0,0), facecolor=(0,0,0,0),
+                        capsize=err_capsize, err_kws={'color': errorcolor, 'linewidth': 2.5},
+                        ax=ax)
             groupby = [g_var, hue] if hue is not None else [g_var]
             sns.stripplot(data=data.groupby(by=groupby)[v_var].mean().reset_index(), 
                             x=x, y=y, order=order, 
