@@ -1,6 +1,5 @@
 # ignore vs code system file
 *.vscode 
-*.ipynb
 *.ipynb_checkpoints
 *.DS_Store 
 *.log
