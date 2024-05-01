@@ -75,7 +75,7 @@ def sim_three_strategies_paral(pool, n_samples=100, seed=42):
                             for i in range(2*n_samples)]
     sim_data_all = pd.concat([p.get() for p in res], axis=0, ignore_index=True)
     fname = f'{pth}/simulations/'
-    fname += f'{args.data_set}/MOS6/sim-{args.method}.csv'
+    fname += f'sim/MOS6/sim-{args.method}.csv'
     sim_data_all.to_csv(fname)
 
 def get_sim_sample(params, group, seed, sub_id, sim_sample=2):
@@ -136,6 +136,11 @@ def fit_flr_to_mos(n_block=1, n_sub=5, seed=42):
     cmand = ['python', 'm1_fit.py', f'-d=syn_mos6_{n_sub}-sub',
               f'-n=FLR22', '-s=420', '-f=40',
               '-c=40', f'-m="map"', f'-a="BFGS"']
+    subprocess.run(cmand)
+
+    cmand = ['python', 'm2_rollout.py', f'-d=syn_mos6_{n_sub}-sub',
+              f'-n=FLR22', '-f=10',
+              '-c=10', f'-m="map"', f'-a="BFGS"']
     subprocess.run(cmand)
 
 def syn_mos_data(param, sub_id, group, data, seed, n_block=10):
