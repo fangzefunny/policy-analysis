@@ -48,7 +48,7 @@ python m1_fit.py -d="exp1" -n=$model -s=420 -f=40 -c=40 -m="map" -a="BFGS"
 ```
 to fit any model you like. Replace the `$model` with the name of the model you want to fit. 
 
-You can fit the model by yourself or download our the fitting results from xxxxx.  
+You can fit the model by yourself or download our the fitting results from the [OSF space](https://osf.io/xmjaz/).  
 
 
 ## 4) Model simulation
