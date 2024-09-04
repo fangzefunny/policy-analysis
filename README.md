@@ -1,5 +1,7 @@
 # Individuals with anxiety and depression use atypical decision strategies in an uncertain world
 
+[Original paper](https://elifesciences.org/reviewed-preprints/93887)
+
 Here is the guideline of reproducing the main figures in the paper. 
 
 # Steps for Reproducing the Main Analyses
